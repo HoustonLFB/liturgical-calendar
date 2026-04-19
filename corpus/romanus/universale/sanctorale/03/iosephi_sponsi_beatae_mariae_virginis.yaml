@@ -3,16 +3,14 @@ category: 1
 date:
   month: 3
   day: 19
-
 history:
   # L'éviction par les dimanches de Carême (Prec 2) est déléguée au moteur.
   # La TransferQueue alloue DOY+1 de manière déterministe en O(N) local.
   - from: 1969
     to: 2007
-    precedence: 4
+    precedence: 3
     nature: sollemnitas
     color: albus
-
   - from: 2008
     precedence: 3
     nature: sollemnitas

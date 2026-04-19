@@ -6,10 +6,10 @@ date:
 history:
   - from: 1969
     to: 2021
-    precedence: 11
+    precedence: 10
     nature: memoria
     color: rubeus
   - from: 2022 # ajout du titre de Docteur de l'Église
-    precedence: 11
+    precedence: 10
     nature: memoria
     color: rubeus

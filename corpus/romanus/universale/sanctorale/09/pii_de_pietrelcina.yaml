@@ -5,6 +5,6 @@ date:
   day: 23
 history:
   - from: 2002
-    precedence: 11
+    precedence: 10
     nature: memoria
     color: albus

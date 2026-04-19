@@ -3,7 +3,6 @@ category: 1
 date:
   month: 3
   day: 25
-
 history:
   - from: 1969
     precedence: 3
@@ -40,7 +39,6 @@ history:
         mobile:
           anchor: pascha
           offset: 8
-
       # --- BRANCHEMENT OCTAVE DE PÂQUES (Prec 1) ---
       # Invariant : L'Octave est un bloc d'exclusion totale.
       # Exclusion totale de la plage Pascha[0] à Pascha[7]
@@ -57,8 +55,7 @@ history:
         mobile:
           anchor: pascha
           offset: 8
-
-      # NOTE SUR L'OPTIMISATION DU PIPELINE :
-      # Les collisions avec les dimanches de Carême (Prec 2) ne sont pas listées.
-      # L'Engine applique la règle par défaut : Prec 2 > Prec 4.
-      # Sans règle 'mobile' explicite, la TransferQueue alloue automatiquement DOY + 1.
+# NOTE SUR L'OPTIMISATION DU PIPELINE :
+# Les collisions avec les dimanches de Carême (Prec 2) ne sont pas listées.
+# L'Engine applique la règle par défaut : Prec 2 > Prec 4.
+# Sans règle 'mobile' explicite, la TransferQueue alloue automatiquement DOY + 1.
