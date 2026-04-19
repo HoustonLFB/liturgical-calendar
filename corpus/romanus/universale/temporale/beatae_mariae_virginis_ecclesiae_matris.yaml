@@ -5,7 +5,7 @@ mobile:
   offset: 50
 history:
   - from: 2018
-    precedence: 11
+    precedence: 10
     nature: memoria
     color: albus
     season: tempus_ordinarium

@@ -6,7 +6,7 @@ date:
 history:
   - from: 1969
     to: 1969
-    precedence: 11
+    precedence: 11 # TODO à vérifier
     nature: memoria
     color: albus
   - from: 1970 # Docteur de l'Église

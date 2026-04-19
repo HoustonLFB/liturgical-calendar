@@ -5,7 +5,7 @@ mobile:
   offset: 7
 history:
   - from: 1969
-    precedence: 3
+    precedence: 6
     nature: festum
     color: albus
     transfers:

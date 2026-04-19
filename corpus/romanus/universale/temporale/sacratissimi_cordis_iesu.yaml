@@ -6,6 +6,6 @@ mobile:
   offset: 68
 history:
   - from: 1969
-    precedence: 2
+    precedence: 3
     nature: sollemnitas
     color: albus
