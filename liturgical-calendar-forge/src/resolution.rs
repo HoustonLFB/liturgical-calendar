@@ -101,9 +101,10 @@ fn nature_to_core(n: &crate::registry::Nature) -> CoreNature {
     match n {
         R::Sollemnitas  => CoreNature::Sollemnitas,
         R::Festum       => CoreNature::Festum,
+        R::Dominica     => CoreNature::Dominica,
         R::Memoria      => CoreNature::Memoria,
-        R::Feria        => CoreNature::Feria,
         R::Commemoratio => CoreNature::Commemoratio,
+        R::Feria        => CoreNature::Feria,
     }
 }
 
@@ -241,7 +242,9 @@ impl TransferQueue {
 pub(crate) fn should_demote_to_commemoratio(
     feast: &PlacedFeast, period: LiturgicalPeriod,
 ) -> bool {
-    feast.precedence >= 11
+    // Toutes les mémoires (générales=9, propres=10, facultatives=11)
+    // perdent leur caractère prescriptif en période privilegiée.
+    feast.precedence >= 9
         && matches!(
             period,
             LiturgicalPeriod::TempusQuadragesimae
@@ -294,11 +297,13 @@ fn elect(
     let mut to_transfer      = Vec::new();
 
     for feast in candidates {
-if (temporal_primary && should_demote_to_commemoratio(&feast, period)) || feast.precedence >= 8 {
-    secondary_feasts.push(feast);
-} else if feast.precedence <= 9 && feast.nature != CoreNature::Feria {
-    to_transfer.push(feast);
-}
+        if (temporal_primary && should_demote_to_commemoratio(&feast, period)) || feast.precedence >= 6 {
+            // secondary : FestaBMVEtSanctorumGenerales (6) et rangs inférieurs
+            secondary_feasts.push(feast);
+        } else if feast.precedence <= 7 && feast.nature != CoreNature::Feria {
+            // transferable : FestaPropria (7) et rangs supérieurs (0-5 atteignent ici)
+            to_transfer.push(feast);
+        }
         // else : supprimé silencieusement.
     }
 
@@ -362,9 +367,9 @@ pub(crate) fn resolve_year(
     // ── PASSE 2 ───────────────────────────────────────────────────────────────
 
     for (&doy, candidates) in slots.iter_mut() {
-        // V7a : Precedence ∈ [0, 3].
+        // V7a : TriduumSacrum (0) et SollemnitatesMaiores (1) — uniques par construction.
         {
-            let very_high: Vec<_> = candidates.iter().filter(|f| f.precedence <= 3).collect();
+            let very_high: Vec<_> = candidates.iter().filter(|f| f.precedence <= 1).collect();
             if very_high.len() >= 2 {
                 return Err(ForgeError::SolemnityCollision {
                     slug_a:     very_high[0].slug.clone(),
@@ -375,10 +380,10 @@ pub(crate) fn resolve_year(
             }
         }
 
-        // V7b : Precedence ∈ [4, 5], même scope.
+        // V7b : SollemnitatesGenerales (2) et SollemnitatesPropria (3) — même scope.
         {
             let solemn: Vec<_> = candidates.iter()
-                .filter(|f| f.precedence >= 4 && f.precedence <= 5)
+                .filter(|f| f.precedence >= 2 && f.precedence <= 3)
                 .collect();
             for i in 0..solemn.len() {
                 for j in (i + 1)..solemn.len() {
@@ -395,13 +400,14 @@ pub(crate) fn resolve_year(
         }
 
         // §3.1 — scope le plus local prime pour les Solennités.
-        if candidates.iter().filter(|f| f.precedence <= 5).count() >= 2 {
+        // Solennités susceptibles de conflit inter-scope : rangs 2 et 3.
+        if candidates.iter().filter(|f| f.precedence <= 3).count() >= 2 {
             let max_scope = candidates.iter()
-                .filter(|f| f.precedence <= 5)
+                .filter(|f| f.precedence <= 3)
                 .map(|f| f.scope_bits)
                 .max()
                 .unwrap_or(0);
-            candidates.retain(|f| !(f.precedence <= 5 && f.scope_bits < max_scope));
+            candidates.retain(|f| !(f.precedence <= 3 && f.scope_bits < max_scope));
         }
     }
 

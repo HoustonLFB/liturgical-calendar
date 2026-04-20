@@ -428,18 +428,17 @@ pub enum Precedence {
 
 Axe sémantique. **La Nature ne dicte jamais la force d'éviction** — seule `Precedence` est utilisée pour l'éviction. Ce découplage est la justification structurelle du modèle 2D.
 
-> `Dominica` n'est pas une Nature. C'est une classe de précédence. Sa Nature structurelle est `Feria`. Sa force d'éviction est encodée par `Precedence::DominicaePerAnnum` (7) ou `Precedence::DominicaePrivilegiataeMaior` (2).
-
 ```rust
-#[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[repr(u8)]
 pub enum Nature {
-    Sollemnitas   = 0,
-    Festum        = 1,
-    Memoria       = 2,
-    Feria         = 3,
-    Commemoratio  = 4,
-    // 5–7 : réservés
+    Sollemnitas = 0,
+    Festum = 1,
+    Dominica = 2,
+    Memoria = 3,
+    Commemoratio = 4,
+    Feria = 5,
+    // 6–7 : réservés.
 }
 ```
 

@@ -184,7 +184,7 @@ pub(crate) fn vespers_lookahead_pass(
             }
         };
 
-        let has_first_vespers = tomorrow_prec <= 4 || tomorrow_prec == 7;
+        let has_first_vespers = tomorrow_prec <= 3 || tomorrow_prec == 5;
         if !has_first_vespers { continue; }
 
         let today_prec = (entries[doy as usize].flags & 0x0F) as u8;

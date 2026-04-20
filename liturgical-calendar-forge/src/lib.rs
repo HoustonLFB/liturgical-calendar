@@ -115,9 +115,21 @@ pub fn compile(
 /// Helper pour les tests : compile une plage d'années en un buffer binaire unique.
 /// Ce pipeline suit strictement le layout AOT défini pour la production.
 pub fn forge_full_range(_range: std::ops::RangeInclusive<u16>) -> Result<Vec<u8>, ForgeError> {
-    let registry = ingest_corpus(Path::new("corpus/roman"))?;
-    let feast_ids = assign_feast_ids(&registry);
+    let corpus_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../corpus/romanus");
     
+    // Diagnostic — affiche le chemin absolu résolu
+    eprintln!("[DEBUG] CARGO_MANIFEST_DIR = {}", env!("CARGO_MANIFEST_DIR"));
+    eprintln!("[DEBUG] corpus_path = {}", corpus_path.canonicalize()
+        .map(|p| p.display().to_string())
+        .unwrap_or_else(|e| format!("ERREUR canonicalize: {}", e)));
+    eprintln!("[DEBUG] corpus_path exists = {}", corpus_path.exists());
+    
+    let registry = ingest_corpus(&corpus_path)?;
+    eprintln!("[DEBUG] {} fêtes chargées", registry.len());
+    
+    let feast_ids = assign_feast_ids(&registry);
+
     let mut pool = PoolBuilder::new();
     // Invariant structurel : on doit TOUJOURS produire 431 années (1969-2399)
     // même si le test ne demande qu'une sous-plage.

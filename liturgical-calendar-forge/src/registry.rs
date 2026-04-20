@@ -8,9 +8,10 @@ use std::collections::BTreeMap;
 pub enum Nature {
     Sollemnitas,
     Festum,
+    Dominica,
     Memoria,
-    Feria,
     Commemoratio,
+    Feria,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]

@@ -28,7 +28,7 @@ where
     // toute construction du graphe métier.
     if !matches!(human_val, 1..=13) {
         return Err(serde::de::Error::custom(format!(
-            "precedence invalide : {} (attendu 1–13, conforme Tabella dierum liturgicorum)",
+            "precedence invalide : {} (attendu 1-13, Table des preseances 1969)",
             human_val
         )));
     }
@@ -124,9 +124,10 @@ fn parse_nature(s: &str) -> Result<Nature, RegistryError> {
     match s {
         "sollemnitas"  => Ok(Nature::Sollemnitas),
         "festum"       => Ok(Nature::Festum),
+        "dominica"     => Ok(Nature::Dominica),
         "memoria"      => Ok(Nature::Memoria),
-        "feria"        => Ok(Nature::Feria),
         "commemoratio" => Ok(Nature::Commemoratio),
+        "feria"        => Ok(Nature::Feria),
         other => {
             let hint = match other {
                 "solemnity" | "solemnnitas" | "solemnitas" => " (hint: 'sollemnitas')",
@@ -158,7 +159,7 @@ fn parse_color(s: &str) -> Result<Color, RegistryError> {
 }
 
 // ---------------------------------------------------------------------------
-// Parse LiturgicalPeriod
+// Parse Liturgical Season
 // ---------------------------------------------------------------------------
 
 fn parse_season(s: &str) -> Result<LiturgicalPeriod, RegistryError> {
@@ -264,16 +265,20 @@ fn parse_history(slug: &str, entries: &[YamlHistoryEntry])
         let season = entry.season.as_deref().map(parse_season).transpose()?;
         let has_vigil_mass = entry.has_vigil_mass.unwrap_or(false);
 
-        // V-Natura-Memoria
-        // Valeurs internes : 11 = MemoriaeObligatoriae, 12 = FeriaePerAnnumEtMemoriaeAdLibitum
-        // (YAML correspondant : 12 et 13 après shift −1)
-        if nature == Nature::Memoria && entry.precedence != 11 && entry.precedence != 12 {
+        // V-Natura-Memoria — mapping 1:1 Table des preseances :
+        //   Rang 10 YAML -> interne 9  = MemoriaeObligatoriaGenerales
+        //   Rang 11 YAML -> interne 10 = MemoriaeObligatoriaePropria
+        //   Rang 12 YAML -> interne 11 = MemoriaeAdLibitum
+        if nature == Nature::Memoria
+            && !matches!(entry.precedence, 9 | 10 | 11)
+        {
             return Err(ParseError::InvalidMemoriaPrecedence {
                 slug: slug.to_string(),
                 from,
                 found_precedence: entry.precedence,
             }.into());
         }
+
         // V-Vigilia
         if has_vigil_mass && nature != Nature::Sollemnitas {
             return Err(ParseError::VigiliaNonSollemnitas {
@@ -434,17 +439,6 @@ pub fn parse_feast_from_yaml(
 }
 
 // ---------------------------------------------------------------------------
-// parse_feast_file — lecture disque + appel parse_feast_from_yaml
-// ---------------------------------------------------------------------------
-
-fn parse_feast_file(path: &Path, slug: &str, scope: Scope)
-    -> Result<FeastDef, ForgeError>
-{
-    let content = fs::read_to_string(path)?;
-    parse_feast_from_yaml(slug, scope, &content)
-}
-
-// ---------------------------------------------------------------------------
 // ingest_scope_dir — un scope (temporale/ + sanctorale/)
 // INV-FORGE-1 : collecter → trier lex → ingérer
 // ---------------------------------------------------------------------------
@@ -458,15 +452,11 @@ fn ingest_scope_dir(
         let dir = scope_dir.join(sub);
         if !dir.exists() { continue; }
 
-        let mut files: Vec<std::path::PathBuf> = fs::read_dir(&dir)?
-            .filter_map(|e| e.ok())
-            .map(|e| e.path())
-            .filter(|p| matches!(
-                p.extension().and_then(|x| x.to_str()),
-                Some("yaml") | Some("yml")
-            ))
-            .collect();
-        files.sort();
+        // Collecte récursive — absorbe les sous-répertoires mensuels
+        // (sanctorale/01/, sanctorale/03/…) sans changer la logique de tri.
+        let mut files: Vec<std::path::PathBuf> = Vec::new();
+        collect_yaml_recursive(&dir, &mut files)?;
+        files.sort(); // INV-FORGE-1 : ordre lexicographique global
 
         for path in files {
             let stem = path
@@ -475,17 +465,34 @@ fn ingest_scope_dir(
                 .unwrap_or("")
                 .to_string();
 
-            // V6 — slug avant parsing
             validate_slug(&stem).map_err(ForgeError::Parse)?;
 
-            // Ignorer les fichiers vides — corpus en cours de construction
             let content = fs::read_to_string(&path)?;
             if content.trim().is_empty() {
                 continue;
             }
 
-            let def = parse_feast_file(&path, &stem, scope.clone())?;
+            let def = parse_feast_from_yaml(&stem, scope.clone(), &content)?;
             registry.insert(def);
+        }
+    }
+    Ok(())
+}
+
+fn collect_yaml_recursive(
+    dir: &Path,
+    out: &mut Vec<std::path::PathBuf>,
+) -> Result<(), ForgeError> {
+    for entry in fs::read_dir(dir).map_err(ForgeError::Io)? {
+        let entry = entry.map_err(ForgeError::Io)?;
+        let path  = entry.path();
+        if path.is_dir() {
+            collect_yaml_recursive(&path, out)?;
+        } else if matches!(
+            path.extension().and_then(|x| x.to_str()),
+            Some("yaml") | Some("yml")
+        ) {
+            out.push(path);
         }
     }
     Ok(())
@@ -498,47 +505,76 @@ fn ingest_scope_dir(
 pub fn ingest_corpus(data_dir: &Path) -> Result<FeastRegistry, ForgeError> {
     let mut registry = FeastRegistry::new();
 
+    // Universale
     let universale = data_dir.join("universale");
     if universale.exists() {
         ingest_scope_dir(&universale, Scope::Universal, &mut registry)?;
     }
 
+    // Nationalia
     let nationalia = data_dir.join("nationalia");
     if nationalia.exists() {
-        let mut iso_dirs: Vec<std::path::PathBuf> = fs::read_dir(&nationalia)?
-            .filter_map(|e| e.ok())
-            .map(|e| e.path())
-            .filter(|p| p.is_dir())
-            .collect();
-        iso_dirs.sort();
-
+        let iso_dirs = sorted_subdirs(&nationalia)?;
         for iso_path in iso_dirs {
-            let iso = iso_path
-                .file_name().and_then(|n| n.to_str()).unwrap_or("").to_string();
+            let iso = dir_name(&iso_path);
             ingest_scope_dir(&iso_path, Scope::National(iso), &mut registry)?;
         }
     }
 
+    // Continentalia — traité comme National avec code continent
+    let continentalia = data_dir.join("continentalia");
+    if continentalia.exists() {
+        let cont_dirs = sorted_subdirs(&continentalia)?;
+        for cont_path in cont_dirs {
+            let cont = dir_name(&cont_path);
+            ingest_scope_dir(&cont_path, Scope::National(cont), &mut registry)?;
+        }
+    }
+
+    // Dioecesana
     let dioecesana = data_dir.join("dioecesana");
     if dioecesana.exists() {
-        let mut id_dirs: Vec<std::path::PathBuf> = fs::read_dir(&dioecesana)?
-            .filter_map(|e| e.ok())
-            .map(|e| e.path())
-            .filter(|p| p.is_dir())
-            .collect();
-        id_dirs.sort();
-
+        let id_dirs = sorted_subdirs(&dioecesana)?;
         for id_path in id_dirs {
-            let id = id_path
-                .file_name().and_then(|n| n.to_str()).unwrap_or("").to_string();
+            let id = dir_name(&id_path);
             ingest_scope_dir(&id_path, Scope::Diocesan(id), &mut registry)?;
         }
     }
 
-    // V-T2 — post-ingestion : tous les slugs collides doivent exister
+    // Ordines — traité comme Diocesan
+    let ordines = data_dir.join("ordines");
+    if ordines.exists() {
+        let ordo_dirs = sorted_subdirs(&ordines)?;
+        for ordo_path in ordo_dirs {
+            // Ignorer i18n/ qui n'est pas un scope liturgique
+            if dir_name(&ordo_path) == "i18n" { continue; }
+            let ordo = dir_name(&ordo_path);
+            ingest_scope_dir(&ordo_path, Scope::Diocesan(ordo), &mut registry)?;
+        }
+    }
+
     validate_collides_targets(&registry)?;
 
     Ok(registry)
+}
+
+// Helpers extraits pour éviter la répétition
+fn sorted_subdirs(dir: &Path) -> Result<Vec<std::path::PathBuf>, ForgeError> {
+    let mut dirs: Vec<_> = fs::read_dir(dir)
+        .map_err(ForgeError::Io)?
+        .filter_map(|e| e.ok())
+        .map(|e| e.path())
+        .filter(|p| p.is_dir())
+        .collect();
+    dirs.sort();
+    Ok(dirs)
+}
+
+fn dir_name(path: &Path) -> String {
+    path.file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("")
+        .to_string()
 }
 
 // ---------------------------------------------------------------------------
@@ -668,7 +704,22 @@ history:
         assert_eq!(def.history[0].precedence, 0); // 1 − 1 = 0 interne = TriduumSacrum
     }
 
-    // --- V4a ---
+    #[test]
+    fn precedence_yaml_thirteen_maps_to_twelve_internal() {
+        let yaml = r#"
+version: 1
+category: 1
+date:
+  month: 5
+  day: 1
+history:
+  - precedence: 13
+    nature: feria
+    color: green
+"#;
+        let def = parse_feast_from_yaml("test_slug", Scope::Universal, yaml).unwrap();
+        assert_eq!(def.history[0].precedence, 12);
+    }
 
     #[test]
     fn v4a_offset_on_ordinal_anchor() {
@@ -717,7 +768,7 @@ date:
   month: 5
   day: 1
 history:
-  - precedence: 10
+  - precedence: 8
     nature: memoria
     color: white
 "#;
@@ -725,15 +776,49 @@ history:
         assert!(matches!(
             err,
             ForgeError::Parse(ParseError::InvalidMemoriaPrecedence {
-                found_precedence: 9, // valeur interne après shift
+                found_precedence: 7, // valeur interne après shift
                 ..
             })
         ));
     }
 
-    /// YAML precedence: 12 → interne 11 (MemoriaeObligatoriae) : valide.
+    /// YAML 10 -> interne 9 (MemoriaeObligatoriaGenerales) : valide.
     #[test]
-    fn v_natura_memoria_valid_precedence_12_yaml() {
+    fn v_natura_memoria_valid_obligatoria_generales() {
+        let yaml = r#"
+version: 1
+category: 1
+date:
+  month: 5
+  day: 1
+history:
+  - precedence: 10
+    nature: memoria
+    color: white
+"#;
+        assert!(parse_feast_from_yaml("test_slug", Scope::Universal, yaml).is_ok());
+    }
+ 
+    /// YAML 11 -> interne 10 (MemoriaeObligatoriaePropria) : valide.
+    #[test]
+    fn v_natura_memoria_valid_obligatoria_propria() {
+        let yaml = r#"
+version: 1
+category: 1
+date:
+  month: 5
+  day: 1
+history:
+  - precedence: 11
+    nature: memoria
+    color: white
+"#;
+        assert!(parse_feast_from_yaml("test_slug", Scope::Universal, yaml).is_ok());
+    }
+ 
+    /// YAML 12 -> interne 11 (MemoriaeAdLibitum) : valide.
+    #[test]
+    fn v_natura_memoria_valid_ad_libitum() {
         let yaml = r#"
 version: 1
 category: 1
@@ -742,23 +827,6 @@ date:
   day: 1
 history:
   - precedence: 12
-    nature: memoria
-    color: white
-"#;
-        assert!(parse_feast_from_yaml("test_slug", Scope::Universal, yaml).is_ok());
-    }
-
-    /// YAML precedence: 13 → interne 12 (FeriaePerAnnumEtMemoriaeAdLibitum) : valide.
-    #[test]
-    fn v_natura_memoria_valid_precedence_13_yaml() {
-        let yaml = r#"
-version: 1
-category: 1
-date:
-  month: 5
-  day: 1
-history:
-  - precedence: 13
     nature: memoria
     color: white
 "#;
