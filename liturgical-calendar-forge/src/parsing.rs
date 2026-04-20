@@ -88,7 +88,7 @@ struct YamlHistoryEntry {
     precedence:     u8,
     nature:         String,
     color:          String,
-    season:         Option<String>,
+    period:         Option<String>,
     has_vigil_mass: Option<bool>,
     transfers:      Option<Vec<YamlTransfer>>,  // scoped à cette tranche temporelle
 }
@@ -159,18 +159,19 @@ fn parse_color(s: &str) -> Result<Color, RegistryError> {
 }
 
 // ---------------------------------------------------------------------------
-// Parse Liturgical Season
+// Parse Liturgical Period
 // ---------------------------------------------------------------------------
 
-fn parse_season(s: &str) -> Result<LiturgicalPeriod, RegistryError> {
+fn parse_period(s: &str) -> Result<LiturgicalPeriod, RegistryError> {
     match s {
-        "adventus"                              => Ok(LiturgicalPeriod::Adventus),
-        "nativitas"                             => Ok(LiturgicalPeriod::Nativitas),
-        "epiphania"                             => Ok(LiturgicalPeriod::Epiphania),
-        "quadragesima"                          => Ok(LiturgicalPeriod::Quadragesima),
-        "pascha"                                => Ok(LiturgicalPeriod::Pascha),
-        "tempus_ordinarium"|"temporis_ordinarii"=> Ok(LiturgicalPeriod::TemporisOrdinarii),
-        other => Err(RegistryError::UnknownSeasonString(other.to_string())),
+        "tempus_ordinarium"    => Ok(LiturgicalPeriod::TempusOrdinarium),
+        "tempus_adventus"      => Ok(LiturgicalPeriod::TempusAdventus),
+        "tempus_nativitatis"   => Ok(LiturgicalPeriod::TempusNativitatis),
+        "tempus_quadragesimae" => Ok(LiturgicalPeriod::TempusQuadragesimae),
+        "triduum_paschale"     => Ok(LiturgicalPeriod::TriduumPaschale),
+        "tempus_paschale"      => Ok(LiturgicalPeriod::TempusPaschale),
+        "dies_sancti"          => Ok(LiturgicalPeriod::DiesSancti),
+        other => Err(RegistryError::UnknownPeriodString(other.to_string())),
     }
 }
 
@@ -262,7 +263,7 @@ fn parse_history(slug: &str, entries: &[YamlHistoryEntry])
 
         let nature = parse_nature(&entry.nature)?;
         let color  = parse_color(&entry.color)?;
-        let season = entry.season.as_deref().map(parse_season).transpose()?;
+        let period = entry.period.as_deref().map(parse_period).transpose()?;
         let has_vigil_mass = entry.has_vigil_mass.unwrap_or(false);
 
         // V-Natura-Memoria — mapping 1:1 Table des preseances :
@@ -298,7 +299,7 @@ fn parse_history(slug: &str, entries: &[YamlHistoryEntry])
         result.push(FeastHistoryEntry {
             from, to,
             precedence: entry.precedence,
-            nature, color, season, has_vigil_mass,
+            nature, color, period, has_vigil_mass,
             transfers,
         });
     }

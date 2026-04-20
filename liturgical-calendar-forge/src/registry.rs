@@ -28,12 +28,14 @@ pub enum Color {
 /// Période liturgique (champ `season` dans history)
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum LiturgicalPeriod {
-    Adventus,
-    Nativitas,
-    Epiphania,
-    Quadragesima,
-    Pascha,
-    TemporisOrdinarii,
+    TempusOrdinarium,
+    TempusAdventus,
+    TempusNativitatis,
+    TempusQuadragesimae,
+    TriduumPaschale,
+    TempusPaschale,
+    /// Phase opérationnelle (Semaine Sainte)
+    DiesSancti,
 }
 
 // ---------------------------------------------------------------------------
@@ -98,7 +100,7 @@ pub struct FeastHistoryEntry {
     pub precedence:     u8,
     pub nature:         Nature,
     pub color:          Color,
-    pub season:         Option<LiturgicalPeriod>,
+    pub period:         Option<LiturgicalPeriod>,
     pub has_vigil_mass: bool,
     /// Règles de transfert scoped à cette tranche temporelle (vide si absent dans le YAML)
     pub transfers:      Vec<TransferDef>,

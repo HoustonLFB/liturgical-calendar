@@ -115,7 +115,7 @@ pub enum Color {
     /// Violet — Avent, Carême.
     Violaceus = 3,
     /// Rose — Gaudete (Avent III), Laetare (Carême IV).
-    Roseus = 4,
+    Rosaceus = 4,
     /// Noir — messes des défunts.
     Niger = 5,
     // 6 : usage liturgique futur (or, argent — optionnel selon usages diocésains).
@@ -130,7 +130,7 @@ impl Color {
             1 => Ok(Self::Rubeus),
             2 => Ok(Self::Viridis),
             3 => Ok(Self::Violaceus),
-            4 => Ok(Self::Roseus),
+            4 => Ok(Self::Rosaceus),
             5 => Ok(Self::Niger),
             v => Err(DomainError::InvalidDiscriminant(v)),
         }
@@ -238,7 +238,7 @@ mod tests {
  
     #[test]
     fn color_roundtrip() {
-        for v in [Color::Albus, Color::Rubeus, Color::Viridis, Color::Violaceus, Color::Roseus, Color::Niger] {
+        for v in [Color::Albus, Color::Rubeus, Color::Viridis, Color::Violaceus, Color::Rosaceus, Color::Niger] {
             assert_eq!(Color::try_from_u8(v as u8), Ok(v));
         }
     }

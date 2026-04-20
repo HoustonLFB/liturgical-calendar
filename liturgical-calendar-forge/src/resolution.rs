@@ -27,9 +27,16 @@
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 
+// --- Imports Core (Types binaires optimisés) ---
 use liturgical_calendar_core::{
-    Color as CoreColor, LiturgicalPeriod, Nature as CoreNature,
+    Color as CoreColor, 
+    Nature as CoreNature,
+    LiturgicalPeriod as CorePeriod, 
 };
+
+// --- Import Registry (Contrat YAML / Ingestion) ---
+// On aliase pour ne pas percuter CorePeriod
+use crate::registry::LiturgicalPeriod as RegistryPeriod;
 
 use crate::{
     canonicalization::{
@@ -42,6 +49,22 @@ use crate::{
         TransferTarget,
     },
 };
+
+// ─── Nouvel outil de conversion ───────────────────────────────────────────────
+
+/// Transforme la période du Registre vers le type binaire du Core.
+/// Garantit le respect du layout de 3 bits défini dans l'ADR.
+pub(crate) fn period_to_core(p: &RegistryPeriod) -> CorePeriod {
+    match p {
+        RegistryPeriod::TempusOrdinarium   => CorePeriod::TempusOrdinarium,
+        RegistryPeriod::TempusAdventus     => CorePeriod::TempusAdventus,
+        RegistryPeriod::TempusNativitatis  => CorePeriod::TempusNativitatis,
+        RegistryPeriod::TempusQuadragesimae => CorePeriod::TempusQuadragesimae,
+        RegistryPeriod::TriduumPaschale    => CorePeriod::TriduumPaschale,
+        RegistryPeriod::TempusPaschale     => CorePeriod::TempusPaschale,
+        RegistryPeriod::DiesSancti         => CorePeriod::DiesSancti,
+    }
+}
 
 // ─── FeastIdMap ───────────────────────────────────────────────────────────────
 
@@ -88,7 +111,7 @@ fn color_to_core(c: &crate::registry::Color) -> CoreColor {
         R::Rubeus    => CoreColor::Rubeus,
         R::Viridis   => CoreColor::Viridis,
         R::Violaceus => CoreColor::Violaceus,
-        R::Rosaceus  => CoreColor::Roseus,  // nom différent
+        R::Rosaceus  => CoreColor::Rosaceus,
         R::Niger     => CoreColor::Niger,
         // Aureus : réservé dans Core v2.0 (valeur 6 non définie).
         // Fallback Albus — à revoir si Core expose Color::Aureus.
@@ -143,6 +166,7 @@ pub(crate) struct PlacedFeast {
     pub precedence:     u8,
     pub nature:         CoreNature,
     pub color:          CoreColor,
+    pub period:         Option<CorePeriod>,
     pub has_vigil_mass: bool,
     pub cycle:          Cycle,
     pub temporality:    Temporality,
@@ -240,17 +264,18 @@ impl TransferQueue {
 // ─── Déclassement saisonnier — §3.4 ─────────────────────────────────────────
 
 pub(crate) fn should_demote_to_commemoratio(
-    feast: &PlacedFeast, period: LiturgicalPeriod,
+    feast: &PlacedFeast,
+    period: CorePeriod,
 ) -> bool {
     // Toutes les mémoires (générales=9, propres=10, facultatives=11)
     // perdent leur caractère prescriptif en période privilegiée.
     feast.precedence >= 9
         && matches!(
             period,
-            LiturgicalPeriod::TempusQuadragesimae
-                | LiturgicalPeriod::TempusAdventus
-                | LiturgicalPeriod::TriduumPaschale
-                | LiturgicalPeriod::DiesSancti
+            CorePeriod::TempusQuadragesimae
+                | CorePeriod::TempusAdventus
+                | CorePeriod::TriduumPaschale
+                | CorePeriod::DiesSancti
         )
 }
 
@@ -286,7 +311,7 @@ fn feast_cycle_temporality(feast_def: &FeastDef) -> (Cycle, Temporality) {
 
 fn elect(
     mut candidates: Vec<PlacedFeast>,
-    period:         LiturgicalPeriod,
+    period:         CorePeriod,
 ) -> (PlacedFeast, Vec<PlacedFeast>, Vec<PlacedFeast>) {
     candidates.sort_unstable_by(|a, b| a.key().cmp(&b.key()));
 
@@ -358,6 +383,7 @@ pub(crate) fn resolve_year(
             precedence:     version.precedence,
             nature:         nature_to_core(&version.nature),
             color:          color_to_core(&version.color),
+            period:         version.period.as_ref().map(period_to_core),
             has_vigil_mass: version.has_vigil_mass,
             cycle,
             temporality,
@@ -414,9 +440,9 @@ pub(crate) fn resolve_year(
     // ── PASSE 3 ───────────────────────────────────────────────────────────────
 
     let mut resolved_days:      BTreeMap<u16, ResolvedDay>      = BTreeMap::new();
-    let mut transfer_queue                                        = TransferQueue::new();
+    let mut transfer_queue                                      = TransferQueue::new();
     let mut pending_inserts:    BTreeMap<u16, Vec<PlacedFeast>> = BTreeMap::new();
-    let mut retrograde_inserts: Vec<(u16, PlacedFeast)>          = Vec::new();
+    let mut retrograde_inserts: Vec<(u16, PlacedFeast)>         = Vec::new();
 
     for doy in 0u16..=365u16 {
         let mut candidates: Vec<PlacedFeast> = slots.remove(&doy).unwrap_or_default();

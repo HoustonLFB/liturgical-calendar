@@ -51,7 +51,7 @@ history:
   - precedence: 2
     nature: sollemnitas
     color: albus
-    season: pascha
+    period: tempus_paschale
     has_vigil_mass: false
 "#;
     let feast = parse_feast_from_yaml("dominica_resurrectionis", Scope::Universal, yaml)

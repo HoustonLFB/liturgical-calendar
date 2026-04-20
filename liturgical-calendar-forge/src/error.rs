@@ -62,8 +62,8 @@ pub enum RegistryError {
     UnknownNatureString(String),
     /// Couleur inconnue
     UnknownColorString(String),
-    /// Saison inconnue
-    UnknownSeasonString(String),
+    /// Période inconnue
+    UnknownPeriodString(String),
     /// V3b — from > to, from < 1969, ou to > 2399
     InvalidTemporalRange { from: u16, to: u16 },
     /// V2d — deux entrées history actives la même année
