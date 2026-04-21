@@ -1,0 +1,10 @@
+version: 1
+category: 1
+date:
+  month: 8
+  day: 9
+history:
+  - from: 1999 # un an après le calendrier général romain de 1998
+    precedence: 8
+    nature: festum
+    color: rubeus

@@ -149,7 +149,7 @@ history:
     precedence: 2
     nature: sollemnitas
     color: albus
-    season: tempus_nativitatis # Optionnel — voir §2.3
+    period: tempus_nativitatis # Optionnel — voir §2.3
     has_vigil_mass: false # Optionnel — défaut false. True pour les vigiles propres.
     transfers: # Optionnel, scoped à [from, to] — voir §2.4
       - collides: <slug>
@@ -190,7 +190,7 @@ feasts:
         precedence: <1–13> # Rang liturgique effectif (YAML 1-based).
         nature: <string>
         color: <string>
-        season: <string> # Optionnel — voir §2.3
+        period: <string> # Optionnel — voir §2.3
         has_vigil_mass: <bool> # Optionnel, défaut false — voir §2.5
         transfers: # Optionnel — voir §2.4 (scoped : actif pour [from, to])
           - collides: <slug_concurrent>
@@ -276,9 +276,9 @@ Si présent : la Forge vérifie l'absence de collision dans le `FeastRegistry`. 
 
 ---
 
-## 2.3 Champ `season` dans `history`
+## 2.3 Champ `period` dans `history`
 
-Le champ `season` est **optionnel**. Quand il est absent, la Forge le calcule automatiquement depuis les `SeasonBoundaries` de l'année en cours (Étape 2, Canonicalization).
+Le champ `period` est **optionnel**. Quand il est absent, la Forge le calcule automatiquement depuis les `SeasonBoundaries` de l'année en cours (Étape 2, Canonicalization).
 
 Il peut être fourni explicitement pour les fêtes dont la saison est fixe indépendamment du calendrier temporel (ex: une Solennité du Sanctoral tombe toujours en `TempusOrdinarium` sauf si elle coïncide avec une période privilégiée — la Forge résout ce conflit en Étape 3).
 
@@ -355,7 +355,7 @@ history:
     precedence: 3
     nature: sollemnitas
     color: albus
-    season: tempus_nativitatis
+    period: tempus_nativitatis
     transfers:
       - collides: nativitas_domini # Si Noël est un dimanche, pas d'Octave disponible
         date:
@@ -404,7 +404,7 @@ history:
     precedence: 0
     nature: sollemnitas
     color: albus
-    season: tempus_paschale
+    period: tempus_paschale
     has_vigil_mass: true  # Vigile pascale — messe propre le Samedi Saint au soir
 
 # data/universale/sanctorale/nativitas_domini.yaml
@@ -413,7 +413,7 @@ history:
     precedence: 1
     nature: sollemnitas
     color: albus
-    season: tempus_nativitatis
+    period: tempus_nativitatis
     has_vigil_mass: true  # Messe de Minuit / Vigile de Noël
 ```
 
@@ -601,7 +601,7 @@ history:
     precedence: 1
     nature: sollemnitas
     color: albus
-    season: tempus_paschale
+    period: tempus_paschale
     # title → i18n/la/ascensio_domini.yaml : { 1969: { title: "Ascensio Domini" } }
 ```
 
@@ -628,7 +628,7 @@ history:
     precedence: <1–13> # Rang liturgique effectif (Tabella dierum, YAML 1-based)
     nature: <string> # Voir §6.2.
     color: <string> # Voir §6.3.
-    season: <string> # Optionnel — voir §2.3 et §6.4.
+    period: <string> # Optionnel — voir §2.3 et §6.4.
     has_vigil_mass: <bool># Optionnel, défaut false — voir §2.5.
     transfers: # Optionnel — scoped : actif uniquement pour [from, to] — voir §2.4.
       - collides: <slug> # Options : offset, date, mobile — mutuellement exclusifs.
@@ -974,19 +974,19 @@ Valeurs YAML (insensibles à la casse) et correspondance en `CalendarEntry.flags
 | `roseus`    | `Color::Roseus`    | 4                | Gaudete (Avent III), Laetare (Carême IV)         |
 | `niger`     | `Color::Niger`     | 5                | Messes des défunts                               |
 
-### 6.4 `season` — Saison Liturgique (optionnel)
+### 6.4 `period` — Saison Liturgique (optionnel)
 
 Valeurs YAML et correspondance en `CalendarEntry.flags` bits [10:8] :
 
-| Valeur YAML            | `Season` Rust                 | Valeur numérique |
+| Valeur YAML            | `Period` Rust                 | Valeur numérique |
 | ---------------------- | ----------------------------- | ---------------- |
-| `tempus_ordinarium`    | `Season::TempusOrdinarium`    | 0                |
-| `tempus_adventus`      | `Season::TempusAdventus`      | 1                |
-| `tempus_nativitatis`   | `Season::TempusNativitatis`   | 2                |
-| `tempus_quadragesimae` | `Season::TempusQuadragesimae` | 3                |
-| `triduum_paschale`     | `Season::TriduumPaschale`     | 4                |
-| `tempus_paschale`      | `Season::TempusPaschale`      | 5                |
-| `dies_sancti`          | `Season::DiesSancti`          | 6                |
+| `tempus_ordinarium`    | `period::TempusOrdinarium`    | 0                |
+| `tempus_adventus`      | `period::TempusAdventus`      | 1                |
+| `tempus_nativitatis`   | `period::TempusNativitatis`   | 2                |
+| `tempus_quadragesimae` | `period::TempusQuadragesimae` | 3                |
+| `triduum_paschale`     | `period::TriduumPaschale`     | 4                |
+| `tempus_paschale`      | `period::TempusPaschale`      | 5                |
+| `dies_sancti`          | `period::DiesSancti`          | 6                |
 
 Si omis dans le YAML, la Forge calcule la saison depuis les `SeasonBoundaries` de l'année courante (Étape 2). Pour les fêtes du Sanctoral dont la saison est sans ambiguïté (ex: une Mémoire en juillet → `tempus_ordinarium`), fournir le champ évite le recalcul et garantit la valeur indépendamment du calendrier temporel.
 
@@ -1006,7 +1006,7 @@ Tableau de correspondance complet entre les champs YAML et les champs binaires d
 | —                                 | —                   | `CalendarEntry.secondary_index`                              | 2      | Alimenté par Étape 4 (Materialization)                                         |
 | `history[].precedence`            | Integer [0–12]      | `CalendarEntry.flags` bits [3:0]                             | 4      |                                                                                |
 | `history[].color`                 | String enum         | `CalendarEntry.flags` bits [7:4]                             | 4      |                                                                                |
-| `history[].season`                | String enum \| null | `CalendarEntry.flags` bits [10:8]                            | 4      | Calculé si absent                                                              |
+| `history[].period`                | String enum \| null | `CalendarEntry.flags` bits [10:8]                            | 4      | Calculé si absent                                                              |
 | `history[].nature`                | String enum         | `CalendarEntry.flags` bits [13:11]                           | 4      |                                                                                |
 | `history[].has_vigil_mass`        | bool (défaut false) | `CalendarEntry.flags` bit 15 (HAS_VIGILIA) + bit 15 du DOY−1 | 4      | Reporté sur la veille par la passe vespérale (Étape 5)                         |
 | —                                 | —                   | `CalendarEntry.secondary_count`                              | 6      | Alimenté par Étape 3 (Conflict Resolution)                                     |
@@ -1019,7 +1019,7 @@ Tableau de correspondance complet entre les champs YAML et les champs binaires d
 **Encodage `flags` :**
 
 ```rust
-fn encode_flags(p: Precedence, c: Color, s: Season, n: Nature) -> u16 {
+fn encode_flags(p: Precedence, c: Color, s: Period, n: Nature) -> u16 {
     (p as u16)             // bits [3:0]
     | ((c as u16) << 4)    // bits [7:4]
     | ((s as u16) << 8)    // bits [10:8]
@@ -1332,7 +1332,7 @@ history:
     precedence: 2
     nature: sollemnitas
     color: albus
-    season: tempus_nativitatis
+    period: tempus_nativitatis
     # title → i18n/la/nativitas_domini.yaml : { 1969: { title: "In Nativitate Domini" } }
 ```
 
@@ -1345,7 +1345,7 @@ flags           : 0x0201  (= 0b_0000_0010_0000_0001)
                   décomposé :
                   bits [3:0]   = 0001 → Precedence = 1 (SollemnitatesFixaeMaior)
                   bits [7:4]   = 0000 → Color      = 0 (Albus)
-                  bits [10:8]  = 010  → Season     = 2 (TempusNativitatis)
+                  bits [10:8]  = 010  → Period     = 2 (TempusNativitatis)
                   bits [13:11] = 000  → Nature     = 0 (Sollemnitas)
                   bits [15:14] = 00   → réservés
 ```
@@ -1372,7 +1372,7 @@ history:
     precedence: 2
     nature: sollemnitas
     color: albus
-    season: tempus_paschale
+    period: tempus_paschale
     # title → i18n/la/in_ascensione_domini.yaml : { 1969: { title: "In Ascensione Domini" } }
 ```
 

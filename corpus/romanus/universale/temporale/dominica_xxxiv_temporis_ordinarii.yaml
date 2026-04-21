@@ -2,10 +2,10 @@ version: 1
 category: 0
 mobile:
   anchor: tempus_ordinarium
-  ordinal: 34
+  ordinal: 2
 history:
   - from: 1969
-    precedence: 7
-    nature: feria
+    precedence: 6
+    nature: dominica
     color: viridis
     period: tempus_ordinarium

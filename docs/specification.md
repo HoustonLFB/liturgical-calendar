@@ -604,7 +604,7 @@ Tout champ serde désérialisé depuis le YAML mais non consommé dans le jalon 
 ```rust
 #[derive(Deserialize)]
 struct YamlFile {
-    version:  u32,           // "version" — remplace l'ancien "format_version" (supprimé v1.2)
+    version:  u32,           // "version: 1"
     category: u8,
     #[serde(rename = "from")]
     _from:    Option<u16>,   // réservé Jalon 3 — versioning temporel

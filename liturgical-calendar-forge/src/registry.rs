@@ -97,9 +97,9 @@ pub struct TransferDef {
 pub struct FeastHistoryEntry {
     pub from:           u16,
     pub to:             u16,
-    pub precedence:     u8,
-    pub nature:         Nature,
-    pub color:          Color,
+    pub precedence:     Option<u8>,
+    pub nature:         Option<Nature>,
+    pub color:          Option<Color>,
     pub period:         Option<LiturgicalPeriod>,
     pub has_vigil_mass: bool,
     /// Règles de transfert scoped à cette tranche temporelle (vide si absent dans le YAML)

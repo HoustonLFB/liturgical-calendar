@@ -116,6 +116,16 @@ pub enum ForgeError {
     /// Passe 5 — Table finale incohérente après clôture transitive.
     ResolutionIncomplete { doy: u16, year: u16, detail: String },
     /// Validation post-écriture kal_validate_header échouée.
+
+    /// Post-merge : champ obligatoire absent après fusion universale + override.
+    /// Indique un corpus incomplet, pas un override invalide.
+    MissingResolvedField {
+        feast_id: u16,
+        year:     u16,
+        doy:      u16,
+        field:    &'static str,
+    },
+
     KaldValidationFailed { code: i32 },
 }
 

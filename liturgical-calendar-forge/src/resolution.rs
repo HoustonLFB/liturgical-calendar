@@ -376,13 +376,37 @@ pub(crate) fn resolve_year(
 
         let (cycle, temporality) = feast_cycle_temporality(feast_def);
 
+        let precedence = version.precedence
+            .ok_or_else(|| ForgeError::MissingResolvedField {
+                feast_id,
+                year,
+                doy,
+                field: "precedence",
+            })?;
+
+        let nature_val = version.nature.as_ref()
+            .ok_or_else(|| ForgeError::MissingResolvedField {
+                feast_id,
+                year,
+                doy,
+                field: "nature",
+            })?;
+
+        let color_val = version.color.as_ref()
+            .ok_or_else(|| ForgeError::MissingResolvedField {
+                feast_id,
+                year,
+                doy,
+                field: "color",
+            })?;
+
         slots.entry(doy).or_default().push(PlacedFeast {
             slug:           feast_def.slug.clone(),
             feast_id,
             scope_bits,
-            precedence:     version.precedence,
-            nature:         nature_to_core(&version.nature),
-            color:          color_to_core(&version.color),
+            precedence,
+            nature:         nature_to_core(nature_val),
+            color:          color_to_core(color_val),
             period:         version.period.as_ref().map(period_to_core),
             has_vigil_mass: version.has_vigil_mass,
             cycle,

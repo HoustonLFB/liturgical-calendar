@@ -381,7 +381,7 @@ date:
 history:
   - precedence: 2
     nature: sollemnitas
-    color: white
+    color: albus
     transfers:
       - collides: dominica_in_palmis
         mobile:
