@@ -397,7 +397,7 @@ mobile:
 history:
   - precedence: 2
     nature: sollemnitas
-    color: red
+    color: rubeus
 "#;
 
         let mut registry = FeastRegistry::new();

@@ -151,13 +151,13 @@ fn parse_nature(s: &str) -> Result<Nature, RegistryError> {
 
 fn parse_color(s: &str) -> Result<Color, RegistryError> {
     match s {
-        "white" | "albus"              => Ok(Color::Albus),
-        "red"   | "rubeus"             => Ok(Color::Rubeus),
-        "green" | "viridis"            => Ok(Color::Viridis),
-        "purple"| "violet"|"violaceus" => Ok(Color::Violaceus),
-        "rose"  | "rosaceus"           => Ok(Color::Rosaceus),
-        "black" | "niger"              => Ok(Color::Niger),
-        "gold"  | "aureus"             => Ok(Color::Aureus),
+        "albus"     => Ok(Color::Albus),
+        "rubeus"    => Ok(Color::Rubeus),
+        "viridis"   => Ok(Color::Viridis),
+        "violaceus" => Ok(Color::Violaceus),
+        "rosaceus"  => Ok(Color::Rosaceus),
+        "niger"     => Ok(Color::Niger),
+        "aureus"    => Ok(Color::Aureus),
         other => Err(RegistryError::UnknownColorString(other.to_string())),
     }
 }
