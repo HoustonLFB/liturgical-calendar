@@ -283,7 +283,7 @@ pub(crate) fn should_demote_to_commemoratio(
 // Temporality est sur FeastDef, pas sur FeastHistoryEntry.
 
 fn feast_doy(feast_def: &FeastDef, anchors: &BTreeMap<String, u16>) -> Option<u16> {
-    match &feast_def.temporality {
+    match feast_def.temporality.as_ref()? {  // None temporality → None DOY → skip
         RegistryTemporality::Fixed { month, day } => {
             Some(MONTH_STARTS[*month as usize - 1] + *day as u16 - 1)
         }
@@ -300,10 +300,11 @@ fn feast_doy(feast_def: &FeastDef, anchors: &BTreeMap<String, u16>) -> Option<u1
 }
 
 fn feast_cycle_temporality(feast_def: &FeastDef) -> (Cycle, Temporality) {
-    match &feast_def.temporality {
-        RegistryTemporality::Fixed { .. }             => (Cycle::Sanctoral, Temporality::Fixed),
+    // Appelé uniquement si feast_doy a retourné Some — temporality est garantie Some.
+    match feast_def.temporality.as_ref().expect("temporality absente après merge") {
+        RegistryTemporality::Fixed { .. }           => (Cycle::Sanctoral, Temporality::Fixed),
         RegistryTemporality::Mobile { .. }
-        | RegistryTemporality::Ordinal { .. }         => (Cycle::Temporal,  Temporality::Mobile),
+        | RegistryTemporality::Ordinal { .. }       => (Cycle::Temporal,  Temporality::Mobile),
     }
 }
 

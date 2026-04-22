@@ -118,7 +118,7 @@ pub struct FeastDef {
     pub category:    u8,
     /// Identifiant numérique optionnel (Martyrologium Romanum)
     pub id:          Option<u16>,
-    pub temporality: Temporality,
+    pub temporality: Option<Temporality>,
     pub history:     Vec<FeastHistoryEntry>,
 }
 
@@ -164,6 +164,34 @@ impl FeastRegistry {
 
     pub fn len(&self) -> usize { self.feasts.len() }
     pub fn is_empty(&self) -> bool { self.feasts.is_empty() }
+
+    /// Fusionne un delta dans l'entrée existante, ou insère si absente.
+    ///
+    /// Règles de merge :
+    /// - `temporality` : conserve l'existante si le delta n'en a pas.
+    /// - `history`     : remplace si le delta en fournit une (non-vide).
+    /// - `scope`       : toujours celui du delta (plus local).
+    /// - `id`          : delta prime si `Some`.
+    pub fn merge(&mut self, delta: FeastDef) {
+        match self.feasts.get_mut(&delta.slug) {
+            None => {
+                // Nouvelle fête propre à ce scope — insertion directe.
+                self.feasts.insert(delta.slug.clone(), delta);
+            }
+            Some(existing) => {
+                if delta.temporality.is_some() {
+                    existing.temporality = delta.temporality;
+                }
+                if !delta.history.is_empty() {
+                    existing.history = delta.history;
+                }
+                if delta.id.is_some() {
+                    existing.id = delta.id;
+                }
+                existing.scope = delta.scope;
+            }
+        }
+    }
 }
 
 impl Default for FeastRegistry {

@@ -1,11 +1,10 @@
+# Mardi Saint
 version: 1
 category: 0
 mobile:
   anchor: pascha
-  offset: -1
+  offset: -5
 history:
-  - from: 1969
-    precedence: 1
+  - precedence: 2
     nature: feria
     color: violaceus
-    period: tempus_quadragesimae

@@ -1,11 +1,10 @@
+# Lundi Saint
 version: 1
 category: 0
 mobile:
   anchor: pascha
-  offset: -46
+  offset: -6
 history:
-  - from: 1969
-    precedence: 2
+  - precedence: 2
     nature: feria
     color: violaceus
-    period: tempus_quadragesimae

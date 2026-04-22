@@ -430,12 +430,12 @@ pub fn parse_feast_from_yaml(
         (Some(_), Some(_)) =>
             return Err(ParseError::AmbiguousTemporalityField { slug: slug.to_string() }.into()),
         (None, None) =>
-            return Err(ParseError::MissingTemporalityField { slug: slug.to_string() }.into()),
+            None,  // delta pur — temporalité héritée de l'universale au merge
         (Some(d), None) => {
             validate_date(slug, d.month, d.day)?;
-            Temporality::Fixed { month: d.month, day: d.day }
+            Some(Temporality::Fixed { month: d.month, day: d.day })
         }
-        (None, Some(m)) => parse_mobile_temporality(slug, m)?,
+        (None, Some(m)) => Some(parse_mobile_temporality(slug, m)?),
     };
 
     let history = parse_history(slug, &yaml.history)?;
@@ -459,6 +459,7 @@ fn ingest_scope_dir(
     scope_dir: &Path,
     scope:     Scope,
     registry:  &mut FeastRegistry,
+    is_base:   bool,   // true = universale, false = delta (merge)
 ) -> Result<(), ForgeError> {
     for sub in &["temporale", "sanctorale"] {
         let dir = scope_dir.join(sub);
@@ -485,7 +486,11 @@ fn ingest_scope_dir(
             }
 
             let def = parse_feast_from_yaml(&stem, scope.clone(), &content)?;
-            registry.insert(def);
+            if is_base {
+                registry.insert(def);
+            } else {
+                registry.merge(def);
+            }
         }
     }
     Ok(())
@@ -520,7 +525,7 @@ pub fn ingest_corpus(data_dir: &Path) -> Result<FeastRegistry, ForgeError> {
     // Universale
     let universale = data_dir.join("universale");
     if universale.exists() {
-        ingest_scope_dir(&universale, Scope::Universal, &mut registry)?;
+        ingest_scope_dir(&universale, Scope::Universal, &mut registry, true)?;
     }
 
     // Nationalia
@@ -529,7 +534,7 @@ pub fn ingest_corpus(data_dir: &Path) -> Result<FeastRegistry, ForgeError> {
         let iso_dirs = sorted_subdirs(&nationalia)?;
         for iso_path in iso_dirs {
             let iso = dir_name(&iso_path);
-            ingest_scope_dir(&iso_path, Scope::National(iso), &mut registry)?;
+            ingest_scope_dir(&iso_path, Scope::National(iso), &mut registry, false)?;
         }
     }
 
@@ -539,7 +544,7 @@ pub fn ingest_corpus(data_dir: &Path) -> Result<FeastRegistry, ForgeError> {
         let cont_dirs = sorted_subdirs(&continentalia)?;
         for cont_path in cont_dirs {
             let cont = dir_name(&cont_path);
-            ingest_scope_dir(&cont_path, Scope::National(cont), &mut registry)?;
+            ingest_scope_dir(&cont_path, Scope::National(cont), &mut registry, false)?;
         }
     }
 
@@ -549,7 +554,7 @@ pub fn ingest_corpus(data_dir: &Path) -> Result<FeastRegistry, ForgeError> {
         let id_dirs = sorted_subdirs(&dioecesana)?;
         for id_path in id_dirs {
             let id = dir_name(&id_path);
-            ingest_scope_dir(&id_path, Scope::Diocesan(id), &mut registry)?;
+            ingest_scope_dir(&id_path, Scope::Diocesan(id), &mut registry, false)?;
         }
     }
 
@@ -561,7 +566,7 @@ pub fn ingest_corpus(data_dir: &Path) -> Result<FeastRegistry, ForgeError> {
             // Ignorer i18n/ qui n'est pas un scope liturgique
             if dir_name(&ordo_path) == "i18n" { continue; }
             let ordo = dir_name(&ordo_path);
-            ingest_scope_dir(&ordo_path, Scope::Diocesan(ordo), &mut registry)?;
+            ingest_scope_dir(&ordo_path, Scope::Diocesan(ordo), &mut registry, false)?;
         }
     }
 
@@ -882,7 +887,7 @@ history:
     color: albus
 "#;
         let def = parse_feast_from_yaml("test_slug", Scope::Universal, yaml).unwrap();
-        match def.temporality {
+        match def.temporality.expect("temporality attendue dans ce test") {
             Temporality::Mobile { anchor, offset } => {
                 assert_eq!(anchor, "pascha");
                 assert_eq!(offset, 49);
