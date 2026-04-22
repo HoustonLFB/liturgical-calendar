@@ -2,10 +2,8 @@ version: 1
 category: 0
 mobile:
   anchor: tempus_ordinarium
-  ordinal: 2
+  ordinal: 4
 history:
-  - from: 1969
-    precedence: 6
+  - precedence: 6
     nature: dominica
     color: viridis
-    period: tempus_ordinarium
