@@ -4,8 +4,7 @@ mobile:
   anchor: pascha
   offset: -28
 history:
-  - from: 1969
-    precedence: 2
+  - precedence: 2
     nature: feria
     color: violaceus
     period: tempus_quadragesimae

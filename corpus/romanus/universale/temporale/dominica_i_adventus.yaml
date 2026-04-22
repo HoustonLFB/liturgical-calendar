@@ -6,7 +6,6 @@ mobile:
   # Intervalle [27 nov, 3 déc]
   offset: -28
 history:
-  - from: 1969
-    precedence: 2
+  - precedence: 2
     nature: dominica
     color: violaceus

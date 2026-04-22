@@ -4,7 +4,6 @@ mobile:
   anchor: pascha
   offset: -42 # Invariant : 6 semaines avant Pâques
 history:
-  - from: 1969
-    precedence: 2 # Rang 2 : Dimanche de temps fort (Carême)
+  - precedence: 2 # Rang 2 : Dimanche de temps fort (Carême)
     nature: dominica
     color: violaceus

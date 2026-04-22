@@ -4,7 +4,6 @@ date:
   month: 10
   day: 4
 history:
-  - from: 1969
-    precedence: 11
+  - precedence: 11
     nature: memoria
     color: albus

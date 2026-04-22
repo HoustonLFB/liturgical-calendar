@@ -4,7 +4,6 @@ mobile:
   anchor: pascha
   offset: 60
 history:
-  - from: 1969
-    precedence: 3
+  - precedence: 3
     nature: sollemnitas
     color: albus

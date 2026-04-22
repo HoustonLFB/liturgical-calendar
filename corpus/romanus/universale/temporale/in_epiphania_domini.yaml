@@ -5,8 +5,7 @@ mobile:
   # Dimanche compris entre le 2 et le 8 janvier
   offset: 10
 history:
-  - from: 1969
-    to: ~
+  - to: ~
     precedence: 2
     nature: sollemnitas
     color: albus

@@ -1,10 +1,11 @@
+# Dies Cinerum - Mercredi des Cendres
 version: 1
 category: 0
 mobile:
   anchor: pascha
-  offset: -21
+  offset: -46
 history:
   - precedence: 2
     nature: feria
-    color: rosaceus
+    color: violaceus
     period: tempus_quadragesimae

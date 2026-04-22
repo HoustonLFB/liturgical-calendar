@@ -1436,13 +1436,13 @@ history:
     color: albus
     transfers:
       # Collision avec le Dimanche des Rameaux (pascha − 7, Prec 2)
-      - collides: dominica_in_palmis
+      - collides: dominica_in_palmis_de_passione_domini
         mobile:
           anchor: pascha
           offset: -8 # Samedi avant les Rameaux — rétrograde, offset signé
 
       # Collision avec Lundi Saint (pascha − 6, Prec 3)
-      - collides: feria_ii_in_hebdomada_sancta
+      - collides: feria_ii_hebdomadae_sanctae
         mobile:
           anchor: pascha
           offset: -8 # même cible canonique
@@ -1471,8 +1471,8 @@ history:
 | Année | Date 19 mars | Pâques    | Semaine Sainte ?     | Collision                    | Cible pascha−8 |
 | ----- | ------------ | --------- | -------------------- | ---------------------------- | -------------- |
 | 2008  | Mer 19 mars  | 23 mars   | Oui (Mercredi Saint) | feria_iv_in_hebdomada_sancta | Sam 15 mars    |
-| 2013  | Mar 19 mars  | 31 mars   | Oui (Lundi Saint)    | feria_ii_in_hebdomada_sancta | Sam 23 mars    |
-| 2024  | Mar 19 mars  | 31 mars   | Oui (Lundi Saint)    | feria_ii_in_hebdomada_sancta | Sam 23 mars    |
+| 2013  | Mar 19 mars  | 31 mars   | Oui (Lundi Saint)    | feria_ii_hebdomadae_sanctae  | Sam 23 mars    |
+| 2024  | Mar 19 mars  | 31 mars   | Oui (Lundi Saint)    | feria_ii_hebdomadae_sanctae  | Sam 23 mars    |
 | 2029  | Lun 19 mars  | 1er avril | Oui (Dim. Rameaux)   | dominica_in_palmis           | Sam 24 mars    |
 
 > Le cas Triduum (Jeudi–Samedi Saints) ne peut se produire car il faudrait Pâques entre le 23 et le 26 mars, ce qui est astronomiquement possible mais le 19 mars tomberait alors avant le Triduum — vérification à faire sur toute la plage 1969–2399 lors du test de couverture.

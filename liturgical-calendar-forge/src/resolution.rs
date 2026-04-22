@@ -323,10 +323,14 @@ fn elect(
     let mut to_transfer      = Vec::new();
 
     for feast in candidates {
-        if (temporal_primary && should_demote_to_commemoratio(&feast, period)) || feast.precedence >= 6 {
+        if (temporal_primary && should_demote_to_commemoratio(&feast, period)) || feast.precedence >= 6
+        {
             // secondary : FestaBMVEtSanctorumGenerales (6) et rangs inférieurs
             secondary_feasts.push(feast);
-        } else if feast.precedence <= 7 && feast.nature != CoreNature::Feria {
+        } else if feast.nature == CoreNature::Dominica || feast.nature == CoreNature::Feria {
+            // Dominica et Feria vaincues : absorption silencieuse — jamais transférées.
+            // Invariant liturgique : un dimanche ordinaire ne se reporte pas.
+        } else if feast.precedence <= 7 {
             // transferable : FestaPropria (7) et rangs supérieurs (0-5 atteignent ici)
             to_transfer.push(feast);
         }
@@ -378,27 +382,27 @@ pub(crate) fn resolve_year(
         let (cycle, temporality) = feast_cycle_temporality(feast_def);
 
         let precedence = version.precedence
-            .ok_or_else(|| ForgeError::MissingResolvedField {
-                feast_id,
-                year,
-                doy,
-                field: "precedence",
+            .ok_or_else(|| {
+                eprintln!("ERREUR: Champ 'precedence' manquant pour le slug: {}", feast_def.slug);
+                ForgeError::MissingResolvedField {
+                    feast_id, year, doy, field: "precedence",
+                }
             })?;
 
         let nature_val = version.nature.as_ref()
-            .ok_or_else(|| ForgeError::MissingResolvedField {
-                feast_id,
-                year,
-                doy,
-                field: "nature",
+            .ok_or_else(|| {
+                eprintln!("ERREUR: Champ 'nature' manquant pour le slug: {}", feast_def.slug);
+                ForgeError::MissingResolvedField {
+                    feast_id, year, doy, field: "nature",
+                }
             })?;
 
         let color_val = version.color.as_ref()
-            .ok_or_else(|| ForgeError::MissingResolvedField {
-                feast_id,
-                year,
-                doy,
-                field: "color",
+            .ok_or_else(|| {
+                eprintln!("ERREUR: Champ 'color' manquant pour le slug: {}", feast_def.slug);
+                ForgeError::MissingResolvedField {
+                    feast_id, year, doy, field: "color",
+                }
             })?;
 
         slots.entry(doy).or_default().push(PlacedFeast {

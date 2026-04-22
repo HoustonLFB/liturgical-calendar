@@ -4,7 +4,6 @@ date:
   month: 12
   day: 27
 history:
-  - from: 1969
-    precedence: 8
+  - precedence: 8
     nature: festum
     color: albus

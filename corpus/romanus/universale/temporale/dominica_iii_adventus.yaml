@@ -4,7 +4,6 @@ mobile:
   anchor: nativitas_domini
   offset: -14
 history:
-  - from: 1969
-    precedence: 2
+  - precedence: 2
     nature: dominica
     color: rosaceus

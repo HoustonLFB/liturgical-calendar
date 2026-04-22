@@ -4,7 +4,6 @@ date:
   month: 9
   day: 14
 history:
-  - from: 1969
-    precedence: 5
+  - precedence: 5
     nature: festum
     color: rubeus

@@ -4,12 +4,8 @@ date:
   month: 4
   day: 29
 history:
-  - from: 1969
-    to: 1969
-    precedence: 11 # TODO à vérifier
+  - to: 1969
+    precedence: 10
     nature: memoria
     color: albus
-  - from: 1970 # Docteur de l'Église
-    precedence: 8
-    nature: festum
-    color: albus
+  - from: 1971 # Proclamation comme Docteur de l'Église par Paul VI le 4 octobre 1970, donc célébration effective à partir de 1971

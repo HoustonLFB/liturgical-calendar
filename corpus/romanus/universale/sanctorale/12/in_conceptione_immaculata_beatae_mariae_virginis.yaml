@@ -4,7 +4,6 @@ date:
   month: 12
   day: 8
 history:
-  - from: 1969
-    precedence: 4
+  - precedence: 4
     nature: sollemnitas
     color: albus

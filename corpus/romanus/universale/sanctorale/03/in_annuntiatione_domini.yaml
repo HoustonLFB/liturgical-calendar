@@ -4,8 +4,7 @@ date:
   month: 3
   day: 25
 history:
-  - from: 1969
-    precedence: 3
+  - precedence: 3
     nature: sollemnitas
     color: albus
     transfers:
@@ -47,7 +46,27 @@ history:
         mobile:
           anchor: pascha
           offset: 8
-      - collides: infra_octavam_paschae
+      - collides: feria_ii_infra_octavam_paschae
+        mobile:
+          anchor: pascha
+          offset: 8
+      - collides: feria_iii_infra_octavam_paschae
+        mobile:
+          anchor: pascha
+          offset: 8
+      - collides: feria_iv_infra_octavam_paschae
+        mobile:
+          anchor: pascha
+          offset: 8
+      - collides: feria_v_infra_octavam_paschae
+        mobile:
+          anchor: pascha
+          offset: 8
+      - collides: feria_vi_infra_octavam_paschae
+        mobile:
+          anchor: pascha
+          offset: 8
+      - collides: sabbato_infra_octavam_paschae
         mobile:
           anchor: pascha
           offset: 8

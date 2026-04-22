@@ -1046,19 +1046,19 @@ history:
     nature: sollemnitas
     color: albus
     transfers:
-      - collides: dominica_in_palmis
+      - collides: dominica_in_palmis_de_passione_domini
         mobile:
           anchor: pascha
           offset: -8
-      - collides: feria_ii_in_hebdomada_sancta
+      - collides: feria_ii_hebdomadae_sanctae
         mobile:
           anchor: pascha
           offset: -8
-      - collides: feria_iii_in_hebdomada_sancta
+      - collides: feria_iii_hebdomadae_sanctae
         mobile:
           anchor: pascha
           offset: -8
-      - collides: feria_iv_in_hebdomada_sancta
+      - collides: feria_iv_hebdomadae_sanctae
         mobile:
           anchor: pascha
           offset: -8
