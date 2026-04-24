@@ -384,7 +384,7 @@ history:
     nature: sollemnitas
     color: albus
     transfers:
-      - collides: dominica_in_palmis
+      - collides: dominica_in_palmis_de_passione_domini
         mobile:
           anchor: pascha
           offset: -8
@@ -404,7 +404,7 @@ history:
 
         let mut registry = FeastRegistry::new();
         let def_iosephi = parse_feast_from_yaml("iosephi", Scope::Universal, yaml_iosephi).unwrap();
-        let def_palmis  = parse_feast_from_yaml("dominica_in_palmis", Scope::Universal, yaml_palmis).unwrap();
+        let def_palmis  = parse_feast_from_yaml("dominica_in_palmis_de_passione_domini", Scope::Universal, yaml_palmis).unwrap();
         registry.insert(def_iosephi);
         registry.insert(def_palmis);
 
@@ -413,7 +413,7 @@ history:
         assert_eq!(easter_2016, 86, "Pâques 2016 doit être DOY 86 (27 mars)");
 
         let cy = canonicalize_year(2016, &registry).unwrap();
-        let key = ("iosephi".to_string(), "dominica_in_palmis".to_string());
+        let key = ("iosephi".to_string(), "dominica_in_palmis_de_passione_domini".to_string());
         let doy_dst = cy.pre_resolved_transfers[&key];
         // pascha(86) + (−8) = 78 = Mar 19
         assert_eq!(doy_dst, 78);

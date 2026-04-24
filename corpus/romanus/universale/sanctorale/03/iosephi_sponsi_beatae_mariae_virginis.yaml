@@ -5,41 +5,25 @@ date:
   month: 3
   day: 19
 history:
-  # L'éviction par les dimanches de Carême (Prec 2) est déléguée au moteur.
-  # La TransferQueue alloue DOY+1 de manière déterministe en O(N) local.
-  - to: 2007
+  - from: 1969
+    to: 2007
     precedence: 3
     nature: sollemnitas
     color: albus
+    # Comportement standard : Incrémentation déterministe (J+1) gérée par le moteur
   - from: 2008
-    precedence: 3
-    nature: sollemnitas
-    color: albus
     transfers:
-      # Activation d'une table de dispatch locale pour dérogation rétrograde.
-      # Les cibles 'mobile' sont pré-calculées à l'Étape 3 avant résolution des conflits.
-      # Pâques le 26 mars -> 19 mars = Rameaux
-      - collides: dominica_in_palmis_de_passione_domini
-        mobile:
-          anchor: pascha
-          offset: -8
-      # Pâques le 25 mars -> 19 mars = Lundi Saint
-      - collides: feria_ii_hebdomadae_sanctae
-        mobile:
-          anchor: pascha
-          offset: -8
-      # Pâques le 24 mars -> 19 mars = Mardi Saint
-      - collides: feria_iii_hebdomadae_sanctae
-        mobile:
-          anchor: pascha
-          offset: -8
-      # Pâques le 23 mars -> 19 mars = Mercredi Saint
-      - collides: feria_iv_hebdomadae_sanctae
-        mobile:
-          anchor: pascha
-          offset: -8
-      # Pâques le 22 mars (date la plus hâtive possible) -> 19 mars = Jeudi Saint
-      - collides: feria_v_hebdomadae_sanctae
+      # Bucket : Semaine Sainte (Déplacement rétrograde impératif)
+      # Cible unique : Samedi avant les Rameaux (Easter - 8)
+      - collides:
+          - dominica_in_palmis_de_passione_domini # Rameaux
+          - feria_ii_hebdomadae_sanctae # Lundi Saint
+          - feria_iii_hebdomadae_sanctae # Mardi Saint
+          - feria_iv_hebdomadae_sanctae # Mercredi Saint
+          - feria_v_hebdomadae_sanctae # Jeudi Saint
+          - feria_vi_in_passione_domini # Vendredi Saint
+          - sabbato_sancto # Samedi Saint
+          - dominica_resurrectionis # Dimanche de Pâques
         mobile:
           anchor: pascha
           offset: -8

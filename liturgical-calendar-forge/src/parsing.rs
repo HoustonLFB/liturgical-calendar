@@ -1152,24 +1152,17 @@ history:
     const YAML_IOSEPHI: &str = r#"
 version: 1
 category: 1
-class: lord
+class: saint
 date:
   month: 3
   day: 19
-
 history:
   - from: 1969
-    to: 2007
-    precedence: 5
-    nature: sollemnitas
-    color: albus
-
-  - from: 2008
     precedence: 5
     nature: sollemnitas
     color: albus
     transfers:
-      - collides: dominica_in_palmis
+      - collides: dominica_in_palmis_de_passione_domini
         mobile:
           anchor: pascha
           offset: -8
@@ -1182,6 +1175,10 @@ history:
           anchor: pascha
           offset: -8
       - collides: feria_iv_in_hebdomada_sancta
+        mobile:
+          anchor: pascha
+          offset: -8
+      - collides: feria_v_hebdomadae_sanctae
         mobile:
           anchor: pascha
           offset: -8
