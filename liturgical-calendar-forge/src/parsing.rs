@@ -5,9 +5,34 @@ use std::fs;
 
 use crate::error::{ForgeError, ParseError, RegistryError};
 use crate::registry::{
-    Color, FeastDef, FeastHistoryEntry, FeastRegistry, LiturgicalPeriod,
+    Color, FeastDef, FeastHistoryEntry, FeastRegistry, LiturgicalClass, LiturgicalPeriod,
     Nature, Scope, Temporality, TransferDef, TransferTarget,
 };
+
+// ---------------------------------------------------------------------------
+// Boundary Normalization : Precedence 1-based (YAML) → 0-based (interne)
+// ---------------------------------------------------------------------------
+//
+// Le contrat amont (YAML / rédacteur humain) expose une plage 1–13 conforme
+// à la Tabella dierum liturgicorum 1969 (rangs I à XIII).
+// L'Engine et le pipeline interne utilisent 0–12 pour les opérations bitwise.
+// La conversion s'effectue ici, au point d'entrée exact de la Forge (Serde),
+// afin que nulle autre couche n'ait à connaître la convention YAML.
+
+fn deserialize_precedence_opt<'de, D>(deserializer: D) -> Result<Option<u8>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let opt = Option::<u8>::deserialize(deserializer)?;
+    match opt {
+        None => Ok(None),
+        Some(v) if matches!(v, 1..=13) => Ok(Some(v - 1)),
+        Some(v) => Err(serde::de::Error::custom(format!(
+            "precedence invalide : {} (attendu 1-13)",
+            v
+        ))),
+    }
+}
 
 // ---------------------------------------------------------------------------
 // Structs de désérialisation YAML — deny_unknown_fields partout
@@ -23,6 +48,11 @@ struct YamlFeast {
     mobile:    Option<YamlMobile>,
     #[serde(default)]
     history:   Vec<YamlHistoryEntry>,
+    /// Classe liturgique du sujet — ADR-038.
+    /// Optionnel au parsing (deltas peuvent l'omettre).
+    /// Validé présent après merge dans resolve_year (MissingResolvedField).
+    #[serde(default)]
+    class:     Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -82,21 +112,6 @@ impl Default for YamlHistoryEntry {
     }
 }
 
-fn deserialize_precedence_opt<'de, D>(deserializer: D) -> Result<Option<u8>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let opt = Option::<u8>::deserialize(deserializer)?;
-    match opt {
-        None => Ok(None),
-        Some(v) if matches!(v, 1..=13) => Ok(Some(v - 1)),
-        Some(v) => Err(serde::de::Error::custom(format!(
-            "precedence invalide : {} (attendu 1-13)",
-            v
-        ))),
-    }
-}
-
 // ---------------------------------------------------------------------------
 // V6 — validation slug : [a-z][a-z0-9_]*
 // ---------------------------------------------------------------------------
@@ -151,13 +166,13 @@ fn parse_nature(s: &str) -> Result<Nature, RegistryError> {
 
 fn parse_color(s: &str) -> Result<Color, RegistryError> {
     match s {
-        "albus"     => Ok(Color::Albus),
-        "rubeus"    => Ok(Color::Rubeus),
-        "viridis"   => Ok(Color::Viridis),
-        "violaceus" => Ok(Color::Violaceus),
-        "rosaceus"  => Ok(Color::Rosaceus),
-        "niger"     => Ok(Color::Niger),
-        "aureus"    => Ok(Color::Aureus),
+        "white" | "albus"              => Ok(Color::Albus),
+        "red"   | "rubeus"             => Ok(Color::Rubeus),
+        "green" | "viridis"            => Ok(Color::Viridis),
+        "purple"| "violet"|"violaceus" => Ok(Color::Violaceus),
+        "rose"  | "rosaceus"           => Ok(Color::Rosaceus),
+        "black" | "niger"              => Ok(Color::Niger),
+        "gold"  | "aureus"             => Ok(Color::Aureus),
         other => Err(RegistryError::UnknownColorString(other.to_string())),
     }
 }
@@ -176,6 +191,20 @@ fn parse_period(s: &str) -> Result<LiturgicalPeriod, RegistryError> {
         "tempus_paschale"      => Ok(LiturgicalPeriod::TempusPaschale),
         "dies_sancti"          => Ok(LiturgicalPeriod::DiesSancti),
         other => Err(RegistryError::UnknownPeriodString(other.to_string())),
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Parse LiturgicalClass — ADR-038
+// ---------------------------------------------------------------------------
+
+fn parse_class(s: &str) -> Result<LiturgicalClass, RegistryError> {
+    match s {
+        "lord"   => Ok(LiturgicalClass::Lord),
+        "virgin" => Ok(LiturgicalClass::Virgin),
+        "saint"  => Ok(LiturgicalClass::Saint),
+        "proper" => Ok(LiturgicalClass::Proper),
+        other => Err(RegistryError::UnknownClassString(other.to_string())),
     }
 }
 
@@ -260,8 +289,6 @@ fn parse_history(slug: &str, entries: &[YamlHistoryEntry])
             return Err(RegistryError::InvalidTemporalRange { from, to }.into());
         }
 
-        // Champs obligatoires sur l'entrée universale — absents uniquement
-        // dans les deltas continentalia/nationalia (validés au merge).
         let precedence = entry.precedence; // Option<u8> — transmis tel quel
 
         // V2-Bis — garanti par deserialize_precedence_opt (domaine 0–12 interne).
@@ -425,7 +452,7 @@ pub fn parse_feast_from_yaml(
         return Err(ParseError::UnsupportedSchemaVersion(yaml.version).into());
     }
 
-    // Temporalité — exactement un bloc
+    // Temporalité — exactement un bloc ou aucun (delta pur)
     let temporality = match (yaml.date.as_ref(), yaml.mobile.as_ref()) {
         (Some(_), Some(_)) =>
             return Err(ParseError::AmbiguousTemporalityField { slug: slug.to_string() }.into()),
@@ -438,14 +465,18 @@ pub fn parse_feast_from_yaml(
         (None, Some(m)) => Some(parse_mobile_temporality(slug, m)?),
     };
 
+    // Classe liturgique — ADR-038
+    let class = yaml.class.as_deref().map(parse_class).transpose()?;
+
     let history = parse_history(slug, &yaml.history)?;
 
     Ok(FeastDef {
-        slug:        slug.to_string(),
+        slug: slug.to_string(),
         scope,
         category:    yaml.category,
         id:          yaml.id,
         temporality,
+        class,
         history,
     })
 }
@@ -1023,6 +1054,79 @@ history:
         assert!(matches!(err, ForgeError::Parse(ParseError::UnsupportedSchemaVersion(2))));
     }
 
+    // --- parse_class — ADR-038 ---
+
+    #[test]
+    fn class_lord_parsed() {
+        let yaml = r#"
+version: 1
+category: 0
+mobile:
+  anchor: pascha
+  offset: 68
+class: lord
+history:
+  - precedence: 3
+    nature: sollemnitas
+    color: albus
+"#;
+        let def = parse_feast_from_yaml("sacratissimi_cordis", Scope::Universal, yaml).unwrap();
+        assert_eq!(def.class, Some(LiturgicalClass::Lord));
+    }
+
+    #[test]
+    fn class_saint_parsed() {
+        let yaml = r#"
+version: 1
+category: 1
+date:
+  month: 6
+  day: 29
+class: saint
+history:
+  - precedence: 3
+    nature: sollemnitas
+    color: rubeus
+"#;
+        let def = parse_feast_from_yaml("petri_et_pauli", Scope::Universal, yaml).unwrap();
+        assert_eq!(def.class, Some(LiturgicalClass::Saint));
+    }
+
+    #[test]
+    fn class_absent_yields_none() {
+        let yaml = r#"
+version: 1
+category: 1
+date:
+  month: 5
+  day: 1
+history:
+  - precedence: 10
+    nature: memoria
+    color: albus
+"#;
+        let def = parse_feast_from_yaml("test_slug", Scope::Universal, yaml).unwrap();
+        assert_eq!(def.class, None);
+    }
+
+    #[test]
+    fn class_unknown_rejected() {
+        let yaml = r#"
+version: 1
+category: 1
+date:
+  month: 5
+  day: 1
+class: angel
+history:
+  - precedence: 3
+    nature: sollemnitas
+    color: albus
+"#;
+        let err = parse_feast_from_yaml("test_slug", Scope::Universal, yaml).unwrap_err();
+        assert!(matches!(err, ForgeError::Registry(RegistryError::UnknownClassString(_))));
+    }
+
     // --- Iosephi — transfers scoped (schème v1.7.0) ---
     //
     // YAML precedence: 5 → interne 4 (SollemnitatesGenerales).
@@ -1046,19 +1150,19 @@ history:
     nature: sollemnitas
     color: albus
     transfers:
-      - collides: dominica_in_palmis_de_passione_domini
+      - collides: dominica_in_palmis
         mobile:
           anchor: pascha
           offset: -8
-      - collides: feria_ii_hebdomadae_sanctae
+      - collides: feria_ii_in_hebdomada_sancta
         mobile:
           anchor: pascha
           offset: -8
-      - collides: feria_iii_hebdomadae_sanctae
+      - collides: feria_iii_in_hebdomada_sancta
         mobile:
           anchor: pascha
           offset: -8
-      - collides: feria_iv_hebdomadae_sanctae
+      - collides: feria_iv_in_hebdomada_sancta
         mobile:
           anchor: pascha
           offset: -8

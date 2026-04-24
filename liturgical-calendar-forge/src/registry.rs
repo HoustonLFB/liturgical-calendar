@@ -38,6 +38,22 @@ pub enum LiturgicalPeriod {
     DiesSancti,
 }
 
+/// Classe liturgique du sujet de la fête — ADR-038.
+///
+/// Axe orthogonal à la préséance. Utilisé exclusivement par la Forge (AOT)
+/// pour calculer le `sort_weight` de `ResolutionKey`.
+/// L'Engine ignore ce champ — il consomme un output déjà résolu.
+///
+/// Encodage : lord=0, virgin=1, saint=2, proper=3.
+/// Valeur plus faible = priorité plus haute à rang de préséance égal.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LiturgicalClass {
+    Lord   = 0, // Fêtes du Seigneur
+    Virgin = 1, // Fêtes de la Vierge Marie
+    Saint  = 2, // Fêtes des Saints
+    Proper = 3, // Propres locaux (patron, titulaire, dédicace)
+}
+
 // ---------------------------------------------------------------------------
 // Scope — déduit du chemin du corpus
 // ---------------------------------------------------------------------------
@@ -114,11 +130,16 @@ pub struct FeastHistoryEntry {
 pub struct FeastDef {
     pub slug:        String,
     pub scope:       Scope,
-    /// 0 = temporale universel, ≥ 1 = sanctorale
+    /// 0 = temporale universel, 1 = sanctorale
     pub category:    u8,
     /// Identifiant numérique optionnel (Martyrologium Romanum)
     pub id:          Option<u16>,
+    /// None autorisé pour les deltas purs (temporalité héritée de l'universale au merge).
     pub temporality: Option<Temporality>,
+    /// Classe liturgique du sujet — ADR-038.
+    /// None autorisé dans les deltas (continentalia/nationalia) sans surcharge de classe.
+    /// Obligatoire après merge pour toute fête active dans une année résolue.
+    pub class:       Option<LiturgicalClass>,
     pub history:     Vec<FeastHistoryEntry>,
 }
 
@@ -167,11 +188,12 @@ impl FeastRegistry {
 
     /// Fusionne un delta dans l'entrée existante, ou insère si absente.
     ///
-    /// Règles de merge :
+    /// Règles de merge (ADR-038) :
     /// - `temporality` : conserve l'existante si le delta n'en a pas.
     /// - `history`     : remplace si le delta en fournit une (non-vide).
-    /// - `scope`       : toujours celui du delta (plus local).
+    /// - `class`       : delta prime si `Some` — None = héritage de l'universale.
     /// - `id`          : delta prime si `Some`.
+    /// - `scope`       : toujours celui du delta (plus local).
     pub fn merge(&mut self, delta: FeastDef) {
         match self.feasts.get_mut(&delta.slug) {
             None => {
@@ -187,6 +209,9 @@ impl FeastRegistry {
                 }
                 if delta.id.is_some() {
                     existing.id = delta.id;
+                }
+                if delta.class.is_some() {
+                    existing.class = delta.class;
                 }
                 existing.scope = delta.scope;
             }

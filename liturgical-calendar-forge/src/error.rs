@@ -58,6 +58,8 @@ pub enum ParseError {
 pub enum RegistryError {
     /// V2-Bis — precedence > 12
     InvalidPrecedenceValue(u8),
+    /// Classe liturgique inconnue (ADR-038)
+    UnknownClassString(String),
     /// V5 — nature string inconnue (avec hint optionnel)
     UnknownNatureString(String),
     /// Couleur inconnue

@@ -20,8 +20,6 @@
 //!   CanonicalizedYear::pre_resolved_transfers : BTreeMap<(String,String), u16>
 //!   SeasonBoundaries::period_of(&self, doy: u16) -> LiturgicalPeriod
 
-//! Étape 4 — Conflict Resolution : pipeline 5 passes.
-
 #![allow(missing_docs)]
 
 use std::cmp::Ordering;
@@ -29,9 +27,9 @@ use std::collections::{BTreeMap, BTreeSet};
 
 // --- Imports Core (Types binaires optimisés) ---
 use liturgical_calendar_core::{
-    Color as CoreColor, 
+    Color as CoreColor,
     Nature as CoreNature,
-    LiturgicalPeriod as CorePeriod, 
+    LiturgicalPeriod as CorePeriod,
 };
 
 // --- Import Registry (Contrat YAML / Ingestion) ---
@@ -56,13 +54,13 @@ use crate::{
 /// Garantit le respect du layout de 3 bits défini dans l'ADR.
 pub(crate) fn period_to_core(p: &RegistryPeriod) -> CorePeriod {
     match p {
-        RegistryPeriod::TempusOrdinarium   => CorePeriod::TempusOrdinarium,
-        RegistryPeriod::TempusAdventus     => CorePeriod::TempusAdventus,
-        RegistryPeriod::TempusNativitatis  => CorePeriod::TempusNativitatis,
+        RegistryPeriod::TempusOrdinarium    => CorePeriod::TempusOrdinarium,
+        RegistryPeriod::TempusAdventus      => CorePeriod::TempusAdventus,
+        RegistryPeriod::TempusNativitatis   => CorePeriod::TempusNativitatis,
         RegistryPeriod::TempusQuadragesimae => CorePeriod::TempusQuadragesimae,
-        RegistryPeriod::TriduumPaschale    => CorePeriod::TriduumPaschale,
-        RegistryPeriod::TempusPaschale     => CorePeriod::TempusPaschale,
-        RegistryPeriod::DiesSancti         => CorePeriod::DiesSancti,
+        RegistryPeriod::TriduumPaschale     => CorePeriod::TriduumPaschale,
+        RegistryPeriod::TempusPaschale      => CorePeriod::TempusPaschale,
+        RegistryPeriod::DiesSancti          => CorePeriod::DiesSancti,
     }
 }
 
@@ -131,29 +129,29 @@ fn nature_to_core(n: &crate::registry::Nature) -> CoreNature {
     }
 }
 
-// ─── Enums de classification ──────────────────────────────────────────────────
+// ─── Cycle — utilisé dans elect pour temporal_primary ────────────────────────
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Cycle {
     Temporal  = 0,
     Sanctoral = 1,
 }
 
-/// Temporalité de résolution locale — à distinguer de `registry::Temporality`.
+// ─── ResolutionKey — ADR-038 ──────────────────────────────────────────────────
+//
+// `sort_weight` = (internal_precedence << 2) | class_weight — 6 bits effectifs.
+// Valeur plus faible = priorité plus haute.
+//
+// Bits [5:2] : préséance interne 0-based (0=Triduum, 12=Memoria ad libitum).
+// Bits [1:0] : classe (0=Lord, 1=Virgin, 2=Saint, 3=Proper).
+//
+// `feast_id` : tiebreaker numérique pur — comparaison scalaire, zéro
+// cache-miss, déterminisme garanti sans comparaison de chaînes.
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub(crate) enum Temporality {
-    Fixed  = 0,
-    Mobile = 1,
-}
-
-// ─── ResolutionKey ────────────────────────────────────────────────────────────
-
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub(crate) struct ResolutionKey<'a> {
-    pub precedence:  u8,
-    pub cycle:       Cycle,
-    pub temporality: Temporality,
-    pub slug:        &'a str,
+pub(crate) struct ResolutionKey {
+    pub sort_weight: u8,   // (precedence << 2) | class
+    pub feast_id:    u16,  // tiebreaker final
 }
 
 // ─── PlacedFeast ──────────────────────────────────────────────────────────────
@@ -164,22 +162,20 @@ pub(crate) struct PlacedFeast {
     pub feast_id:       u16,
     pub scope_bits:     u8,   // 0=Universal 1=National 2=Diocesan
     pub precedence:     u8,
+    pub class:          u8,   // ADR-038 : 0=Lord 1=Virgin 2=Saint 3=Proper
     pub nature:         CoreNature,
     pub color:          CoreColor,
     pub period:         Option<CorePeriod>,
     pub has_vigil_mass: bool,
-    pub cycle:          Cycle,
-    pub temporality:    Temporality,
+    pub cycle:          Cycle, // utilisé dans elect pour temporal_primary
 }
 
 impl PlacedFeast {
     #[inline]
-    fn key(&self) -> ResolutionKey<'_> {
+    fn key(&self) -> ResolutionKey {
         ResolutionKey {
-            precedence:  self.precedence,
-            cycle:       self.cycle,
-            temporality: self.temporality,
-            slug:        &self.slug,
+            sort_weight: (self.precedence << 2) | self.class,
+            feast_id:    self.feast_id,
         }
     }
 }
@@ -299,12 +295,13 @@ fn feast_doy(feast_def: &FeastDef, anchors: &BTreeMap<String, u16>) -> Option<u1
     }
 }
 
-fn feast_cycle_temporality(feast_def: &FeastDef) -> (Cycle, Temporality) {
-    // Appelé uniquement si feast_doy a retourné Some — temporality est garantie Some.
+/// Déduit le Cycle depuis la temporalité de la fête.
+/// Appelé uniquement si `feast_doy` a retourné `Some` — temporality garantie `Some`.
+fn feast_cycle(feast_def: &FeastDef) -> Cycle {
     match feast_def.temporality.as_ref().expect("temporality absente après merge") {
-        RegistryTemporality::Fixed { .. }           => (Cycle::Sanctoral, Temporality::Fixed),
+        RegistryTemporality::Fixed { .. }         => Cycle::Sanctoral,
         RegistryTemporality::Mobile { .. }
-        | RegistryTemporality::Ordinal { .. }       => (Cycle::Temporal,  Temporality::Mobile),
+        | RegistryTemporality::Ordinal { .. }     => Cycle::Temporal,
     }
 }
 
@@ -323,7 +320,8 @@ fn elect(
     let mut to_transfer      = Vec::new();
 
     for feast in candidates {
-        if (temporal_primary && should_demote_to_commemoratio(&feast, period)) || feast.precedence >= 6
+        if (temporal_primary && should_demote_to_commemoratio(&feast, period))
+            || feast.precedence >= 6
         {
             // secondary : FestaBMVEtSanctorumGenerales (6) et rangs inférieurs
             secondary_feasts.push(feast);
@@ -379,43 +377,44 @@ pub(crate) fn resolve_year(
             Scope::Diocesan(_) => 2,
         };
 
-        let (cycle, temporality) = feast_cycle_temporality(feast_def);
+        let cycle = feast_cycle(feast_def);
 
         let precedence = version.precedence
             .ok_or_else(|| {
                 eprintln!("ERREUR: Champ 'precedence' manquant pour le slug: {}", feast_def.slug);
-                ForgeError::MissingResolvedField {
-                    feast_id, year, doy, field: "precedence",
-                }
+                ForgeError::MissingResolvedField { feast_id, year, doy, field: "precedence" }
             })?;
 
         let nature_val = version.nature.as_ref()
             .ok_or_else(|| {
                 eprintln!("ERREUR: Champ 'nature' manquant pour le slug: {}", feast_def.slug);
-                ForgeError::MissingResolvedField {
-                    feast_id, year, doy, field: "nature",
-                }
+                ForgeError::MissingResolvedField { feast_id, year, doy, field: "nature" }
             })?;
 
         let color_val = version.color.as_ref()
             .ok_or_else(|| {
                 eprintln!("ERREUR: Champ 'color' manquant pour le slug: {}", feast_def.slug);
-                ForgeError::MissingResolvedField {
-                    feast_id, year, doy, field: "color",
-                }
+                ForgeError::MissingResolvedField { feast_id, year, doy, field: "color" }
             })?;
+
+        // ADR-038 : class obligatoire après merge — None = corpus universale incomplet.
+        let class: u8 = feast_def.class
+            .ok_or_else(|| {
+                eprintln!("ERREUR: Champ 'class' manquant pour le slug: {}", feast_def.slug);
+                ForgeError::MissingResolvedField { feast_id, year, doy, field: "class" }
+            })? as u8;
 
         slots.entry(doy).or_default().push(PlacedFeast {
             slug:           feast_def.slug.clone(),
             feast_id,
             scope_bits,
             precedence,
+            class,
             nature:         nature_to_core(nature_val),
             color:          color_to_core(color_val),
             period:         version.period.as_ref().map(period_to_core),
             has_vigil_mass: version.has_vigil_mass,
             cycle,
-            temporality,
         });
     }
 
@@ -435,14 +434,18 @@ pub(crate) fn resolve_year(
             }
         }
 
-        // V7b : SollemnitatesGenerales (2) et SollemnitatesPropria (3) — même scope.
+        // V7b : SollemnitatesGenerales (2) et SollemnitatesPropria (3).
+        // Erreur uniquement si même scope ET même classe — deux classes différentes
+        // sont résolvables par elect via sort_weight (ADR-038).
         {
             let solemn: Vec<_> = candidates.iter()
                 .filter(|f| f.precedence >= 2 && f.precedence <= 3)
                 .collect();
             for i in 0..solemn.len() {
                 for j in (i + 1)..solemn.len() {
-                    if solemn[i].scope_bits == solemn[j].scope_bits {
+                    if solemn[i].scope_bits == solemn[j].scope_bits
+                        && solemn[i].class == solemn[j].class
+                    {
                         return Err(ForgeError::SolemnityCollision {
                             slug_a:     solemn[i].slug.clone(),
                             slug_b:     solemn[j].slug.clone(),
