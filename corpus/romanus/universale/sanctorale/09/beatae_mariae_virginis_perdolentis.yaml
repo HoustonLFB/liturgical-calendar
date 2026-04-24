@@ -1,10 +1,10 @@
 version: 1
 category: 1
-class: saint
+class: virgin
 date:
   month: 9
   day: 15
 history:
-  - precedence: 11
+  - precedence: 10
     nature: memoria
     color: albus

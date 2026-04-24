@@ -6,10 +6,10 @@ date:
   day: 22
 history:
   - to: 2015
-    precedence: 11
+    precedence: 10
     nature: memoria
     color: albus
   - from: 2016 # Rôle d'apôtre des apôtres (par le pape François)
-    precedence: 8
+    precedence: 7
     nature: festum
     color: albus

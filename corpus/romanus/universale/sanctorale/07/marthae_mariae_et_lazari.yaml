@@ -6,7 +6,7 @@ date:
   day: 29
 history:
   - to: 2020
-    precedence: 11
+    precedence: 10
     nature: memoria
     color: albus
   - from: 2021

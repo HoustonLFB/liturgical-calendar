@@ -6,7 +6,7 @@ date:
   day: 14
 history:
   - to: 1979
-    precedence: 11
+    precedence: 10
     nature: memoria
     color: albus
   - from: 1980
