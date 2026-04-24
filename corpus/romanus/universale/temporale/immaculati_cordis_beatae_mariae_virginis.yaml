@@ -4,10 +4,9 @@ mobile:
   anchor: pascha
   offset: 69
 history:
-  - from: 1996
-    precedence: 10 # Correct : Mémoire obligatoire (Général)
-    nature: memoria
   - to: 1995
-    precedence: 12 # Historique : Était facultative avant 1996
+    precedence: 12
     nature: memoria
     color: albus
+  - from: 1996
+    precedence: 10
