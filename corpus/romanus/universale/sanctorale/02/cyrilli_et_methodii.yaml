@@ -5,11 +5,6 @@ date:
   month: 2
   day: 14
 history:
-  - to: 1979
-    precedence: 10
+  - precedence: 10
     nature: memoria
-    color: albus
-  - from: 1980
-    precedence: 8
-    nature: festum
     color: albus

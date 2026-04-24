@@ -9,7 +9,4 @@ history:
     precedence: 10
     nature: memoria
     color: albus
-  - from: 2021
-    precedence: 8
-    nature: festum
-    color: albus
+  - from: 2021 # 26 janvier 2021 (Décret du Pape François)
