@@ -44,6 +44,7 @@ fn minimal_registry() -> FeastRegistry {
     let yaml = r#"
 version: 1
 category: 0
+class: lord
 mobile:
   anchor: pascha
   offset: 0

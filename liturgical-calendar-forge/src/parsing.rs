@@ -685,6 +685,7 @@ mod tests {
         let yaml = r#"
 version: 1
 category: 0
+class: lord
 mobile:
   anchor: pascha
   offset: 0
@@ -704,6 +705,7 @@ history:
         let yaml = r#"
 version: 1
 category: 0
+class: lord
 mobile:
   anchor: pascha
   offset: 0
@@ -722,6 +724,7 @@ history:
         let yaml = r#"
 version: 1
 category: 1
+class: saint
 date:
   month: 5
   day: 1
@@ -740,6 +743,7 @@ history:
         let yaml = r#"
 version: 1
 category: 0
+class: lord
 mobile:
   anchor: pascha
   offset: 0
@@ -757,6 +761,7 @@ history:
         let yaml = r#"
 version: 1
 category: 1
+class: saint
 date:
   month: 5
   day: 1
@@ -774,6 +779,7 @@ history:
         let yaml = r#"
 version: 1
 category: 0
+class: lord
 mobile:
   anchor: tempus_ordinarium
   offset: 7
@@ -792,6 +798,7 @@ history:
         let yaml = r#"
 version: 1
 category: 0
+class: lord
 mobile:
   anchor: pascha
   ordinal: 1
@@ -812,6 +819,7 @@ history:
         let yaml = r#"
 version: 1
 category: 1
+class: lord
 date:
   month: 5
   day: 1
@@ -836,6 +844,7 @@ history:
         let yaml = r#"
 version: 1
 category: 1
+class: lord
 date:
   month: 5
   day: 1
@@ -853,6 +862,7 @@ history:
         let yaml = r#"
 version: 1
 category: 1
+class: lord
 date:
   month: 5
   day: 1
@@ -870,6 +880,7 @@ history:
         let yaml = r#"
 version: 1
 category: 1
+class: lord
 date:
   month: 5
   day: 1
@@ -889,6 +900,7 @@ history:
         let yaml = r#"
 version: 1
 category: 1
+class: lord
 date:
   month: 5
   day: 1
@@ -909,6 +921,7 @@ history:
         let yaml = r#"
 version: 1
 category: 0
+class: lord
 mobile:
   anchor: pentecostes
   offset: 0
@@ -934,6 +947,7 @@ history:
         let yaml = r#"
 version: 1
 category: 1
+class: lord
 date:
   month: 3
   day: 19
@@ -959,6 +973,7 @@ history:
         let yaml = r#"
 version: 1
 category: 1
+class: lord
 date:
   month: 3
   day: 19
@@ -986,6 +1001,7 @@ history:
         let yaml = r#"
 version: 1
 category: 1
+class: lord
 date:
   month: 3
   day: 19
@@ -1011,6 +1027,7 @@ history:
         let yaml = r#"
 version: 1
 category: 1
+class: lord
 date:
   month: 3
   day: 19
@@ -1042,6 +1059,7 @@ history:
         let yaml = r#"
 version: 2
 category: 1
+class: lord
 date:
   month: 1
   day: 1
@@ -1061,10 +1079,10 @@ history:
         let yaml = r#"
 version: 1
 category: 0
+class: lord
 mobile:
   anchor: pascha
   offset: 68
-class: lord
 history:
   - precedence: 3
     nature: sollemnitas
@@ -1079,10 +1097,10 @@ history:
         let yaml = r#"
 version: 1
 category: 1
+class: saint
 date:
   month: 6
   day: 29
-class: saint
 history:
   - precedence: 3
     nature: sollemnitas
@@ -1114,10 +1132,10 @@ history:
         let yaml = r#"
 version: 1
 category: 1
+class: angel
 date:
   month: 5
   day: 1
-class: angel
 history:
   - precedence: 3
     nature: sollemnitas
@@ -1134,6 +1152,7 @@ history:
     const YAML_IOSEPHI: &str = r#"
 version: 1
 category: 1
+class: lord
 date:
   month: 3
   day: 19

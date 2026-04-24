@@ -5,7 +5,7 @@ mobile:
   anchor: pascha
   offset: 0
 history:
-  - precedence: 2
+  - precedence: 1
     nature: sollemnitas
     color: albus
     period: tempus_paschale

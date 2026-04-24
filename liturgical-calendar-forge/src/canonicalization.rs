@@ -375,6 +375,7 @@ mod tests {
         let yaml_iosephi = r#"
 version: 1
 category: 1
+class: lord
 date:
   month: 3
   day: 19
@@ -391,6 +392,7 @@ history:
         let yaml_palmis = r#"
 version: 1
 category: 0
+class: lord
 mobile:
   anchor: pascha
   offset: -7
