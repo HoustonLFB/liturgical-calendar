@@ -294,7 +294,7 @@ fn parse_history(slug: &str, entries: &[YamlHistoryEntry])
         // V2-Bis — garanti par deserialize_precedence_opt (domaine 0–12 interne).
         // La debug_assert ne s'applique que si la valeur est présente.
         debug_assert!(
-            precedence.map_or(true, |p| p <= 12),
+            precedence.is_none_or(|p| p <= 12),
             "Invariant V2-Bis violé après Serde"
         );
 
@@ -305,7 +305,7 @@ fn parse_history(slug: &str, entries: &[YamlHistoryEntry])
 
         // V-Natura-Memoria — applicable uniquement si les deux champs sont présents.
         if let (Some(nat), Some(prec)) = (nature.as_ref(), precedence) {
-            if *nat == Nature::Memoria && !matches!(prec, 9 | 10 | 11) {
+            if *nat == Nature::Memoria && !matches!(prec, 9..=11) {
                 return Err(ParseError::InvalidMemoriaPrecedence {
                     slug:             slug.to_string(),
                     from,
@@ -315,7 +315,7 @@ fn parse_history(slug: &str, entries: &[YamlHistoryEntry])
         }
 
         // V-Vigilia — applicable uniquement si nature est présente.
-        if has_vigil_mass && nature.as_ref().map_or(false, |n| *n != Nature::Sollemnitas) {
+        if has_vigil_mass && nature.as_ref().is_some_and(|n| *n != Nature::Sollemnitas) {
             return Err(ParseError::VigiliaNonSollemnitas {
                 slug:   slug.to_string(),
                 from,

@@ -15,10 +15,10 @@ pub enum Precedence {
     /// 1. Triduum pascal.
     TriduumSacrum = 0,
     /// 2. Solennités majeures : Nativité, Épiphanie, Ascension, Pentecôte. 
-    /// Inclut les dimanches d'Avent, Carême, Temps Pascal, Mercredi des Cendres et Semaine Sainte.
+    ///    Inclut les dimanches d'Avent, Carême, Temps Pascal, Mercredi des Cendres et Semaine Sainte.
     SollemnitatesMaiores = 1,
     /// 3. Solennités du Seigneur, de la Vierge et des saints inscrits au calendrier général. 
-    /// Inclut la Commémoration des fidèles défunts.
+    ///    Inclut la Commémoration des fidèles défunts.
     SollemnitatesGenerales = 2,
     /// 4. Solennités propres (patron du lieu, dédicace de l'église, titulaire de l'ordre).
     SollemnitatesPropria = 3,

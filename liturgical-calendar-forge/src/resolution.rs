@@ -311,7 +311,7 @@ fn elect(
     mut candidates: Vec<PlacedFeast>,
     period:         CorePeriod,
 ) -> (PlacedFeast, Vec<PlacedFeast>, Vec<PlacedFeast>) {
-    candidates.sort_unstable_by(|a, b| a.key().cmp(&b.key()));
+    candidates.sort_unstable_by_key(|a| a.key());
 
     let primary = candidates.remove(0);
     let temporal_primary = primary.cycle == Cycle::Temporal;
