@@ -1158,27 +1158,80 @@ date:
   day: 19
 history:
   - from: 1969
-    precedence: 5
+    to: 2007
+    precedence: 3
     nature: sollemnitas
     color: albus
     transfers:
+      # Semaine Sainte : déplacement post-Octave (règle pré-2008)
       - collides: dominica_in_palmis_de_passione_domini
         mobile:
           anchor: pascha
-          offset: -8
-      - collides: feria_ii_in_hebdomada_sancta
+          offset: 8
+      - collides: feria_ii_hebdomadae_sanctae
         mobile:
           anchor: pascha
-          offset: -8
-      - collides: feria_iii_in_hebdomada_sancta
+          offset: 8
+      - collides: feria_iii_hebdomadae_sanctae
         mobile:
           anchor: pascha
-          offset: -8
-      - collides: feria_iv_in_hebdomada_sancta
+          offset: 8
+      - collides: feria_iv_hebdomadae_sanctae
         mobile:
           anchor: pascha
-          offset: -8
+          offset: 8
       - collides: feria_v_hebdomadae_sanctae
+        mobile:
+          anchor: pascha
+          offset: 8
+      - collides: feria_vi_hebdomadae_sanctae
+        mobile:
+          anchor: pascha
+          offset: 8
+      - collides: sabbato_sancto
+        mobile:
+          anchor: pascha
+          offset: 8
+      - collides: dominica_resurrectionis
+        mobile:
+          anchor: pascha
+          offset: 8
+  - from: 2008
+    precedence: 3
+    nature: sollemnitas
+    color: albus
+    transfers:
+      # Bucket : Semaine Sainte (Déplacement rétrograde impératif)
+      # Cible unique : Samedi avant les Rameaux (Easter - 8)
+      - collides: dominica_in_palmis_de_passione_domini # Rameaux
+        mobile:
+          anchor: pascha
+          offset: -8
+      - collides: feria_ii_hebdomadae_sanctae # Lundi Saint
+        mobile:
+          anchor: pascha
+          offset: -8
+      - collides: feria_iii_hebdomadae_sanctae # Mardi Saint
+        mobile:
+          anchor: pascha
+          offset: -8
+      - collides: feria_iv_hebdomadae_sanctae # Mercredi Saint
+        mobile:
+          anchor: pascha
+          offset: -8
+      - collides: feria_v_hebdomadae_sanctae # Jeudi Saint
+        mobile:
+          anchor: pascha
+          offset: -8
+      - collides: feria_vi_hebdomadae_sanctae # Vendredi Saint
+        mobile:
+          anchor: pascha
+          offset: -8
+      - collides: sabbato_sancto # Samedi Saint
+        mobile:
+          anchor: pascha
+          offset: -8
+      - collides: dominica_resurrectionis # Dimanche de Pâques
         mobile:
           anchor: pascha
           offset: -8
@@ -1197,14 +1250,14 @@ history:
         let v1969 = &feast.history[0];
         assert_eq!(v1969.from, 1969);
         assert_eq!(v1969.to, 2007);
-        assert_eq!(v1969.precedence, Some(4)); // YAML 5 − 1 = 4 interne
-        assert!(v1969.transfers.is_empty(), "période 1969–2007 sans transfers");
+        assert_eq!(v1969.precedence, Some(2)); // YAML 3 - 1 = 2 interne
+        assert_eq!(v1969.transfers.len(), 8, "8 collides en Semaine Sainte (post-Octave)");
 
         let v2008 = &feast.history[1];
         assert_eq!(v2008.from, 2008);
         assert_eq!(v2008.to, 2399);
-        assert_eq!(v2008.precedence, Some(4)); // YAML 5 − 1 = 4 interne
-        assert_eq!(v2008.transfers.len(), 4, "4 collides en Semaine Sainte");
+        assert_eq!(v2008.precedence, Some(2)); // YAML 3 - 1 = 2 interne
+        assert_eq!(v2008.transfers.len(), 8, "8 collides en Semaine Sainte (pré-Octave)");
 
         for t in &v2008.transfers {
             match &t.target {

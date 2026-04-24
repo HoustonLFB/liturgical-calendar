@@ -10,20 +10,89 @@ history:
     precedence: 3
     nature: sollemnitas
     color: albus
-    # Comportement standard : Incrémentation déterministe (J+1) gérée par le moteur
+    # Comportement standard par défaut : Incrémentation déterministe (J+1) gérée par le moteur
+    transfers:
+      # Semaine Sainte : déplacement post-Octave (règle pré-2008)
+      - collides: dominica_in_palmis_de_passione_domini
+        mobile:
+          anchor: pascha
+          offset: 8
+      - collides: feria_ii_hebdomadae_sanctae
+        mobile:
+          anchor: pascha
+          offset: 8
+      - collides: feria_iii_hebdomadae_sanctae
+        mobile:
+          anchor: pascha
+          offset: 8
+      - collides: feria_iv_hebdomadae_sanctae
+        mobile:
+          anchor: pascha
+          offset: 8
+      - collides: feria_v_hebdomadae_sanctae
+        mobile:
+          anchor: pascha
+          offset: 8
+      - collides: feria_vi_hebdomadae_sanctae
+        mobile:
+          anchor: pascha
+          offset: 8
+      - collides: sabbato_sancto
+        mobile:
+          anchor: pascha
+          offset: 8
+      - collides: dominica_resurrectionis
+        mobile:
+          anchor: pascha
+          offset: 8
   - from: 2008
+    precedence: 3
+    nature: sollemnitas
+    color: albus
     transfers:
       # Bucket : Semaine Sainte (Déplacement rétrograde impératif)
       # Cible unique : Samedi avant les Rameaux (Easter - 8)
-      - collides:
-          - dominica_in_palmis_de_passione_domini # Rameaux
-          - feria_ii_hebdomadae_sanctae # Lundi Saint
-          - feria_iii_hebdomadae_sanctae # Mardi Saint
-          - feria_iv_hebdomadae_sanctae # Mercredi Saint
-          - feria_v_hebdomadae_sanctae # Jeudi Saint
-          - feria_vi_in_passione_domini # Vendredi Saint
-          - sabbato_sancto # Samedi Saint
-          - dominica_resurrectionis # Dimanche de Pâques
+      - collides: dominica_in_palmis_de_passione_domini # Rameaux
         mobile:
           anchor: pascha
           offset: -8
+      - collides: feria_ii_hebdomadae_sanctae # Lundi Saint
+        mobile:
+          anchor: pascha
+          offset: -8
+      - collides: feria_iii_hebdomadae_sanctae # Mardi Saint
+        mobile:
+          anchor: pascha
+          offset: -8
+      - collides: feria_iv_hebdomadae_sanctae # Mercredi Saint
+        mobile:
+          anchor: pascha
+          offset: -8
+      - collides: feria_v_hebdomadae_sanctae # Jeudi Saint
+        mobile:
+          anchor: pascha
+          offset: -8
+      - collides: feria_vi_hebdomadae_sanctae # Vendredi Saint
+        mobile:
+          anchor: pascha
+          offset: -8
+      - collides: sabbato_sancto # Samedi Saint
+        mobile:
+          anchor: pascha
+          offset: -8
+      - collides: dominica_resurrectionis # Dimanche de Pâques
+        mobile:
+          anchor: pascha
+          offset: -8
+      # - collides:
+      #     - dominica_in_palmis_de_passione_domini # Rameaux
+      #     - feria_ii_hebdomadae_sanctae # Lundi Saint
+      #     - feria_iii_hebdomadae_sanctae # Mardi Saint
+      #     - feria_iv_hebdomadae_sanctae # Mercredi Saint
+      #     - feria_v_hebdomadae_sanctae # Jeudi Saint
+      #     - feria_vi_hebdomadae_sanctae # Vendredi Saint
+      #     - sabbato_sancto # Samedi Saint
+      #     - dominica_resurrectionis # Dimanche de Pâques
+      #   mobile:
+      #     anchor: pascha
+      #     offset: -8
