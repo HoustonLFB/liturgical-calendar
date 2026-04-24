@@ -1,5 +1,6 @@
 version: 1
 category: 3 # Type mobile : calcul anchor + offset
+class: lord
 mobile:
   anchor: pascha
   offset: -42 # Invariant : 6 semaines avant Pâques

@@ -1,5 +1,6 @@
 version: 1
 category: 1
+class: lord
 mobile:
   anchor: pascha
   # Vendredi après le 2ème dimanche après la Pentecôte (63 + 5)

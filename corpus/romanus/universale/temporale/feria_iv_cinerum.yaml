@@ -1,6 +1,6 @@
-# Dies Cinerum - Mercredi des Cendres
 version: 1
 category: 0
+class: lord
 mobile:
   anchor: pascha
   offset: -46

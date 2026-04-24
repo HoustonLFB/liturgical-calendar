@@ -1,5 +1,6 @@
 version: 1
 category: 1
+class: lord
 date:
   month: 12
   day: 25

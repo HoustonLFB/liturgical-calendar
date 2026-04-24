@@ -1,5 +1,6 @@
 version: 1
 category: 1
+class: lord
 mobile:
   anchor: pascha
   # Dimanche après la Pentecôte (49 + 7)

@@ -1,5 +1,6 @@
 version: 1
 category: 3
+class: lord
 mobile:
   anchor: nativitas_domini
   # Alignement sur le 4e dimanche précédant le 25 décembre

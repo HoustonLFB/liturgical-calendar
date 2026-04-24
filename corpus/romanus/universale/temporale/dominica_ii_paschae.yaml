@@ -1,6 +1,6 @@
-# de Divinae Misericordiae
 version: 1
 category: 0
+class: lord
 mobile:
   anchor: pascha
   offset: 7

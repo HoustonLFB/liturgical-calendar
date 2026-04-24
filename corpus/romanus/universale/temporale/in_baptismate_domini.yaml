@@ -1,5 +1,6 @@
 version: 1
 category: 3
+class: lord
 mobile:
   anchor: in_epiphania_domini
   offset: 1

@@ -1,6 +1,6 @@
-# Mercredi de la Semaine Sainte
 version: 1
 category: 0
+class: lord
 mobile:
   anchor: pascha
   offset: -4

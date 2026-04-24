@@ -1,5 +1,6 @@
 version: 1
 category: 3
+class: lord
 mobile:
   anchor: nativitas_domini
   offset: -14

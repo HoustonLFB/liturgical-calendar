@@ -1,5 +1,6 @@
 version: 1
 category: 1
+class: lord
 mobile:
   anchor: pascha
   offset: 60
