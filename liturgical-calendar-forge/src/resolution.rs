@@ -14,7 +14,7 @@
 //!   MobileDef::anchor           : String
 //!   MobileDef::offset           : i32
 //!   MobileDef::ordinal          : Option<u8>         — tempus_ordinarium uniquement
-//!   TransferRule::collides      : String
+//!   TransferRule::collides      : Vec<String>
 //!   TransferRule::target        : TransferTarget
 //!   TransferTarget              : Offset(u32) | Date{m,d} | Mobile{anchor,offset}
 //!   CanonicalizedYear::pre_resolved_transfers : BTreeMap<(String,String), u16>
@@ -460,10 +460,14 @@ pub(crate) fn resolve_year(
         for feast in to_transfer {
             let active_rule = registry.get(&feast.slug)
                 .and_then(|def| def.active_version_for(year))
-                .and_then(|ver| ver.transfers.iter().find(|t| t.collides == primary.slug));
+                .and_then(|ver| ver.transfers.iter().find(|t| t.collides.iter().any(|c| c == &primary.slug)));
 
             if let Some(rule) = active_rule {
-                let pre_key = (feast.slug.clone(), rule.collides.clone());
+                let matched_collides = rule.collides.iter()
+                    .find(|c| *c == &primary.slug)
+                    .cloned()
+                    .unwrap(); // safe : find sur rule garanti par le .find() ci-dessus
+                let pre_key = (feast.slug.clone(), matched_collides);
                 if let Some(&doy_dst) = canonicalized.pre_resolved_transfers.get(&pre_key) {
                     if doy_dst <= doy {
                         retrograde_inserts.push((doy_dst, feast));

@@ -101,7 +101,7 @@ pub enum TransferTarget {
 #[derive(Debug, Clone)]
 pub struct TransferDef {
     /// Slug de la fête avec laquelle la collision est déclarée
-    pub collides: String,
+    pub collides: Vec<String>,
     pub target: TransferTarget,
 }
 

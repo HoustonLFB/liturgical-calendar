@@ -237,10 +237,12 @@ fn resolve_mobile_transfer_targets(
                     let anchor_doy = anchors.get(anchor.as_str())
                         .ok_or_else(|| ForgeError::UnresolvedAnchor { anchor: anchor.clone() })?;
                     let doy_dst = (*anchor_doy as i32 + offset) as u16;
-                    result.insert(
-                        (feast.slug.clone(), transfer.collides.clone()),
-                        doy_dst,
-                    );
+                    for c in &transfer.collides {
+                        result.insert(
+                            (feast.slug.clone(), c.clone()),
+                            doy_dst,
+                        );
+                    }
                 }
             }
         }

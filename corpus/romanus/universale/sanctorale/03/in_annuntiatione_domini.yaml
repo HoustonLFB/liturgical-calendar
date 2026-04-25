@@ -9,73 +9,32 @@ history:
     nature: sollemnitas
     color: albus
     transfers:
-      # --- BRANCHEMENT SEMAINE SAINTE (Prec 1) ---
+      # --- BRANCHEMENT SEMAINE SAINTE ---
       # Redirection déterministe vers le lundi de la IIe semaine de Pâques
-      - collides: dominica_in_palmis_de_passione_domini
-        mobile:
-          anchor: pascha
-          offset: 8
-      - collides: feria_ii_hebdomadae_sanctae
-        mobile:
-          anchor: pascha
-          offset: 8
-      - collides: feria_iii_hebdomadae_sanctae
-        mobile:
-          anchor: pascha
-          offset: 8
-      - collides: feria_iv_hebdomadae_sanctae
-        mobile:
-          anchor: pascha
-          offset: 8
-      - collides: feria_v_hebdomadae_sanctae
-        mobile:
-          anchor: pascha
-          offset: 8
-      - collides: feria_vi_hebdomadae_sanctae
-        mobile:
-          anchor: pascha
-          offset: 8
-      - collides: sabbato_sancto
-        mobile:
-          anchor: pascha
-          offset: 8
-      # --- BRANCHEMENT OCTAVE DE PÂQUES (Prec 1) ---
+      # --- BRANCHEMENT OCTAVE DE PÂQUES ---
       # Invariant : L'Octave est un bloc d'exclusion totale.
       # Exclusion totale de la plage Pascha[0] à Pascha[7]
       # Le dispatch vers Pascha + 8 (Lundi de la IIe semaine) est statique.
-      - collides: dominica_resurrectionis
+      # NOTE SUR L'OPTIMISATION DU PIPELINE :
+      # Les collisions avec les dimanches de Carême (Prec 2) ne sont pas listées.
+      # L'Engine applique la règle par défaut : Prec 2 > Prec 4.
+      # Sans règle 'mobile' explicite, la TransferQueue alloue automatiquement DOY + 1.
+      - collides:
+          - dominica_in_palmis_de_passione_domini
+          - feria_ii_hebdomadae_sanctae
+          - feria_iii_hebdomadae_sanctae
+          - feria_iv_hebdomadae_sanctae
+          - feria_v_hebdomadae_sanctae
+          - feria_vi_hebdomadae_sanctae
+          - sabbato_sancto
+          - dominica_resurrectionis
+          - feria_ii_infra_octavam_paschae
+          - feria_iii_infra_octavam_paschae
+          - feria_iv_infra_octavam_paschae
+          - feria_v_infra_octavam_paschae
+          - feria_vi_infra_octavam_paschae
+          - sabbato_infra_octavam_paschae
+          - dominica_ii_paschae
         mobile:
           anchor: pascha
           offset: 8
-      - collides: feria_ii_infra_octavam_paschae
-        mobile:
-          anchor: pascha
-          offset: 8
-      - collides: feria_iii_infra_octavam_paschae
-        mobile:
-          anchor: pascha
-          offset: 8
-      - collides: feria_iv_infra_octavam_paschae
-        mobile:
-          anchor: pascha
-          offset: 8
-      - collides: feria_v_infra_octavam_paschae
-        mobile:
-          anchor: pascha
-          offset: 8
-      - collides: feria_vi_infra_octavam_paschae
-        mobile:
-          anchor: pascha
-          offset: 8
-      - collides: sabbato_infra_octavam_paschae
-        mobile:
-          anchor: pascha
-          offset: 8
-      - collides: dominica_ii_paschae
-        mobile:
-          anchor: pascha
-          offset: 8
-# NOTE SUR L'OPTIMISATION DU PIPELINE :
-# Les collisions avec les dimanches de Carême (Prec 2) ne sont pas listées.
-# L'Engine applique la règle par défaut : Prec 2 > Prec 4.
-# Sans règle 'mobile' explicite, la TransferQueue alloue automatiquement DOY + 1.

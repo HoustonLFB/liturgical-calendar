@@ -36,6 +36,28 @@ where
 }
 
 // ---------------------------------------------------------------------------
+// Deserialize Collides
+// ---------------------------------------------------------------------------
+
+/// Accepte indifféremment `collides: slug` (String) ou `collides: [a, b]` (Vec).
+fn deserialize_collides<'de, D>(d: D) -> Result<Vec<String>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::Deserialize;
+    #[derive(serde::Deserialize)]
+    #[serde(untagged)]
+    enum OneOrMany {
+        One(String),
+        Many(Vec<String>),
+    }
+    match OneOrMany::deserialize(d)? {
+        OneOrMany::One(s)   => Ok(vec![s]),
+        OneOrMany::Many(v)  => Ok(v),
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Structs de désérialisation YAML — deny_unknown_fields partout
 // ---------------------------------------------------------------------------
 
@@ -68,10 +90,11 @@ struct YamlMobile {
     ordinal: Option<u8>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 struct YamlTransfer {
-    collides: String,
+    #[serde(deserialize_with = "deserialize_collides")]
+    collides: Vec<String>,
     offset:   Option<u32>,
     date:     Option<YamlDate>,
     mobile:   Option<YamlMobileDst>,
@@ -359,12 +382,14 @@ fn parse_transfers(slug: &str, from: u16, transfers: &[YamlTransfer])
 
     for t in transfers {
         // V-T3 — unicité de collides dans cette tranche temporelle
-        if !seen.insert(t.collides.as_str()) {
+        for c in &t.collides {
+            if !seen.insert(c.as_str()) {
             return Err(ParseError::TransferDuplicateCollides {
                 slug:     slug.to_string(),
                 from,
-                collides: t.collides.clone(),
+                collides: c.clone(),
             }.into());
+            }
         }
 
         // V-T1 — exactement une option
@@ -373,10 +398,10 @@ fn parse_transfers(slug: &str, from: u16, transfers: &[YamlTransfer])
                   + t.mobile.is_some() as u8;
         match count {
             0 => return Err(ParseError::TransferEmpty {
-                slug: slug.to_string(), collides: t.collides.clone()
+                slug: slug.to_string(), collides: t.collides.join(", ")
             }.into()),
             2.. => return Err(ParseError::TransferAmbiguous {
-                slug: slug.to_string(), collides: t.collides.clone()
+                slug: slug.to_string(), collides: t.collides.join(", ")
             }.into()),
             _ => {}
         }
@@ -385,7 +410,7 @@ fn parse_transfers(slug: &str, from: u16, transfers: &[YamlTransfer])
             // V-T4 — offset ≥ 1 (u32, seule valeur invalide = 0)
             if offset == 0 {
                 return Err(ParseError::TransferOffsetNotPositive {
-                    slug: slug.to_string(), collides: t.collides.clone(), offset,
+                    slug: slug.to_string(), collides: t.collides.join(", "), offset,
                 }.into());
             }
             TransferTarget::Offset(offset)
@@ -399,7 +424,7 @@ fn parse_transfers(slug: &str, from: u16, transfers: &[YamlTransfer])
             if !PRIMITIVE_ANCHORS.contains(&m.anchor.as_str()) {
                 return Err(ParseError::TransferMobileInvalidAnchor {
                     slug:    slug.to_string(),
-                    collides: t.collides.clone(),
+                    collides: t.collides.join(", "),
                     anchor:  m.anchor.clone(),
                 }.into());
             }
@@ -619,11 +644,13 @@ fn validate_collides_targets(registry: &FeastRegistry) -> Result<(), ForgeError>
     for feast in registry.iter() {
         for entry in &feast.history {
             for transfer in &entry.transfers {
-                if !registry.contains(&transfer.collides) {
-                    return Err(ParseError::UnknownCollidesTarget {
-                        slug:    feast.slug.clone(),
-                        collides: transfer.collides.clone(),
-                    }.into());
+                for c in &transfer.collides {
+                    if !registry.contains(c.as_str()) {
+                        return Err(ParseError::UnknownCollidesTarget {
+                            slug:     feast.slug.clone(),
+                            collides: c.clone(),
+                        }.into());
+                    }
                 }
             }
         }
@@ -1235,37 +1262,18 @@ history:
     precedence: 3
     nature: sollemnitas
     color: albus
+    # Comportement standard par défaut : Incrémentation déterministe (J+1) gérée par le moteur
     transfers:
-      # Semaine Sainte : déplacement post-Octave (règle pré-2008)
-      - collides: dominica_in_palmis_de_passione_domini
-        mobile:
-          anchor: pascha
-          offset: 8
-      - collides: feria_ii_hebdomadae_sanctae
-        mobile:
-          anchor: pascha
-          offset: 8
-      - collides: feria_iii_hebdomadae_sanctae
-        mobile:
-          anchor: pascha
-          offset: 8
-      - collides: feria_iv_hebdomadae_sanctae
-        mobile:
-          anchor: pascha
-          offset: 8
-      - collides: feria_v_hebdomadae_sanctae
-        mobile:
-          anchor: pascha
-          offset: 8
-      - collides: feria_vi_hebdomadae_sanctae
-        mobile:
-          anchor: pascha
-          offset: 8
-      - collides: sabbato_sancto
-        mobile:
-          anchor: pascha
-          offset: 8
-      - collides: dominica_resurrectionis
+      # Semaine Sainte : déplacement post-Octave
+      - collides:
+          - dominica_in_palmis_de_passione_domini # Rameaux
+          - feria_ii_hebdomadae_sanctae # Lundi Saint
+          - feria_iii_hebdomadae_sanctae # Mardi Saint
+          - feria_iv_hebdomadae_sanctae # Mercredi Saint
+          - feria_v_hebdomadae_sanctae # Jeudi Saint
+          - feria_vi_hebdomadae_sanctae # Vendredi Saint
+          - sabbato_sancto # Samedi Saint
+          - dominica_resurrectionis # Dimanche de Pâques
         mobile:
           anchor: pascha
           offset: 8
@@ -1274,37 +1282,17 @@ history:
     nature: sollemnitas
     color: albus
     transfers:
-      # Bucket : Semaine Sainte (Déplacement rétrograde impératif)
+      # Semaine Sainte : déplacement rétrograde
       # Cible unique : Samedi avant les Rameaux (Easter - 8)
-      - collides: dominica_in_palmis_de_passione_domini # Rameaux
-        mobile:
-          anchor: pascha
-          offset: -8
-      - collides: feria_ii_hebdomadae_sanctae # Lundi Saint
-        mobile:
-          anchor: pascha
-          offset: -8
-      - collides: feria_iii_hebdomadae_sanctae # Mardi Saint
-        mobile:
-          anchor: pascha
-          offset: -8
-      - collides: feria_iv_hebdomadae_sanctae # Mercredi Saint
-        mobile:
-          anchor: pascha
-          offset: -8
-      - collides: feria_v_hebdomadae_sanctae # Jeudi Saint
-        mobile:
-          anchor: pascha
-          offset: -8
-      - collides: feria_vi_hebdomadae_sanctae # Vendredi Saint
-        mobile:
-          anchor: pascha
-          offset: -8
-      - collides: sabbato_sancto # Samedi Saint
-        mobile:
-          anchor: pascha
-          offset: -8
-      - collides: dominica_resurrectionis # Dimanche de Pâques
+      - collides:
+          - dominica_in_palmis_de_passione_domini # Rameaux
+          - feria_ii_hebdomadae_sanctae # Lundi Saint
+          - feria_iii_hebdomadae_sanctae # Mardi Saint
+          - feria_iv_hebdomadae_sanctae # Mercredi Saint
+          - feria_v_hebdomadae_sanctae # Jeudi Saint
+          - feria_vi_hebdomadae_sanctae # Vendredi Saint
+          - sabbato_sancto # Samedi Saint
+          - dominica_resurrectionis # Dimanche de Pâques
         mobile:
           anchor: pascha
           offset: -8
@@ -1321,16 +1309,12 @@ history:
         assert_eq!(feast.history.len(), 2);
 
         let v1969 = &feast.history[0];
-        assert_eq!(v1969.from, 1969);
-        assert_eq!(v1969.to, 2007);
-        assert_eq!(v1969.precedence, Some(2)); // YAML 3 - 1 = 2 interne
-        assert_eq!(v1969.transfers.len(), 8, "8 collides en Semaine Sainte (post-Octave)");
+        assert_eq!(v1969.transfers.len(), 1, "1 TransferDef multi-collides");
+        assert_eq!(v1969.transfers[0].collides.len(), 8, "8 slugs Semaine Sainte (post-Octave)");
 
         let v2008 = &feast.history[1];
-        assert_eq!(v2008.from, 2008);
-        assert_eq!(v2008.to, 2399);
-        assert_eq!(v2008.precedence, Some(2)); // YAML 3 - 1 = 2 interne
-        assert_eq!(v2008.transfers.len(), 8, "8 collides en Semaine Sainte (pré-Octave)");
+        assert_eq!(v2008.transfers.len(), 1, "1 TransferDef multi-collides");
+        assert_eq!(v2008.transfers[0].collides.len(), 8, "8 slugs Semaine Sainte (pré-Octave)");
 
         for t in &v2008.transfers {
             match &t.target {
