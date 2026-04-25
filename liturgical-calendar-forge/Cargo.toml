@@ -7,6 +7,7 @@ edition = "2021"
 serde = { version = "1", features = ["derive"] }
 serde_yml = "0.0.12"
 sha2 = { version = "0.10", default-features = false }
+toml = "0.8"
 liturgical-calendar-core = { path = "../liturgical-calendar-core" }
 
 [features]

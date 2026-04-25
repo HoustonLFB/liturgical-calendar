@@ -118,6 +118,13 @@ pub enum ForgeError {
     /// Passe 5 — Table finale incohérente après clôture transitive.
     ResolutionIncomplete { doy: u16, year: u16, detail: String },
     /// Validation post-écriture kal_validate_header échouée.
+    
+    /// Conflit entre l'ID du fichier lock et l'ID forcé dans le YAML.
+    FeastIDLockConflict { slug: String, yaml_id: u16, lock_id: u16 },
+    /// Plus d'IDs disponibles pour ce couple (scope, category).
+    FeastIDExhausted { scope: u8, category: u8 },
+    /// Fichier .lock illisible ou corrompu.
+    LockFileMalformed(String),
 
     /// Post-merge : champ obligatoire absent après fusion universale + override.
     /// Indique un corpus incomplet, pas un override invalide.
@@ -129,6 +136,7 @@ pub enum ForgeError {
     },
 
     KaldValidationFailed { code: i32 },
+
 }
 
 impl From<ParseError> for ForgeError {

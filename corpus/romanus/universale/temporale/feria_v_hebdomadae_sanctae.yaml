@@ -1,3 +1,4 @@
+# In Cena Domini
 version: 1
 category: 0
 class: lord
@@ -5,6 +6,6 @@ mobile:
   anchor: pascha
   offset: -3
 history:
-  - precedence: 1
+  - precedence: 2 # La Cène du Seigneur est de rang 2, elle ne fait pas partie du Triduum Pascal, mais elle est plus importante que les autres jours de la Semaine Sainte.
     nature: feria
     color: albus

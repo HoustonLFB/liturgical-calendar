@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+pub use crate::lock::FeastRegistryLock;
 
 // ---------------------------------------------------------------------------
 // Enums sémantiques — INV-FORGE-DERIVE : PartialOrd + Ord requis

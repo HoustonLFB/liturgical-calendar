@@ -239,61 +239,62 @@ pub unsafe extern "C" fn kal_read_secondary(
 pub unsafe extern "C" fn kal_scan_flags(
     data:         *const u8,
     len:          usize,
+    year_from:    u16,   // ← nouveau
+    year_to:      u16,   // ← nouveau
     flag_mask:    u16,
     flag_value:   u16,
     out_indices:  *mut u32,
     out_capacity: u32,
     out_count:    *mut u32,
 ) -> i32 {
-    // 1. NULL checks — première instruction.
     if data.is_null() || out_indices.is_null() || out_count.is_null() {
         return KAL_ERR_NULL_PTR;
     }
-
-    // 2. Header minimum.
     if len < 64 {
         return KAL_ERR_FILE_SIZE;
     }
 
-    // 3. Lire entry_count (offset 12, u32 LE).
-    // SAFETY: len >= 64.
     let entry_count = u32::from_le_bytes([
         *data.add(12), *data.add(13), *data.add(14), *data.add(15),
     ]);
-
-    // 4. Vérifier que le Data Body est entièrement dans le buffer.
     let body_end = 64u64 + entry_count as u64 * 8;
     if body_end > len as u64 {
         return KAL_ERR_FILE_SIZE;
     }
 
-    // 5. Scan linéaire — flags à l'offset 4 de chaque CalendarEntry (stride 8).
-    let mut found: u32 = 0;
-    for idx in 0..entry_count {
-        let offset = 64 + idx as usize * 8 + 4; // +4 = offset de flags dans CalendarEntry
-        // SAFETY: body_end vérifié, offset < body_end.
-        let lo = *data.add(offset);
-        let hi = *data.add(offset + 1);
-        let flags = u16::from_le_bytes([lo, hi]);
+    // Epoch depuis le header (offset 8).
+    let epoch = u16::from_le_bytes([*data.add(8), *data.add(9)]);
 
+    if year_from < epoch || year_to < year_from {
+        return KAL_ERR_INDEX_OOB;
+    }
+
+    let idx_start = (year_from - epoch) as u32 * 366;
+    let idx_end   = ((year_to  - epoch) as u32 + 1) * 366;
+    let idx_end   = idx_end.min(entry_count);
+
+    if idx_start >= entry_count {
+        out_count.write(0);
+        return KAL_ENGINE_OK;
+    }
+
+    let mut found: u32 = 0;
+    for idx in idx_start..idx_end {
+        let base = 64 + idx as usize * 8;
+        let primary_id = u16::from_le_bytes([*data.add(base), *data.add(base + 1)]);
+        if primary_id == 0 { continue; }
+
+        let flags = u16::from_le_bytes([*data.add(base + 4), *data.add(base + 5)]);
         if (flags & flag_mask) == flag_value {
             if found < out_capacity {
-                // SAFETY: found < out_capacity.
                 out_indices.add(found as usize).write(idx);
             }
             found += 1;
         }
     }
 
-    // 6. Écrire le count total — même si out_capacity était insuffisant.
-    // SAFETY: out_count non-NULL vérifié en step 1.
     out_count.write(found);
-
-    if found > out_capacity {
-        return KAL_ERR_BUF_TOO_SMALL;
-    }
-
-    KAL_ENGINE_OK
+    if found > out_capacity { KAL_ERR_BUF_TOO_SMALL } else { KAL_ENGINE_OK }
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────

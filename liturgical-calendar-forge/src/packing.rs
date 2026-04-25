@@ -25,22 +25,22 @@ const SLOTS_PER_YEAR: u32 = 366;
 /// Nombre total d'entrées dans le Data Body.
 const ENTRY_COUNT: u32 = YEAR_COUNT * SLOTS_PER_YEAR; // 157 746
 
-/// Produit le fichier `.kald` et retourne le SHA-256 (`checksum[0..8]` = Build ID).
+/// Sérialise le corpus en buffer binaire `.kald` — sans I/O.
 ///
-/// `all_entries` : 431 tableaux `[CalendarEntry; 366]`, index 0 = année 1969.
-/// La vespers_lookahead_pass DOIT avoir été appliquée avant cet appel.
+/// Retourne `(checksum, full_bytes)` :
+/// - `checksum` : SHA-256 du [Data Body ∥ Secondary Pool].
+/// - `full_bytes` : buffer complet (Header ∥ Data Body ∥ Secondary Pool).
 ///
-/// Retourne `checksum: [u8; 32]` (SHA-256 du [Data Body ∥ Secondary Pool]).
-pub(crate) fn write_kald(
-    path:        &Path,
+/// La vespers_lookahead_pass DOIT avoir été appliquée sur `all_entries` avant cet appel.
+pub(crate) fn build_kald(
     all_entries: Vec<[CalendarEntry; 366]>,
     pool:        PoolBuilder,
     variant_id:  u16,
-) -> Result<[u8; 32], ForgeError> {
+) -> Result<([u8; 32], Vec<u8>), ForgeError> {
     assert_eq!(
         all_entries.len() as u32,
         YEAR_COUNT,
-        "write_kald : attendu {} années, reçu {}",
+        "build_kald : attendu {} années, reçu {}",
         YEAR_COUNT,
         all_entries.len()
     );
@@ -76,8 +76,6 @@ pub(crate) fn write_kald(
 
     // ── SHA-256 sur [Data Body ∥ Secondary Pool] ──────────────────────────────
     // Header exclu — conforme §3.2 spec.
-    // Streaming sans allocation intermédiaire (compatible no_alloc pour le Core,
-    // mais ici nous sommes dans la Forge std — Vec est admis).
 
     let mut hasher = Sha256::new();
     hasher.update(&data_body);
@@ -90,19 +88,18 @@ pub(crate) fn write_kald(
     // ── Construction du Header (64 octets, LE) ────────────────────────────────
 
     let mut header = [0u8; 64];
-    header[0..4].copy_from_slice(b"KALD");                          // magic
-    header[4..6].copy_from_slice(&4u16.to_le_bytes());              // version = 4
-    header[6..8].copy_from_slice(&variant_id.to_le_bytes());        // variant_id
-    header[8..10].copy_from_slice(&1969u16.to_le_bytes());          // epoch
+    header[0..4].copy_from_slice(b"KALD");                              // magic
+    header[4..6].copy_from_slice(&4u16.to_le_bytes());                  // version = 4
+    header[6..8].copy_from_slice(&variant_id.to_le_bytes());            // variant_id
+    header[8..10].copy_from_slice(&1969u16.to_le_bytes());              // epoch
     header[10..12].copy_from_slice(&(YEAR_COUNT as u16).to_le_bytes()); // range = 431
-    header[12..16].copy_from_slice(&ENTRY_COUNT.to_le_bytes());     // entry_count
-    header[16..20].copy_from_slice(&pool_offset.to_le_bytes());     // pool_offset
-    header[20..24].copy_from_slice(&pool_size.to_le_bytes());       // pool_size
-    header[24..56].copy_from_slice(&checksum);                      // SHA-256
+    header[12..16].copy_from_slice(&ENTRY_COUNT.to_le_bytes());         // entry_count
+    header[16..20].copy_from_slice(&pool_offset.to_le_bytes());         // pool_offset
+    header[20..24].copy_from_slice(&pool_size.to_le_bytes());           // pool_size
+    header[24..56].copy_from_slice(&checksum);                          // SHA-256
     // [56..64] = _reserved = 0x00 × 8 — déjà initialisé.
 
-    // ── Assemblage et écriture ────────────────────────────────────────────────
-    // Assemblage in-memory pour la validation post-écriture sans re-lecture disque.
+    // ── Assemblage in-memory ──────────────────────────────────────────────────
 
     let total_size = 64usize + data_body.len() + pool_bytes.len();
     let mut full: Vec<u8> = Vec::with_capacity(total_size);
@@ -112,16 +109,10 @@ pub(crate) fn write_kald(
 
     debug_assert_eq!(full.len(), total_size);
 
-    {
-        let file   = std::fs::File::create(path)?;
-        let mut w  = BufWriter::new(file);
-        w.write_all(&full)?;
-        w.flush()?;
-    } // flush + fermeture garantie avant la validation.
-
-    // ── Validation post-écriture via kal_validate_header ─────────────────────
+    // ── Validation via kal_validate_header ────────────────────────────────────
     // Utilise le buffer in-memory — évite une re-lecture disque.
     // SAFETY : `full` est valide et non-null ; len = full.len() exact.
+
     let rc = unsafe {
         kal_validate_header(
             full.as_ptr(),
@@ -133,6 +124,26 @@ pub(crate) fn write_kald(
     if rc != 0 {
         return Err(ForgeError::KaldValidationFailed { code: rc });
     }
+
+    Ok((checksum, full))
+}
+
+/// Produit le fichier `.kald` sur disque et retourne le SHA-256.
+///
+/// `all_entries` : 431 tableaux `[CalendarEntry; 366]`, index 0 = année 1969.
+/// La vespers_lookahead_pass DOIT avoir été appliquée avant cet appel.
+pub(crate) fn write_kald(
+    path:        &Path,
+    all_entries: Vec<[CalendarEntry; 366]>,
+    pool:        PoolBuilder,
+    variant_id:  u16,
+) -> Result<[u8; 32], ForgeError> {
+    let (checksum, full) = build_kald(all_entries, pool, variant_id)?;
+
+    let file  = std::fs::File::create(path).map_err(ForgeError::Io)?;
+    let mut w = BufWriter::new(file);
+    w.write_all(&full).map_err(ForgeError::Io)?;
+    w.flush().map_err(ForgeError::Io)?;
 
     Ok(checksum)
 }

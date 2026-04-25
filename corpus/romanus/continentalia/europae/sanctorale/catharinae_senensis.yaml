@@ -2,3 +2,6 @@ version: 1
 category: 1
 history:
   - from: 1999 # Co-patronne de l'Europe
+    precedence: 10
+    nature: memoria
+    color: albus

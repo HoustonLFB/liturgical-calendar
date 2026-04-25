@@ -70,35 +70,6 @@ pub(crate) fn period_to_core(p: &RegistryPeriod) -> CorePeriod {
 /// Calculé une fois avant la boucle annuelle dans `compile()`.
 pub(crate) type FeastIdMap = BTreeMap<String, u16>;
 
-/// Alloue les FeastIDs selon le layout §5.1 (Scope[2] | Category[2] | Sequence[12]).
-/// Ordre : lexicographique des slugs par `(scope_bits, category)` — INV-FORGE-3.
-/// BTreeMap garantit l'ordre d'itération déterministe.
-pub(crate) fn assign_feast_ids(registry: &FeastRegistry) -> FeastIdMap {
-    let mut counters: BTreeMap<(u8, u8), u16> = BTreeMap::new();
-    let mut result = FeastIdMap::new();
-
-    for feast in registry.iter() {
-        let scope_bits: u8 = match &feast.scope {
-            Scope::Universal   => 0,
-            Scope::National(_) => 1,
-            Scope::Diocesan(_) => 2,
-        };
-        let key = (scope_bits, feast.category);
-        let seq = counters.entry(key).or_insert(1);
-        if *seq > 0x0FFF {
-            // V3 (FeastIDExhausted) — détecté ici silencieusement,
-            // erreur fatale complète réservée à l'Étape 1.
-            continue;
-        }
-        let feast_id: u16 = ((scope_bits as u16) << 14)
-            | ((feast.category as u16 & 0x3) << 12)
-            | (*seq & 0x0FFF);
-        result.insert(feast.slug.clone(), feast_id);
-        *seq += 1;
-    }
-    result
-}
-
 // ─── Conversions registry → Core ─────────────────────────────────────────────
 // Nécessaires car registry::Color / registry::Nature ≠ liturgical_calendar_core::Color/Nature.
 
@@ -586,6 +557,36 @@ pub(crate) fn resolve_year(
     }
 
     debug_assert!(transfer_queue.is_empty(), "TransferQueue non vide après Passe 4");
+
+    // ── INTER-PASSE 4/5 — Feria generica pour doy=59 en année bissextile ─────────
+
+    if is_leap && !resolved_days.contains_key(&59) {
+        // Aucune fête ne tombe le 29 février — émettre une feria de substitution.
+        // On cherche un slug feria générique dans le registry ; à défaut, ID réservé.
+        let feria_id = feast_ids
+            .get("feria_per_annum")
+            .or_else(|| feast_ids.get("feria_generica"))
+            .copied()
+            .unwrap_or(0xFFFE); // ID de réserve si absent du corpus
+
+        let period = canonicalized.season_boundaries.period_of(59);
+
+        resolved_days.insert(59, ResolvedDay {
+            primary: PlacedFeast {
+                slug:           "feria_per_annum".into(),
+                feast_id:       feria_id,
+                scope_bits:     0,
+                precedence:     13, // rang le plus bas
+                class:          3,
+                nature:         CoreNature::Feria,
+                color:          CoreColor::Viridis,
+                period:         Some(period),
+                has_vigil_mass: false,
+                cycle:          Cycle::Temporal,
+            },
+            secondary_feasts: Vec::new(),
+        });
+    }
 
     // ── PASSE 5 ───────────────────────────────────────────────────────────────
 

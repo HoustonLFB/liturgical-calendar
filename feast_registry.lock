@@ -1,0 +1,11 @@
+# feast_registry.lock — généré par la Forge, ne pas éditer manuellement.
+# Format : slug = feast_id (décimal)
+
+[entries]
+annuntiatio_domini = 1
+benedicti_abbatis = 2
+# ...
+
+[tombstones]
+# slugs supprimés — IDs jamais réalloués
+old_slug = 42

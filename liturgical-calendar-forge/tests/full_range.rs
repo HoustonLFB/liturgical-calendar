@@ -121,15 +121,13 @@ fn full_range_triduum_2025_exactly_3_entries() {
 
     let rc = unsafe {
         kal_scan_flags(
-            kald.as_ptr(),
-            kald.len(),
-            0x000F, // mask  : bits [3:0] = champ Precedence
-            0,      // value : Precedence == 0 → rang suprême
-            indices.as_mut_ptr(),
-            10,
-            &mut count,
+            kald.as_ptr(), kald.len(),
+            2025, 2025,  // ← bornes annuelles
+            0x000F, 0,
+            indices.as_mut_ptr(), 10, &mut count,
         )
     };
+    eprintln!("count = {}", count);
 
     // KAL_ERR_BUF_TOO_SMALL ne peut pas survenir ici (buffer de 10, Triduum = 3)
     assert_ne!(

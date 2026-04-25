@@ -11,3 +11,5 @@ history:
     color: albus
   - from: 1996
     precedence: 10
+    nature: memoria
+    color: albus
