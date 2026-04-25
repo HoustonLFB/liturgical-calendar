@@ -12,6 +12,8 @@ pub enum ParseError {
     MalformedYaml(String),
     /// V1 — version != 1
     UnsupportedSchemaVersion(u32),
+    /// Champ `class` absent après merge — détecté avant le pipeline annuel.
+    MissingClassAfterMerge { slug: String },
     /// Temporalité : date: ET mobile: simultanément
     AmbiguousTemporalityField { slug: String },
     /// Temporalité : ni date: ni mobile:

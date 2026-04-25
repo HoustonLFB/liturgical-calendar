@@ -73,7 +73,18 @@ pub fn compile(
     let mut lock  = crate::lock::FeastRegistryLock::load(&lock_path)?;
     let feast_ids = allocate_feast_ids(&registry, &mut lock, &lock_path)?;
 
-    // ── Étape 1bis — i18n Resolution (AOT, avant le pipeline de résolution) ──
+    // ── Validation post-merge : class obligatoire sur toute fête active ──────
+    for feast in registry.iter() {
+        if feast.class.is_none() {
+            return Err(ForgeError::Parse(
+                crate::error::ParseError::MissingClassAfterMerge {
+                    slug: feast.slug.clone(),
+                }
+            ));
+        }
+    }
+
+    // ── Étape 1bis — i18n Resolution ─────────────────────────────────────────
     let i18n_artifacts = match &i18n {
         Some(cfg) => {
             let mut store = i18n::DictStore::new();
