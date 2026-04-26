@@ -3,6 +3,7 @@
 pub mod error;
 pub mod registry;
 pub mod lock;
+pub mod variant_lock;
 pub mod parsing;
 pub mod canonicalization;
 pub mod resolution;
@@ -13,6 +14,7 @@ pub(crate) mod lits_writer;
 
 // ── Exports publics ───────────────────────────────────────────────────────────
 
+pub use variant_lock::VariantRegistryLock;
 pub use error::ForgeError;
 pub use registry::FeastRegistry;
 pub use parsing::{ingest_corpus, parse_feast_from_yaml, allocate_feast_ids};
@@ -66,12 +68,11 @@ pub fn compile(
     output:      &Path,
     variant_id:  u16,
     i18n:        Option<I18nConfig<'_>>,
-    corpus_root: &Path,
+    lock_path:   &Path,
 ) -> Result<[u8; 32], ForgeError> {
     // ── Étape 1 — Allocation d'IDs stables ───────────────────────────────────
-    let lock_path = corpus_root.join("feast_registry.lock");
-    let mut lock  = crate::lock::FeastRegistryLock::load(&lock_path)?;
-    let feast_ids = allocate_feast_ids(&registry, &mut lock, &lock_path)?;
+    let mut lock  = crate::lock::FeastRegistryLock::load(lock_path)?;
+    let feast_ids = allocate_feast_ids(&registry, &mut lock, lock_path)?;
 
     // ── Validation post-merge : class obligatoire sur toute fête active ──────
     for feast in registry.iter() {

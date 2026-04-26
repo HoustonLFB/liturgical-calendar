@@ -3,11 +3,16 @@ name = "liturgical-calendar-forge"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "kal-forge"
+path = "src/main.rs"
+
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_yml = "0.0.12"
 sha2 = { version = "0.10", default-features = false }
 toml = "0.8"
+clap = { version = "4", features = ["derive"] }
 liturgical-calendar-core = { path = "../liturgical-calendar-core" }
 
 [features]

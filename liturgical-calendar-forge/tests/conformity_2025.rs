@@ -105,7 +105,7 @@ fn fixture() -> &'static Fixture {
             &kald,
             0,
             Some(I18nConfig { i18n_root: &i18n_root, lits_dir: &lits_dir }),
-            &base,  // ← corpus_root = répertoire temp du test
+            &base.join("feast_registry.lock"),
         )
         .expect("compile doit réussir");
 

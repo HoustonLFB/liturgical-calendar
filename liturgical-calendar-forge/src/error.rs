@@ -125,6 +125,8 @@ pub enum ForgeError {
     FeastIDLockConflict { slug: String, yaml_id: u16, lock_id: u16 },
     /// Plus d'IDs disponibles pour ce couple (scope, category).
     FeastIDExhausted { scope: u8, category: u8 },
+    /// Plus de variant_id disponibles (> 65 535 scopes — cas théorique).
+    VariantIDExhausted,
     /// Fichier .lock illisible ou corrompu.
     LockFileMalformed(String),
 

@@ -30,6 +30,34 @@ const _: () = assert!(size_of::<CalendarEntry>() == 8);
 const _: () = assert!(offset_of!(CalendarEntry, flags) == 4);
 const _: () = assert!(offset_of!(CalendarEntry, secondary_count) == 6);
 
+/// Version du format `.kald` — source unique partagée entre la Forge et l'Engine.
+/// Synchronisée avec `header[4..6]` (packing.rs) et la garde de `validate_header`.
+pub const KALD_FORMAT_VERSION: u16 = 4;
+
+/// Discriminant de layout — capturant taille et offsets de `CalendarEntry` + version.
+///
+/// Calculé entièrement à compile-time via `const {}`.
+/// Toute modification de padding, réordonnancement de champs ou bump de version
+/// invalide ce discriminant sans intervention manuelle.
+///
+/// Inscrit dans `header[56..64]` par la Forge.
+/// Vérifié par `validate_header` avant tout accès au Data Body.
+pub const LAYOUT_DISCRIMINANT: u64 = {
+    let sz            = size_of::<CalendarEntry>() as u64;
+    let off_secondary = offset_of!(CalendarEntry, secondary_index) as u64;
+    let off_flags     = offset_of!(CalendarEntry, flags) as u64;
+    let off_sec_count = offset_of!(CalendarEntry, secondary_count) as u64;
+    let off_reserved  = offset_of!(CalendarEntry, _reserved) as u64;
+    let version       = KALD_FORMAT_VERSION as u64;
+
+    sz
+        ^ (off_secondary << 8)
+        ^ (off_flags     << 16)
+        ^ (off_sec_count << 24)
+        ^ (off_reserved  << 32)
+        ^ (version       << 48)
+};
+
 impl CalendarEntry {
     /// Retourne une entrée entièrement nulle (Padding Entry).
     ///

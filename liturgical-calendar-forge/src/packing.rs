@@ -88,16 +88,16 @@ pub(crate) fn build_kald(
     // ── Construction du Header (64 octets, LE) ────────────────────────────────
 
     let mut header = [0u8; 64];
-    header[0..4].copy_from_slice(b"KALD");                              // magic
-    header[4..6].copy_from_slice(&4u16.to_le_bytes());                  // version = 4
-    header[6..8].copy_from_slice(&variant_id.to_le_bytes());            // variant_id
-    header[8..10].copy_from_slice(&1969u16.to_le_bytes());              // epoch
-    header[10..12].copy_from_slice(&(YEAR_COUNT as u16).to_le_bytes()); // range = 431
-    header[12..16].copy_from_slice(&ENTRY_COUNT.to_le_bytes());         // entry_count
-    header[16..20].copy_from_slice(&pool_offset.to_le_bytes());         // pool_offset
-    header[20..24].copy_from_slice(&pool_size.to_le_bytes());           // pool_size
-    header[24..56].copy_from_slice(&checksum);                          // SHA-256
-    // [56..64] = _reserved = 0x00 × 8 — déjà initialisé.
+    header[0..4].copy_from_slice(b"KALD");                                                               // magic
+    header[4..6].copy_from_slice(&liturgical_calendar_core::entry::KALD_FORMAT_VERSION.to_le_bytes());   // format_version
+    header[6..8].copy_from_slice(&variant_id.to_le_bytes());                                             // variant_id
+    header[8..10].copy_from_slice(&1969u16.to_le_bytes());                                               // epoch
+    header[10..12].copy_from_slice(&(YEAR_COUNT as u16).to_le_bytes());                                  // range = 431
+    header[12..16].copy_from_slice(&ENTRY_COUNT.to_le_bytes());                                          // entry_count
+    header[16..20].copy_from_slice(&pool_offset.to_le_bytes());                                          // pool_offset
+    header[20..24].copy_from_slice(&pool_size.to_le_bytes());                                            // pool_size
+    header[24..56].copy_from_slice(&checksum);                                                           // SHA-256
+    header[56..64].copy_from_slice(&liturgical_calendar_core::entry::LAYOUT_DISCRIMINANT.to_le_bytes()); // layout_discriminant
 
     // ── Assemblage in-memory ──────────────────────────────────────────────────
 

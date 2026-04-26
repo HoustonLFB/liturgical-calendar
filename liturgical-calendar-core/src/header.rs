@@ -25,8 +25,9 @@ pub struct Header {
     pub pool_size: u32,
     /// SHA-256(`Data Body ∥ Secondary Pool`).
     pub checksum: [u8; 32],
-    /// Padding réservé, doit être `0x00 × 8`.
-    pub _reserved: [u8; 8],
+    /// Discriminant de layout — `LAYOUT_DISCRIMINANT.to_le_bytes()`.
+    /// Détecte toute dérive de schéma entre la Forge et l'Engine.
+    pub layout_discriminant: [u8; 8],
 }
 
 // Assertion statique de layout — évaluée à la compilation.
@@ -36,22 +37,26 @@ const _: () = assert!(size_of::<Header>() == 64);
 // ERR_NULL_PTR absent : le NULL check est assuré par la couche FFI avant tout
 // appel à validate_header.
 
-pub(crate) const ERR_BUF_TOO_SMALL: i32 = -2; // len < 64, spec §kal_validate_header step 2
-pub(crate) const ERR_MAGIC: i32 = -3;
-pub(crate) const ERR_VERSION: i32 = -4;
-pub(crate) const ERR_CHECKSUM: i32 = -5;
-pub(crate) const ERR_FILE_SIZE: i32 = -6;
-pub(crate) const ERR_RESERVED: i32 = -9;
+pub(crate) const ERR_BUF_TOO_SMALL: i32 = -2;
+pub(crate) const ERR_MAGIC:         i32 = -3;
+pub(crate) const ERR_VERSION:       i32 = -4;
+pub(crate) const ERR_CHECKSUM:      i32 = -5;
+pub(crate) const ERR_FILE_SIZE:     i32 = -6;
+/// Conservé pour compatibilité FFI — `CalendarEntry._reserved` vérifié par la Forge.
+pub(crate) const ERR_RESERVED:      i32 = -9;
+/// Discriminant de layout incompatible — `header[56..64] != LAYOUT_DISCRIMINANT`.
+/// Signale une dérive de schéma entre la Forge et l'Engine (struct recompilée).
+pub(crate) const ERR_SCHEMA:        i32 = -10;
 
 /// Valide le header et retourne `Ok(Header)` si toutes les vérifications passent.
 ///
 /// Validations séquentielles (arrêt au premier échec) :
-/// 1. `len >= 64`             → `ERR_BUF_TOO_SMALL`
-/// 2. `magic == b"KALD"`     → `ERR_MAGIC`
-/// 3. `version == 4`         → `ERR_VERSION`
-/// 4. taille fichier cohérente → `ERR_FILE_SIZE`
-/// 5. `_reserved == [0; 8]`  → `ERR_RESERVED`
-/// 6. SHA-256 correct         → `ERR_CHECKSUM`
+/// 1. `len >= 64`                          → `ERR_BUF_TOO_SMALL`
+/// 2. `magic == b"KALD"`                  → `ERR_MAGIC`
+/// 3. `version == KALD_FORMAT_VERSION`    → `ERR_VERSION`
+/// 4. taille fichier cohérente            → `ERR_FILE_SIZE`
+/// 5. `layout_discriminant` correct       → `ERR_SCHEMA`
+/// 6. SHA-256 correct                     → `ERR_CHECKSUM`
 ///
 /// `data` doit être non-NULL (vérifié par l'appelant FFI).
 pub(crate) fn validate_header(data: &[u8]) -> Result<Header, i32> {
@@ -73,9 +78,10 @@ pub(crate) fn validate_header(data: &[u8]) -> Result<Header, i32> {
     let mut checksum = [0u8; 32];
     checksum.copy_from_slice(&data[24..56]);
 
-    let reserved = [
-        data[56], data[57], data[58], data[59], data[60], data[61], data[62], data[63],
-    ];
+    let stored_discriminant =
+        u64::from_le_bytes([
+            data[56], data[57], data[58], data[59], data[60], data[61], data[62], data[63]
+        ]);
 
     // 2. Magic
     if magic != *b"KALD" {
@@ -83,7 +89,7 @@ pub(crate) fn validate_header(data: &[u8]) -> Result<Header, i32> {
     }
 
     // 3. Version
-    if version != 4 {
+    if version != crate::entry::KALD_FORMAT_VERSION {
         return Err(ERR_VERSION);
     }
 
@@ -94,14 +100,15 @@ pub(crate) fn validate_header(data: &[u8]) -> Result<Header, i32> {
         return Err(ERR_FILE_SIZE);
     }
 
-    // 5. Invariant structurel
+    // 5. Invariant structurel pool_offset
     if pool_offset as u64 != 64 + (entry_count as u64) * 8 {
         return Err(ERR_FILE_SIZE);
     }
 
-    // 6. Champ réservé nul
-    if reserved != [0u8; 8] {
-        return Err(ERR_RESERVED);
+    // 6. Discriminant de layout — vérifié avant SHA-256 : inutile de hacher
+    //    un blob structurellement incompatible avec cet Engine.
+    if stored_discriminant != crate::entry::LAYOUT_DISCRIMINANT {
+        return Err(ERR_SCHEMA);
     }
 
     // 7. Checksum SHA-256(Data Body ∥ Secondary Pool)
@@ -123,7 +130,7 @@ pub(crate) fn validate_header(data: &[u8]) -> Result<Header, i32> {
         pool_offset,
         pool_size,
         checksum,
-        _reserved: reserved,
+        layout_discriminant: stored_discriminant.to_le_bytes(),
     })
 }
 
@@ -155,7 +162,9 @@ pub(crate) mod tests {
         buf[16..20].copy_from_slice(&(64u32 + n_entries * 8).to_le_bytes()); // pool_offset
         buf[20..24].copy_from_slice(&pool_size.to_le_bytes());
         buf[24..56].copy_from_slice(checksum.as_slice());
-        // _reserved octets 56..64 = 0 (vec initialisé à 0)
+        buf[56..64].copy_from_slice(
+            &crate::entry::LAYOUT_DISCRIMINANT.to_le_bytes()
+        );
 
         buf
     }
@@ -201,10 +210,11 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn err_reserved() {
+    fn err_schema() {
         let mut buf = make_valid_kald(0);
-        buf[56] = 0xFF; // _reserved non nul
-        assert_eq!(validate_header(&buf), Err(ERR_RESERVED));
+        // Discriminant corrompu — simule une dérive de layout entre Forge et Engine.
+        buf[56] ^= 0xFF;
+        assert_eq!(validate_header(&buf), Err(ERR_SCHEMA));
     }
 
     #[test]

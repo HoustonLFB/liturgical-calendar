@@ -2,6 +2,12 @@
 # Empêche l'indexation de Gigaoctets de binaires spécifiques à votre CPU
 /target/
 
+# artifacts/
+artifacts/*.kald
+artifacts/**/*.kald
+artifacts/*.lits
+artifacts/**/*.lits
+
 # --- COUCHE 2 : INFRASTRUCTURE & SECRETS ---
 # Ne jamais versionner les accès à PostgreSQL
 .env

@@ -23,23 +23,28 @@ pub const KAL_ERR_FILE_SIZE: i32 = -6;
 pub const KAL_ERR_INDEX_OOB: i32 = -7;
 /// Accès hors du Secondary Pool.
 pub const KAL_ERR_POOL_OOB: i32 = -8;
-/// Champ réservé non nul.
+/// Champ réservé non nul dans une `CalendarEntry`.
 pub const KAL_ERR_RESERVED: i32 = -9;
+/// Discriminant de layout incompatible — `header[56..64] != LAYOUT_DISCRIMINANT`.
+/// Signale une dérive de schéma entre la Forge et l'Engine (struct recompilée).
+pub const KAL_ERR_SCHEMA: i32 = -10;
 
 // Projection 1-à-1 des codes internes vers les constantes publiques FFI.
 #[inline]
 fn map_header_err(code: i32) -> i32 {
     use crate::header::{
-        ERR_BUF_TOO_SMALL, ERR_CHECKSUM, ERR_FILE_SIZE, ERR_MAGIC, ERR_RESERVED, ERR_VERSION,
+        ERR_BUF_TOO_SMALL, ERR_CHECKSUM, ERR_FILE_SIZE, ERR_MAGIC, ERR_RESERVED, ERR_SCHEMA,
+        ERR_VERSION,
     };
     match code {
         ERR_BUF_TOO_SMALL => KAL_ERR_BUF_TOO_SMALL,
-        ERR_MAGIC => KAL_ERR_MAGIC,
-        ERR_VERSION => KAL_ERR_VERSION,
-        ERR_FILE_SIZE => KAL_ERR_FILE_SIZE,
-        ERR_RESERVED => KAL_ERR_RESERVED,
-        ERR_CHECKSUM => KAL_ERR_CHECKSUM,
-        _ => unreachable!(),
+        ERR_MAGIC         => KAL_ERR_MAGIC,
+        ERR_VERSION       => KAL_ERR_VERSION,
+        ERR_FILE_SIZE     => KAL_ERR_FILE_SIZE,
+        ERR_RESERVED      => KAL_ERR_RESERVED,
+        ERR_SCHEMA        => KAL_ERR_SCHEMA,
+        ERR_CHECKSUM      => KAL_ERR_CHECKSUM,
+        _                 => unreachable!(),
     }
 }
 
@@ -343,7 +348,9 @@ mod tests {
         buf[16..20].copy_from_slice(&(64u32 + entry_count * 8).to_le_bytes());
         // pool_size = 0 (déjà 0)
         buf[24..56].copy_from_slice(checksum.as_slice());
-        // _reserved = 0 (déjà 0)
+        buf[56..64].copy_from_slice(
+            &crate::entry::LAYOUT_DISCRIMINANT.to_le_bytes()
+        );
         buf
     }
 
@@ -386,7 +393,7 @@ mod tests {
             pool_offset: 0,
             pool_size: 0,
             checksum: [0; 32],
-            _reserved: [0; 8],
+            layout_discriminant: [0; 8],
         };
         let ret = unsafe { kal_validate_header(buf.as_ptr(), buf.len(), &mut hdr as *mut Header) };
         assert_eq!(ret, KAL_ENGINE_OK);
@@ -420,11 +427,12 @@ mod tests {
     }
 
     #[test]
-    fn validate_err_reserved() {
+    fn validate_err_schema() {
         let mut buf = make_valid_kald(0);
-        buf[56] = 0xFF;
+        // Discriminant corrompu — simule une dérive de layout entre Forge et Engine.
+        buf[56] ^= 0xFF;
         let ret = unsafe { kal_validate_header(buf.as_ptr(), buf.len(), ptr::null_mut()) };
-        assert_eq!(ret, KAL_ERR_RESERVED);
+        assert_eq!(ret, KAL_ERR_SCHEMA);
     }
 
     #[test]
@@ -574,6 +582,9 @@ mod tests {
         buf[16..20].copy_from_slice(&pool_offset.to_le_bytes());
         buf[20..24].copy_from_slice(&pool_size.to_le_bytes());
         buf[24..56].copy_from_slice(checksum.as_slice());
+        buf[56..64].copy_from_slice(
+            &crate::entry::LAYOUT_DISCRIMINANT.to_le_bytes()
+        );
         buf
     }
 
