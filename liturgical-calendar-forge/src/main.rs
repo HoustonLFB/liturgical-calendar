@@ -57,7 +57,6 @@ fn run(args: &Args) -> Result<(), liturgical_calendar_forge::ForgeError> {
     // ── Résolution des chemins ────────────────────────────────────────────────
     let rite_root   = args.corpus.join(&args.rite);
     let corpus_root = rite_root.join(&args.scope);
-    let lock_path   = rite_root.join("feast_registry.lock");
 
     if !corpus_root.exists() {
         eprintln!(
@@ -90,7 +89,7 @@ fn run(args: &Args) -> Result<(), liturgical_calendar_forge::ForgeError> {
     );
 
     // ── Ingest corpus ─────────────────────────────────────────────────────────
-    let registry = ingest_corpus(&corpus_root)?;
+    let registry = ingest_corpus(&rite_root)?;
     eprintln!("[kal-forge] {} fêtes chargées", registry.len());
 
     // ── Résolution chemin de sortie ───────────────────────────────────────────
@@ -107,15 +106,10 @@ fn run(args: &Args) -> Result<(), liturgical_calendar_forge::ForgeError> {
     // lits_dir = args.out — les .lits sont écrits à plat avec un nom préfixé.
     // write_lits produit "{lang}.lits" dans lits_dir ; on renomme ensuite
     // en "{flat_name}_{lang}.lits" pour éviter toute collision inter-scopes.
-    let i18n_config = match &args.i18n {
-        Some(i18n_root) => {
-            Some(I18nConfig {
-                i18n_root: i18n_root.as_path(),
-                lits_dir:  args.out.as_path(),
-            })
-        }
-        None => None,
-    };
+    let i18n_config = args.i18n.as_ref().map(|i18n_root| I18nConfig {
+        i18n_root: i18n_root.as_path(),
+        lits_dir: args.out.as_path(),
+    });
 
     // ── Compilation ───────────────────────────────────────────────────────────
     let checksum = compile(registry, &kald_path, variant_id, i18n_config, &lock_path)?;

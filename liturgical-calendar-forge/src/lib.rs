@@ -90,6 +90,7 @@ pub fn compile(
         Some(cfg) => {
             let mut store = i18n::DictStore::new();
             let langs     = i18n::discover_and_load_i18n(cfg.i18n_root, &mut store)?;
+            i18n::remap_default_from_keys(&mut store, &registry);
             i18n::validate_i18n(&registry, &store)?;
             Some((store, langs))
         }

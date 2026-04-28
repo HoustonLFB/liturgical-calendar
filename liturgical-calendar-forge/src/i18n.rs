@@ -203,6 +203,37 @@ pub fn discover_and_load_i18n(
 }
 
 // ---------------------------------------------------------------------------
+// remap_default_from_keys
+// ---------------------------------------------------------------------------
+
+/// Remappage post-ingestion : corrige les clés `from=1969` produites par défaut
+/// quand le slug démarre après 1969 et n'a qu'une seule entrée history.
+pub fn remap_default_from_keys(
+    store:    &mut DictStore,
+    registry: &FeastRegistry,
+) {
+    let to_remap: Vec<(String, String)> = store
+        .iter_keys()
+        .filter(|(_, _slug, from)| *from == 1969)
+        .filter_map(|(lang, slug, _)| {
+            let feast = registry.get(slug)?;
+            if feast.history.len() == 1 && !feast.history.iter().any(|e| e.from == 1969) {
+                Some((lang.to_owned(), slug.to_owned()))
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    for (lang, slug) in to_remap {
+        let real_from = registry.get(&slug).unwrap().history[0].from;
+        if let Some(entry) = store.entries.remove(&(lang.clone(), slug.clone(), 1969)) {
+            store.entries.insert((lang, slug, real_from), entry);
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // validate_i18n — V-I1, V-I2
 // ---------------------------------------------------------------------------
 
