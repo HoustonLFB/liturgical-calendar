@@ -68,7 +68,7 @@ fn setup_i18n(base_dir: &PathBuf) -> PathBuf {
     let la_dir    = i18n_root.join("la");
     fs::create_dir_all(&la_dir).unwrap();
 
-    let content = "1969:\n  title: \"Dominica Resurrectionis\"\n";
+    let content = "version: 1\nhistory:\n  - from: 1969\n    label: \"Dominica Resurrectionis\"\n";
     fs::write(la_dir.join("dominica_resurrectionis.yaml"), content).unwrap();
 
     i18n_root
@@ -237,7 +237,7 @@ fn lits_provider_get_easter_2025() {
     let label = provider.get(entry.primary_id, 2025)
         .expect("LitsProvider::get doit retourner un label pour Pâques 2025");
 
-    assert_eq!(label, "Dominica Resurrectionis", "label latin inattendu : {:?}", label);
+    assert_eq!(label.label, "Dominica Resurrectionis", "label latin inattendu : {:?}", label.label);
 }
 
 // ---------------------------------------------------------------------------

@@ -157,7 +157,7 @@ mod tests {
     fn flags_encoding_roundtrip() {
         use crate::types::{Color, LiturgicalPeriod, Nature, Precedence};
 
-        let p = Precedence::MemoriaeObligatoriae as u16; // 11
+        let p = Precedence::MemoriaeAdLibitum as u16; // 11
         let c = Color::Viridis as u16; // 2
         let lp = LiturgicalPeriod::TempusOrdinarium as u16; // 0
         let n = Nature::Memoria as u16; // 2
@@ -172,7 +172,7 @@ mod tests {
             _reserved: 0,
         };
 
-        assert_eq!(entry.precedence(), Ok(Precedence::MemoriaeObligatoriae));
+        assert_eq!(entry.precedence(), Ok(Precedence::MemoriaeAdLibitum));
         assert_eq!(entry.color(), Ok(Color::Viridis));
         assert_eq!(
             entry.liturgical_period(),

@@ -92,9 +92,10 @@ impl Nature {
         match val {
             0 => Ok(Self::Sollemnitas),
             1 => Ok(Self::Festum),
-            2 => Ok(Self::Memoria),
-            3 => Ok(Self::Feria),
+            2 => Ok(Self::Dominica),
+            3 => Ok(Self::Memoria),
             4 => Ok(Self::Commemoratio),
+            5 => Ok(Self::Feria),
             v => Err(DomainError::InvalidDiscriminant(v)),
         }
     }

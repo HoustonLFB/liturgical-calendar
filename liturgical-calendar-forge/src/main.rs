@@ -57,6 +57,7 @@ fn run(args: &Args) -> Result<(), liturgical_calendar_forge::ForgeError> {
     // ── Résolution des chemins ────────────────────────────────────────────────
     let rite_root   = args.corpus.join(&args.rite);
     let corpus_root = rite_root.join(&args.scope);
+    let lock_path   = rite_root.join("feast_registry.lock");
 
     if !corpus_root.exists() {
         eprintln!(
@@ -89,26 +90,28 @@ fn run(args: &Args) -> Result<(), liturgical_calendar_forge::ForgeError> {
     );
 
     // ── Ingest corpus ─────────────────────────────────────────────────────────
-    let registry = ingest_corpus(&rite_root)?;
+    let registry = ingest_corpus(&corpus_root)?;
     eprintln!("[kal-forge] {} fêtes chargées", registry.len());
 
     // ── Résolution chemin de sortie ───────────────────────────────────────────
-    // Nom aplati : "romanus/nationalia/FR" → "romanus_nationalia_FR.kald"
+    // Nom aplati : "romanus/nationalia/FR" → "romanus_nationalia_FR"
+    // .kald : artifacts/romanus_nationalia_FR.kald
+    // .lits : artifacts/romanus_nationalia_FR_la.lits  (préfixe + code langue)
     let flat_name = scope_key.replace('/', "_");
     let kald_path = args.out.join(format!("{flat_name}.kald"));
-    let lits_dir  = args.out.join(&flat_name);
 
     std::fs::create_dir_all(&args.out)
         .map_err(liturgical_calendar_forge::ForgeError::Io)?;
 
     // ── i18n config (optionnel) ───────────────────────────────────────────────
+    // lits_dir = args.out — les .lits sont écrits à plat avec un nom préfixé.
+    // write_lits produit "{lang}.lits" dans lits_dir ; on renomme ensuite
+    // en "{flat_name}_{lang}.lits" pour éviter toute collision inter-scopes.
     let i18n_config = match &args.i18n {
         Some(i18n_root) => {
-            std::fs::create_dir_all(&lits_dir)
-                .map_err(liturgical_calendar_forge::ForgeError::Io)?;
             Some(I18nConfig {
                 i18n_root: i18n_root.as_path(),
-                lits_dir:  lits_dir.as_path(),
+                lits_dir:  args.out.as_path(),
             })
         }
         None => None,
@@ -116,9 +119,33 @@ fn run(args: &Args) -> Result<(), liturgical_calendar_forge::ForgeError> {
 
     // ── Compilation ───────────────────────────────────────────────────────────
     let checksum = compile(registry, &kald_path, variant_id, i18n_config, &lock_path)?;
+
     let build_id = u64::from_le_bytes(checksum[..8].try_into().unwrap());
     eprintln!("[kal-forge] ✓  {}", kald_path.display());
     eprintln!("[kal-forge]    build_id = {build_id:#018x}");
+
+    // ── Renommage des .lits : {lang}.lits → {flat_name}_{lang}.lits ──────────
+    // write_lits produit "{lang}.lits" dans args.out. On renomme ici pour
+    // obtenir le flat layout : romanus_universale_la.lits, etc.
+    if args.i18n.is_some() {
+        for entry in std::fs::read_dir(&args.out).map_err(liturgical_calendar_forge::ForgeError::Io)? {
+            let entry = entry.map_err(liturgical_calendar_forge::ForgeError::Io)?;
+            let path  = entry.path();
+            if path.extension().map(|e| e == "lits").unwrap_or(false) {
+                let lang = path.file_stem()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or_default();
+                // Ne renommer que les .lits sans préfixe (ceux qu'on vient de produire).
+                if !lang.contains('_') {
+                    let new_name = format!("{flat_name}_{lang}.lits");
+                    let new_path = args.out.join(&new_name);
+                    std::fs::rename(&path, &new_path)
+                        .map_err(liturgical_calendar_forge::ForgeError::Io)?;
+                    eprintln!("[kal-forge] ✓  {}", new_path.display());
+                }
+            }
+        }
+    }
 
     Ok(())
 }

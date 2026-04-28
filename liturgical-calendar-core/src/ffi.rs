@@ -343,7 +343,7 @@ mod tests {
 
         buf[0..4].copy_from_slice(b"KALD");
         buf[4..6].copy_from_slice(&4u16.to_le_bytes());
-        // variant_id, epoch, range = 0 (non vérifiés par kal_read_entry)
+        buf[8..10].copy_from_slice(&1969u16.to_le_bytes());
         buf[12..16].copy_from_slice(&entry_count.to_le_bytes());
         buf[16..20].copy_from_slice(&(64u32 + entry_count * 8).to_le_bytes());
         // pool_size = 0 (déjà 0)
@@ -658,7 +658,7 @@ mod tests {
         let mut indices = [0u32; 4];
         let mut count = 0u32;
         let rc = unsafe {
-            kal_scan_flags(ptr::null(), 0, 0x000F, 0, indices.as_mut_ptr(), 4, &mut count)
+            kal_scan_flags(ptr::null(), 0, 0, 2399, 0x000F, 0, indices.as_mut_ptr(), 4, &mut count)
         };
         assert_eq!(rc, KAL_ERR_NULL_PTR);
     }
@@ -668,7 +668,7 @@ mod tests {
         let kald = minimal_valid_kald();
         let mut count = 0u32;
         let rc = unsafe {
-            kal_scan_flags(kald.as_ptr(), kald.len(), 0, 0, ptr::null_mut(), 0, &mut count)
+            kal_scan_flags(kald.as_ptr(), kald.len(), 1969, 1969, 0, 0, ptr::null_mut(), 0, &mut count)
         };
         assert_eq!(rc, KAL_ERR_NULL_PTR);
     }
@@ -678,7 +678,7 @@ mod tests {
         let kald = minimal_valid_kald();
         let mut indices = [0u32; 4];
         let rc = unsafe {
-            kal_scan_flags(kald.as_ptr(), kald.len(), 0, 0, indices.as_mut_ptr(), 4, ptr::null_mut())
+            kal_scan_flags(kald.as_ptr(), kald.len(), 1969, 1969, 0, 0, indices.as_mut_ptr(), 4, ptr::null_mut())
         };
         assert_eq!(rc, KAL_ERR_NULL_PTR);
     }
@@ -690,7 +690,7 @@ mod tests {
         let mut indices = [0u32; 4];
         let mut count = 0u32;
         let rc = unsafe {
-            kal_scan_flags(kald.as_ptr(), kald.len(), 0x000F, 0, indices.as_mut_ptr(), 4, &mut count)
+            kal_scan_flags(kald.as_ptr(), kald.len(), 1969, 1969, 0x000F, 0, indices.as_mut_ptr(), 4, &mut count)
         };
         assert_eq!(rc, KAL_ENGINE_OK);
         assert_eq!(count, 0);
@@ -704,7 +704,7 @@ mod tests {
         let mut indices = [0u32; 4];
         let mut count = 0u32;
         let rc = unsafe {
-            kal_scan_flags(kald.as_ptr(), kald.len(), 0x000F, 7, indices.as_mut_ptr(), 4, &mut count)
+            kal_scan_flags(kald.as_ptr(), kald.len(), 1969, 1969, 0x000F, 7, indices.as_mut_ptr(), 4, &mut count)
         };
         assert_eq!(rc, KAL_ENGINE_OK);
         assert_eq!(count, 1);
@@ -717,7 +717,7 @@ mod tests {
         let mut indices = [0u32; 4];
         let mut count = 0u32;
         let rc = unsafe {
-            kal_scan_flags(kald.as_ptr(), kald.len(), 0x000F, 7, indices.as_mut_ptr(), 4, &mut count)
+            kal_scan_flags(kald.as_ptr(), kald.len(), 1969, 1969, 0x000F, 7, indices.as_mut_ptr(), 4, &mut count)
         };
         assert_eq!(rc, KAL_ENGINE_OK);
         assert_eq!(count, 0);
@@ -728,16 +728,16 @@ mod tests {
         // 3 entrées avec flags=0x0007, buffer capacity=1.
         let mut kald = make_valid_kald(3);
         for i in 0u32..3 {
-            let off = 64 + i as usize * 8 + 4;
-            kald[off..off + 2].copy_from_slice(&0x0007u16.to_le_bytes());
-            // Recalculer primary_id non-nul pour cohérence (optionnel ici)
+            let base = 64 + i as usize * 8;
+            kald[base..base + 2].copy_from_slice(&1u16.to_le_bytes());       // primary_id = 1
+            kald[base + 4..base + 6].copy_from_slice(&0x0007u16.to_le_bytes()); // flags
         }
         let mut indices = [0u32; 1];
         let mut count = 0u32;
         // Note : make_valid_kald calcule le checksum sans nos patches — le scan
         // ne vérifie pas le checksum, donc les lectures brutes restent valides.
         let rc = unsafe {
-            kal_scan_flags(kald.as_ptr(), kald.len(), 0x000F, 7, indices.as_mut_ptr(), 1, &mut count)
+            kal_scan_flags(kald.as_ptr(), kald.len(), 1969, 1969, 0x000F, 7, indices.as_mut_ptr(), 1, &mut count)
         };
         assert_eq!(rc, KAL_ERR_BUF_TOO_SMALL);
         assert_eq!(count, 3, "count doit refléter le vrai nombre même si buffer insuffisant");
@@ -748,13 +748,14 @@ mod tests {
         // Vérifier que les indices retournés sont croissants (ordre du scan linéaire).
         let mut kald = make_valid_kald(5);
         for i in [1u32, 3, 4] {
-            let off = 64 + i as usize * 8 + 4;
-            kald[off..off + 2].copy_from_slice(&0x0003u16.to_le_bytes());
+            let base = 64 + i as usize * 8;
+            kald[base..base + 2].copy_from_slice(&1u16.to_le_bytes());       // primary_id = 1
+            kald[base + 4..base + 6].copy_from_slice(&0x0003u16.to_le_bytes()); // flags
         }
         let mut indices = [0u32; 10];
         let mut count = 0u32;
         let rc = unsafe {
-            kal_scan_flags(kald.as_ptr(), kald.len(), 0x000F, 3, indices.as_mut_ptr(), 10, &mut count)
+            kal_scan_flags(kald.as_ptr(), kald.len(), 1969, 1969, 0x000F, 3, indices.as_mut_ptr(), 10, &mut count)
         };
         assert_eq!(rc, KAL_ENGINE_OK);
         assert_eq!(count, 3);

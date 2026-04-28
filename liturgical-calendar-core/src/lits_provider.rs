@@ -12,12 +12,28 @@
 //! # Layout binaire attendu
 //!
 //! ```text
-//! [ Header   :  32 octets              ]
-//! [ Entry Table : entry_count × 10 B  ]
-//! [ String Pool : pool_size octets     ]
+//! [ Header     :  32 octets              ]
+//! [ Entry Table: entry_count × 14 octets ]
+//! [ String Pool: pool_size octets        ]
 //! ```
 //!
+//! ## Entry Table (14 octets / entrée)
+//!
+//! | Offset | Champ             | Type   |
+//! |--------|-------------------|--------|
+//! |  0.. 2 | feast_id          | u16 LE |
+//! |  2.. 4 | from              | u16 LE |
+//! |  4.. 6 | to                | u16 LE |
+//! |  6..10 | label_offset      | u32 LE |
+//! | 10..14 | annotation_offset | u32 LE | 0xFFFF_FFFF si absent
+//!
 //! Tous les entiers sont Little-Endian.
+
+/// Sentinelle inscrite par la Forge quand aucune annotation n'est définie.
+const ANNOTATION_ABSENT: u32 = u32::MAX;
+
+/// Stride d'une entrée Entry Table en octets.
+const ENTRY_STRIDE: usize = 14;
 
 /// Erreurs de construction du projecteur.
 #[derive(Debug, PartialEq, Eq)]
@@ -32,58 +48,57 @@ pub enum LitsError {
     CorruptLayout,
 }
 
+/// Label et annotation retournés par `LitsProvider::get`.
+///
+/// `annotation` est `None` si la Forge a inscrit `ANNOTATION_ABSENT`
+/// dans `annotation_offset` — l'Engine ne doit pas déréférencer dans ce cas.
+#[derive(Debug, PartialEq, Eq)]
+pub struct LitsEntry<'a> {
+    /// Titre officiel de la fête pour la langue et l'année demandées.
+    pub label:      &'a str,
+    /// Précision liturgique ou titre alternatif — `None` si absent du corpus.
+    pub annotation: Option<&'a str>,
+}
+
 /// Projecteur de mémoire sur un buffer `.lits` fourni par l'appelant.
 ///
 /// Zéro allocation. Zéro copie. Zéro état interne.
 /// Le buffer doit rester valide pour toute la durée de vie `'a`.
 pub struct LitsProvider<'a> {
-    data: &'a [u8],
-    /// Nombre d'entrées dans l'Entry Table (lu depuis le header).
+    data:        &'a [u8],
     entry_count: u32,
-    /// Offset absolu du début du String Pool dans `data`.
     pool_offset: u32,
-    /// Taille du String Pool en octets.
-    pool_size: u32,
+    pool_size:   u32,
 }
 
 impl<'a> LitsProvider<'a> {
     /// Construit le projecteur depuis un buffer brut.
     ///
     /// Valide : magic, version, cohérence `pool_offset` + `pool_size` vs `data.len()`.
-    /// Ne valide pas le SHA-256 — responsabilité du client (§9.4 spec, INV-W5).
+    /// Ne valide pas le SHA-256 — responsabilité du client (§9.4 spec).
     pub fn new(data: &'a [u8]) -> Result<Self, LitsError> {
         if data.len() < 32 {
             return Err(LitsError::BufferTooShort);
         }
 
-        // magic [0..4]
         if &data[0..4] != b"LITS" {
             return Err(LitsError::InvalidMagic);
         }
 
-        // version [4..6]
         let version = u16::from_le_bytes([data[4], data[5]]);
         if version != 1 {
             return Err(LitsError::UnsupportedVersion(version));
         }
 
-        // entry_count [20..24]
         let entry_count = u32::from_le_bytes([data[20], data[21], data[22], data[23]]);
-
-        // pool_offset [24..28]
         let pool_offset = u32::from_le_bytes([data[24], data[25], data[26], data[27]]);
+        let pool_size   = u32::from_le_bytes([data[28], data[29], data[30], data[31]]);
 
-        // pool_size [28..32]
-        let pool_size = u32::from_le_bytes([data[28], data[29], data[30], data[31]]);
-
-        // Cohérence du layout
-        // pool_offset == 32 + entry_count * 10 (invariant spec §9.2)
-        let expected_pool_offset: u64 = 32u64 + (entry_count as u64) * 10;
+        // pool_offset == 32 + entry_count × 14 (invariant spec §9.2)
+        let expected_pool_offset: u64 = 32u64 + (entry_count as u64) * (ENTRY_STRIDE as u64);
         let file_end: u64 = (pool_offset as u64) + (pool_size as u64);
 
-        if (pool_offset as u64) != expected_pool_offset
-            || file_end != data.len() as u64
-        {
+        if (pool_offset as u64) != expected_pool_offset || file_end != data.len() as u64 {
             return Err(LitsError::CorruptLayout);
         }
 
@@ -99,41 +114,27 @@ impl<'a> LitsProvider<'a> {
         &self.data[12..20]
     }
 
-    /// Retourne le label (titre) pour `(feast_id, year)`.
+    /// Retourne le `LitsEntry` pour `(feast_id, year)`, ou `None` si absent.
     ///
-    /// Algorithme : recherche binaire sur `feast_id` → scan linéaire
-    /// des tranches `[from, to]` pour trouver la tranche couvrant `year`.
-    ///
-    /// Retourne `None` si aucune entrée ne couvre `(feast_id, year)`.
-    /// Ce n'est pas une erreur — le client gère l'affichage (fallback, "?", ID brut).
+    /// Algorithme : recherche binaire sur `feast_id` → scan linéaire des tranches
+    /// `[from, to]` pour trouver celle couvrant `year`.
     ///
     /// Complexité : O(log N + K), N = `entry_count`, K ≤ 10 (tranches par fête).
-    pub fn get(&self, feast_id: u16, year: u16) -> Option<&'a str> {
+    pub fn get(&self, feast_id: u16, year: u16) -> Option<LitsEntry<'a>> {
         if self.entry_count == 0 {
             return None;
         }
 
-        // L'Entry Table commence à l'offset 32 dans le buffer.
-        // Chaque entrée : feast_id(u16) + from(u16) + to(u16) + str_offset(u32) = 10 B.
-        let table_base: usize = 32;
-
-        // ── Recherche binaire sur feast_id ────────────────────────────────────
-        // Trouve l'index de la première entrée avec feast_id == feast_id cible.
-        // Les entrées sont triées par (feast_id ASC, from ASC).
-
         let n = self.entry_count as usize;
 
+        // ── Recherche binaire sur feast_id ────────────────────────────────────
         let first = {
             let mut lo: usize = 0;
             let mut hi: usize = n;
             while lo < hi {
                 let mid = lo + (hi - lo) / 2;
-                let fid = self.read_entry_feast_id(table_base, mid);
-                if fid < feast_id {
-                    lo = mid + 1;
-                } else {
-                    hi = mid;
-                }
+                let fid = self.read_feast_id(mid);
+                if fid < feast_id { lo = mid + 1; } else { hi = mid; }
             }
             lo
         };
@@ -142,21 +143,26 @@ impl<'a> LitsProvider<'a> {
             return None;
         }
 
-        // ── Scan linéaire des tranches [from, to] pour ce feast_id ────────────
+        // ── Scan linéaire des tranches [from, to] ────────────────────────────
         let mut idx = first;
         while idx < n {
-            let fid = self.read_entry_feast_id(table_base, idx);
-            if fid != feast_id {
-                break; // plus d'entrées pour ce feast_id
-            }
+            if self.read_feast_id(idx) != feast_id { break; }
 
-            let from = self.read_entry_from(table_base, idx);
-            let to   = self.read_entry_to(table_base, idx);
+            let from = self.read_from(idx);
+            let to   = self.read_to(idx);
 
             if year >= from && year <= to {
-                // Tranche trouvée — lecture de la chaîne dans le String Pool
-                let str_offset = self.read_entry_str_offset(table_base, idx);
-                return self.read_string(str_offset);
+                let label_offset      = self.read_label_offset(idx);
+                let annotation_offset = self.read_annotation_offset(idx);
+
+                let label      = self.read_string(label_offset)?;
+                let annotation = if annotation_offset == ANNOTATION_ABSENT {
+                    None
+                } else {
+                    self.read_string(annotation_offset)
+                };
+
+                return Some(LitsEntry { label, annotation });
             }
 
             idx += 1;
@@ -165,39 +171,45 @@ impl<'a> LitsProvider<'a> {
         None
     }
 
-    // ── Accesseurs internes (LE, no bounds-check en release) ─────────────────
+    // ── Accesseurs Entry Table (LE) ───────────────────────────────────────────
 
     #[inline]
-    fn entry_base(&self, table_base: usize, idx: usize) -> usize {
-        table_base + idx * 10
+    fn entry_base(&self, idx: usize) -> usize {
+        32 + idx * ENTRY_STRIDE
     }
 
     #[inline]
-    fn read_entry_feast_id(&self, table_base: usize, idx: usize) -> u16 {
-        let b = self.entry_base(table_base, idx);
+    fn read_feast_id(&self, idx: usize) -> u16 {
+        let b = self.entry_base(idx);
         u16::from_le_bytes([self.data[b], self.data[b + 1]])
     }
 
     #[inline]
-    fn read_entry_from(&self, table_base: usize, idx: usize) -> u16 {
-        let b = self.entry_base(table_base, idx) + 2;
+    fn read_from(&self, idx: usize) -> u16 {
+        let b = self.entry_base(idx) + 2;
         u16::from_le_bytes([self.data[b], self.data[b + 1]])
     }
 
     #[inline]
-    fn read_entry_to(&self, table_base: usize, idx: usize) -> u16 {
-        let b = self.entry_base(table_base, idx) + 4;
+    fn read_to(&self, idx: usize) -> u16 {
+        let b = self.entry_base(idx) + 4;
         u16::from_le_bytes([self.data[b], self.data[b + 1]])
     }
 
     #[inline]
-    fn read_entry_str_offset(&self, table_base: usize, idx: usize) -> u32 {
-        let b = self.entry_base(table_base, idx) + 6;
+    fn read_label_offset(&self, idx: usize) -> u32 {
+        let b = self.entry_base(idx) + 6;
+        u32::from_le_bytes([self.data[b], self.data[b+1], self.data[b+2], self.data[b+3]])
+    }
+
+    #[inline]
+    fn read_annotation_offset(&self, idx: usize) -> u32 {
+        let b = self.entry_base(idx) + 10;
         u32::from_le_bytes([self.data[b], self.data[b+1], self.data[b+2], self.data[b+3]])
     }
 
     /// Lit une chaîne UTF-8 null-terminée depuis le String Pool.
-    /// `str_offset` = offset depuis le début du pool (pas du fichier).
+    /// `str_offset` est relatif au début du pool.
     #[inline]
     fn read_string(&self, str_offset: u32) -> Option<&'a str> {
         let pool_start = self.pool_offset as usize;
@@ -208,12 +220,9 @@ impl<'a> LitsProvider<'a> {
             return None;
         }
 
-        // Recherche du null-terminator
         let slice = &self.data[abs_start..pool_end];
         let len   = slice.iter().position(|&b| b == 0x00)?;
 
-        // SAFETY : le contenu a été produit par la Forge avec des chaînes UTF-8 valides.
-        // En l'absence de `unsafe`, on utilise `from_utf8` avec conversion gracieuse.
         core::str::from_utf8(&slice[..len]).ok()
     }
 }
