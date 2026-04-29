@@ -32,5 +32,5 @@ cargo run -p liturgical-calendar-forge --bin kal-forge -- \
     --scope universale \
     --corpus ./corpus \
     --out ./artifacts \
-    --i18n ./corpus/romanus/universale/i18n
+    --i18n
 ```
