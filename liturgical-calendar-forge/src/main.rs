@@ -37,9 +37,9 @@ struct Args {
     #[arg(long, default_value_t = false)]
     include_drafts: bool,
 
-    /// Racine i18n. Si fourni, produit un .lits par langue découverte.
-    #[arg(long)]
-    i18n: Option<PathBuf>,
+    /// Produit un .lits par langue découverte dans la hiérarchie i18n du rite.
+    #[arg(long, default_value_t = false)]
+    i18n: bool,
 }
 
 // ── Point d'entrée ────────────────────────────────────────────────────────────
@@ -103,13 +103,16 @@ fn run(args: &Args) -> Result<(), liturgical_calendar_forge::ForgeError> {
         .map_err(liturgical_calendar_forge::ForgeError::Io)?;
 
     // ── i18n config (optionnel) ───────────────────────────────────────────────
-    // lits_dir = args.out — les .lits sont écrits à plat avec un nom préfixé.
-    // write_lits produit "{lang}.lits" dans lits_dir ; on renomme ensuite
-    // en "{flat_name}_{lang}.lits" pour éviter toute collision inter-scopes.
-    let i18n_config = args.i18n.as_ref().map(|i18n_root| I18nConfig {
-        i18n_root: i18n_root.as_path(),
-        lits_dir: args.out.as_path(),
-    });
+    // rite_root est passé à I18nConfig — discover_and_load_i18n traverse
+    // la hiérarchie complète (universale → continentalia → nationalia → ...).
+    let i18n_config = if args.i18n {
+        Some(I18nConfig {
+            i18n_root: rite_root.as_path(),
+            lits_dir:  args.out.as_path(),
+        })
+    } else {
+        None
+    };
 
     // ── Compilation ───────────────────────────────────────────────────────────
     let checksum = compile(registry, &kald_path, variant_id, i18n_config, &lock_path)?;
@@ -121,7 +124,7 @@ fn run(args: &Args) -> Result<(), liturgical_calendar_forge::ForgeError> {
     // ── Renommage des .lits : {lang}.lits → {flat_name}_{lang}.lits ──────────
     // write_lits produit "{lang}.lits" dans args.out. On renomme ici pour
     // obtenir le flat layout : romanus_universale_la.lits, etc.
-    if args.i18n.is_some() {
+    if args.i18n {
         for entry in std::fs::read_dir(&args.out).map_err(liturgical_calendar_forge::ForgeError::Io)? {
             let entry = entry.map_err(liturgical_calendar_forge::ForgeError::Io)?;
             let path  = entry.path();

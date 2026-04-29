@@ -64,14 +64,13 @@ history:
 
 /// Construit l'arborescence i18n minimale dans `base_dir`.
 fn setup_i18n(base_dir: &PathBuf) -> PathBuf {
-    let i18n_root = base_dir.join("i18n");
-    let la_dir    = i18n_root.join("la");
+    let la_dir = base_dir.join("universale").join("i18n").join("la");
     fs::create_dir_all(&la_dir).unwrap();
 
     let content = "version: 1\nhistory:\n  - from: 1969\n    label: \"Dominica Resurrectionis\"\n";
     fs::write(la_dir.join("dominica_resurrectionis.yaml"), content).unwrap();
 
-    i18n_root
+    base_dir.to_owned() // retourne rite_root, pas i18n_root
 }
 
 // ---------------------------------------------------------------------------
@@ -97,14 +96,14 @@ fn fixture() -> &'static Fixture {
 
         fs::create_dir_all(&lits_dir).unwrap();
 
-        let i18n_root = setup_i18n(&base);
+        let _i18n_root = setup_i18n(&base);
         let registry  = minimal_registry();
 
         let kald_checksum = compile(
             registry,
             &kald,
             0,
-            Some(I18nConfig { i18n_root: &i18n_root, lits_dir: &lits_dir }),
+            Some(I18nConfig { i18n_root: &base, lits_dir: &lits_dir }),
             &base.join("feast_registry.lock"),
         )
         .expect("compile doit réussir");

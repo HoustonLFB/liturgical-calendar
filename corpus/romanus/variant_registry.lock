@@ -53,7 +53,7 @@ caroli_lwanga_et_sociorum = 4140
 casimiri = 4141
 catharinae_alexandrinae = 4142
 catharinae_senensis = 20484
-cathedra_petri_apostoli = 4143
+cathedrae_petri_apostoli = 4097
 catherinae_laboure = 28676
 cesarii_arelatensis = 28677
 christophori_magallanes_et_sociorum = 4144
@@ -73,7 +73,7 @@ damasi_i = 4152
 daudi_okelo_et_jildo_irwa = 28682
 dionysii_et_sociorum = 20486
 domina_nostra_de_la_salette = 28683
-domini_nostri_iesu_christi_regis_universi = 12289
+domini_nostri_iesu_christi_universorum_regis = 12290
 dominica_i_adventus = 12290
 dominica_i_quadragesimae = 12291
 dominica_ii_adventus = 12292
@@ -326,4 +326,6 @@ xysti_ii_et_sociorum = 4300
 yvonis = 28703
 
 [tombstones]
-"romanus/universale" = 1
+cathedra_petri_apostoli = 4143
+domini_nostri_iesu_christi_regis_universi = 12289
+"romanus/universale" = 64

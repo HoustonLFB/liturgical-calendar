@@ -145,8 +145,60 @@ pub fn parse_dict_file(
 // ---------------------------------------------------------------------------
 // discover_and_load_i18n
 // ---------------------------------------------------------------------------
+//
+// Traverse la même hiérarchie de scopes qu'`ingest_corpus` :
+//   universale → continentalia/* → nationalia/* → dioecesana/* → ordines/*
+//
+// Pour chaque scope, scanne `{scope}/i18n/{lang}/{slug}.yaml`.
+// Les langues sont accumulées sur l'ensemble des scopes (BTreeSet — déduplication).
+// Ordre de chargement : les scopes plus spécifiques écrasent les universels
+// (last-write-wins sur DictStore.insert) — conforme à l'algorithme Bottom-Up (§4).
+//
+// `rite_root` : chemin vers `corpus/{rite}/` (racine du rite, pas d'un scope).
 
 pub fn discover_and_load_i18n(
+    rite_root: &Path,
+    store:     &mut DictStore,
+) -> Result<Vec<String>, ForgeError> {
+    use std::collections::BTreeSet;
+
+    // Collecte des scope_roots dans l'ordre ingest_corpus.
+    let mut scope_roots: Vec<std::path::PathBuf> = Vec::new();
+
+    // 1. universale
+    let universale = rite_root.join("universale");
+    if universale.exists() { scope_roots.push(universale); }
+
+    // 2–5. niveaux multi-scopes
+    for level in &["continentalia", "nationalia", "dioecesana", "ordines"] {
+        let dir = rite_root.join(level);
+        if !dir.exists() { continue; }
+        let mut subs: Vec<_> = fs::read_dir(&dir)
+            .map_err(ForgeError::Io)?
+            .filter_map(|e| e.ok())
+            .map(|e| e.path())
+            .filter(|p| p.is_dir())
+            .collect();
+        subs.sort();
+        scope_roots.extend(subs);
+    }
+
+    let mut all_langs: BTreeSet<String> = BTreeSet::new();
+
+    for scope_root in &scope_roots {
+        let i18n_root = scope_root.join("i18n");
+        if !i18n_root.exists() { continue; }
+
+        let langs = scan_i18n_root(&i18n_root, store)?;
+        all_langs.extend(langs);
+    }
+
+    Ok(all_langs.into_iter().collect())
+}
+
+/// Scanne un répertoire `i18n/` unique : `{lang}/{slug}.yaml`.
+/// Retourne la liste des langues découvertes dans ce répertoire.
+fn scan_i18n_root(
     i18n_root: &Path,
     store:     &mut DictStore,
 ) -> Result<Vec<String>, ForgeError> {
