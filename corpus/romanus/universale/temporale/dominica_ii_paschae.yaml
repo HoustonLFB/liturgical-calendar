@@ -5,7 +5,14 @@ mobile:
   anchor: pascha
   offset: 7
 history:
-  - precedence: 2
+  - from: 1969
+    precedence: 2
+    nature: feria
+    color: albus
+    period: tempus_paschale
+    to: 2001
+  - from: 2002
+    precedence: 2
     nature: feria
     color: albus
     period: tempus_paschale

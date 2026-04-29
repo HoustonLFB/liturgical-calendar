@@ -178,6 +178,7 @@ pub fn discover_and_load_i18n(
             .filter_map(|e| e.ok())
             .map(|e| e.path())
             .filter(|p| p.is_dir())
+            .filter(|p| !p.join("DRAFT").exists())
             .collect();
         subs.sort();
         scope_roots.extend(subs);
