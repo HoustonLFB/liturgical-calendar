@@ -357,13 +357,15 @@ fn parse_history(slug: &str, entries: &[YamlHistoryEntry])
     Ok(result)
 }
 
-fn check_temporal_overlap(_slug: &str, entries: &[FeastHistoryEntry])
+fn check_temporal_overlap(slug: &str, entries: &[FeastHistoryEntry])
     -> Result<(), ForgeError>
 {
     let mut sorted: Vec<&FeastHistoryEntry> = entries.iter().collect();
     sorted.sort_by_key(|e| e.from);
     for i in 1..sorted.len() {
         if sorted[i].from <= sorted[i - 1].to {
+            eprintln!("[DEBUG] TemporalOverlap : slug={slug}  from[i]={} <= to[i-1]={}",
+                sorted[i].from, sorted[i - 1].to);
             return Err(RegistryError::TemporalOverlap.into());
         }
     }

@@ -1,4 +1,6 @@
 version: 1
 history:
   - from: 1969
-    label: "Cyrilli et Methodii"
+    label: "Ss. Cyrilli, monachi, et Methodii, episcopi"
+  - from: 1981 # Titre de co-patrons de l'Europe par Jean-Paul II le 31 décembre 1980
+    label: "Ss. Cyrilli, monachi, et Methodii, episcopi, compatronos Europae"

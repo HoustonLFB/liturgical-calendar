@@ -286,6 +286,60 @@ pub fn remap_default_from_keys(
 }
 
 // ---------------------------------------------------------------------------
+// propagate_labels
+// ---------------------------------------------------------------------------
+
+/// Pour chaque (lang, slug), propage le label de la tranche précédente
+/// vers les tranches suivantes qui n'ont pas de label dans le store.
+///
+/// Permet au rédacteur de n'écrire le label qu'une fois quand il ne change pas
+/// entre deux tranches history (ex: seule la precedence évolue).
+pub fn propagate_labels(
+    store:    &mut DictStore,
+    registry: &FeastRegistry,
+) {
+    for feast in registry.iter() {
+        // Trier les tranches par from ASC — ordre canonique.
+        let mut froms: Vec<u16> = feast.history.iter().map(|e| e.from).collect();
+        froms.sort();
+
+        // Pour chaque langue connue dans le store pour ce slug.
+        let langs: Vec<String> = store
+            .iter_keys()
+            .filter(|(_, s, _)| *s == feast.slug.as_str())
+            .map(|(l, _, _)| l.to_owned())
+            .collect::<std::collections::BTreeSet<_>>()
+            .into_iter()
+            .collect();
+
+        for lang in &langs {
+            let mut last_label:      Option<String> = None;
+            let mut last_annotation: Option<String> = None;
+
+            for &from in &froms {
+                match store.get(lang, &feast.slug, from) {
+                    Some(resolved) => {
+                        last_label      = Some(resolved.label.clone());
+                        last_annotation = resolved.annotation.clone();
+                    }
+                    None => {
+                        if let Some(label) = &last_label {
+                            store.insert(
+                                lang,
+                                &feast.slug,
+                                from,
+                                label.clone(),
+                                last_annotation.clone(),
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // validate_i18n — V-I1, V-I2
 // ---------------------------------------------------------------------------
 
