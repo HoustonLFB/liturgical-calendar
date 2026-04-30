@@ -5,6 +5,7 @@ date:
   month: 9
   day: 9
 history:
-  - precedence: 12
+  - from: 2003 # entrée en vigueur avec Missel Romain 2002
+    precedence: 12
     nature: memoria
     color: albus

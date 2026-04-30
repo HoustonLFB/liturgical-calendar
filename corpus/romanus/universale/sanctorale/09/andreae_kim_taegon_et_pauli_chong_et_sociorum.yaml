@@ -5,6 +5,7 @@ date:
   month: 9
   day: 20
 history:
-  - precedence: 10
+  - from: 2003 # entrée en vigueur avec Missel Romain 2002
+    precedence: 10
     nature: memoria
     color: rubeus
