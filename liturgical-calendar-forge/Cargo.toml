@@ -2,6 +2,7 @@
 name = "liturgical-calendar-forge"
 version = "0.1.0"
 edition = "2021"
+default-run = "kal-forge"
 
 [[bin]]
 name = "kal-forge"

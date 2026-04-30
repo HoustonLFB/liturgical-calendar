@@ -18,27 +18,27 @@ use liturgical_calendar_forge::{
 )]
 struct Args {
     /// Rite à compiler.
-    #[arg(long, default_value = "romanus")]
+    #[arg(short, long, default_value = "romanus")]
     rite: String,
 
-    /// Scope à compiler. Si absent, compile tous les scopes détectés dans --corpus.
-    #[arg(long, default_value = "universale")]
-    scope: String,
+    /// Scope à compiler. Si absent, compile tous les scopes non-DRAFT du rite.
+    #[arg(short, long)]
+    scope: Option<String>,
 
     /// Racine du corpus YAML.
-    #[arg(long, default_value = "./corpus")]
+    #[arg(short, long, default_value = "./corpus")]
     corpus: PathBuf,
 
-    /// Répertoire de sortie des artefacts. Par défaut : ./artifacts.
-    #[arg(long, default_value = "./artifacts")]
+    /// Répertoire de sortie des artefacts.
+    #[arg(short, long, default_value = "./artifacts")]
     out: PathBuf,
 
     /// Inclure les scopes marqués DRAFT (ignorés par défaut).
-    #[arg(long, default_value_t = false)]
+    #[arg(short = 'd', long, default_value_t = false)]
     include_drafts: bool,
 
     /// Produit un .lits par langue découverte dans la hiérarchie i18n du rite.
-    #[arg(long, default_value_t = false)]
+    #[arg(short, long, default_value_t = false)]
     i18n: bool,
 }
 
@@ -54,60 +54,78 @@ fn main() {
 }
 
 fn run(args: &Args) -> Result<(), liturgical_calendar_forge::ForgeError> {
+    let rite_root = args.corpus.join(&args.rite);
+
+    std::fs::create_dir_all(&args.out)
+        .map_err(liturgical_calendar_forge::ForgeError::Io)?;
+
+    match &args.scope {
+        Some(scope) => compile_scope(args, &rite_root, scope),
+        None        => {
+            let scopes = discover_scopes(&args.corpus, &args.rite, args.include_drafts)
+                .map_err(liturgical_calendar_forge::ForgeError::Io)?;
+            if scopes.is_empty() {
+                eprintln!("[kal-forge] aucun scope trouvé dans {}", rite_root.display());
+                return Ok(());
+            }
+            for scope_key in &scopes {
+                // scope_key = "romanus/universale" → extraire la partie après le rite
+                let scope = scope_key
+                    .strip_prefix(&format!("{}/", args.rite))
+                    .unwrap_or(scope_key);
+                if let Err(e) = compile_scope(args, &rite_root, scope) {
+                    eprintln!("[kal-forge] erreur sur {scope_key} : {e}");
+                }
+            }
+            Ok(())
+        }
+    }
+}
+
+fn compile_scope(
+    args:      &Args,
+    rite_root: &Path,
+    scope:     &str,
+) -> Result<(), liturgical_calendar_forge::ForgeError> {
     // ── Résolution des chemins ────────────────────────────────────────────────
-    let rite_root   = args.corpus.join(&args.rite);
-    let corpus_root = rite_root.join(&args.scope);
+    let corpus_root = rite_root.join(scope);
 
     if !corpus_root.exists() {
-        eprintln!(
-            "[kal-forge] scope introuvable : {}",
-            corpus_root.display()
-        );
+        eprintln!("[kal-forge] scope introuvable : {}", corpus_root.display());
         std::process::exit(1);
     }
 
     // ── Détection sentinelle DRAFT ────────────────────────────────────────────
     if !args.include_drafts && corpus_root.join("DRAFT").exists() {
         eprintln!(
-            "[kal-forge] scope ignoré (DRAFT) : {}/{}  — utilisez --include-drafts pour forcer",
-            args.rite, args.scope
+            "[kal-forge] scope ignoré (DRAFT) : {}/{}  — utilisez -d pour forcer",
+            args.rite, scope
         );
-        std::process::exit(0);
+        return Ok(());
     }
 
     // ── Chargement du variant_registry.lock ───────────────────────────────────
-    // Le lock réside à la racine du rite (partagé entre tous les scopes du rite).
-    let lock_path = args.corpus.join(&args.rite).join("variant_registry.lock");
+    let lock_path = rite_root.join("variant_registry.lock");
     let mut variant_lock = VariantRegistryLock::load(&lock_path)?;
 
-    let scope_key  = format!("{}/{}", args.rite, args.scope);
+    let scope_key  = format!("{}/{}", args.rite, scope);
     let variant_id = variant_lock.allocate(&scope_key)?;
     variant_lock.save(&lock_path)?;
 
-    eprintln!(
-        "[kal-forge] scope={scope_key}  variant_id={variant_id:#06x}"
-    );
+    eprintln!("[kal-forge] scope={scope_key}  variant_id={variant_id:#06x}");
 
     // ── Ingest corpus ─────────────────────────────────────────────────────────
-    let registry = ingest_corpus(&rite_root)?;
+    let registry = ingest_corpus(rite_root)?;
     eprintln!("[kal-forge] {} fêtes chargées", registry.len());
 
     // ── Résolution chemin de sortie ───────────────────────────────────────────
-    // Nom aplati : "romanus/nationalia/FR" → "romanus_nationalia_FR"
-    // .kald : artifacts/romanus_nationalia_FR.kald
-    // .lits : artifacts/romanus_nationalia_FR_la.lits  (préfixe + code langue)
     let flat_name = scope_key.replace('/', "_");
     let kald_path = args.out.join(format!("{flat_name}.kald"));
 
-    std::fs::create_dir_all(&args.out)
-        .map_err(liturgical_calendar_forge::ForgeError::Io)?;
-
-    // ── i18n config (optionnel) ───────────────────────────────────────────────
-    // rite_root est passé à I18nConfig — discover_and_load_i18n traverse
-    // la hiérarchie complète (universale → continentalia → nationalia → ...).
+    // ── i18n config ───────────────────────────────────────────────────────────
     let i18n_config = if args.i18n {
         Some(I18nConfig {
-            i18n_root: rite_root.as_path(),
+            i18n_root: rite_root,
             lits_dir:  args.out.as_path(),
         })
     } else {
@@ -122,17 +140,16 @@ fn run(args: &Args) -> Result<(), liturgical_calendar_forge::ForgeError> {
     eprintln!("[kal-forge]    build_id = {build_id:#018x}");
 
     // ── Renommage des .lits : {lang}.lits → {flat_name}_{lang}.lits ──────────
-    // write_lits produit "{lang}.lits" dans args.out. On renomme ici pour
-    // obtenir le flat layout : romanus_universale_la.lits, etc.
     if args.i18n {
-        for entry in std::fs::read_dir(&args.out).map_err(liturgical_calendar_forge::ForgeError::Io)? {
+        for entry in std::fs::read_dir(&args.out)
+            .map_err(liturgical_calendar_forge::ForgeError::Io)?
+        {
             let entry = entry.map_err(liturgical_calendar_forge::ForgeError::Io)?;
             let path  = entry.path();
             if path.extension().map(|e| e == "lits").unwrap_or(false) {
                 let lang = path.file_stem()
                     .and_then(|s| s.to_str())
                     .unwrap_or_default();
-                // Ne renommer que les .lits sans préfixe (ceux qu'on vient de produire).
                 if !lang.contains('_') {
                     let new_name = format!("{flat_name}_{lang}.lits");
                     let new_path = args.out.join(&new_name);
@@ -149,13 +166,14 @@ fn run(args: &Args) -> Result<(), liturgical_calendar_forge::ForgeError> {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-/// Scanne `corpus/<rite>/` et retourne la liste des scope_keys détectés,
-/// en excluant les entrées non-répertoire et les scopes DRAFT (sauf `include_drafts`).
+/// Scanne `corpus/<rite>/` et retourne les scope_keys compilables.
 ///
-/// Retourne des chemins normalisés `"<rite>/<scope>"`.
-/// Utilisé par le mode "compile tout" (scope absent en argv — non implémenté ici,
-/// prévu pour une prochaine itération).
-#[allow(dead_code)]
+/// Couvre deux niveaux :
+/// - Scopes plats : `universale` → `"romanus/universale"`
+/// - Scopes imbriqués : `nationalia/FR` → `"romanus/nationalia/FR"`
+///
+/// Exclut les scopes marqués `DRAFT` sauf si `include_drafts = true`.
+/// Résultat trié lexicographiquement — déterminisme de compilation.
 fn discover_scopes(
     corpus:         &Path,
     rite:           &str,
@@ -168,23 +186,41 @@ fn discover_scopes(
         let entry = entry?;
         let path  = entry.path();
 
-        if !path.is_dir() {
-            continue;
-        }
+        if !path.is_dir() { continue; }
 
-        // Exclure variant_registry.lock et fichiers parasites
         let name = match path.file_name().and_then(|n| n.to_str()) {
             Some(n) => n.to_owned(),
             None    => continue,
         };
 
-        if !include_drafts && path.join("DRAFT").exists() {
-            continue;
-        }
+        // Exclure les fichiers de métadonnées
+        if name.ends_with(".lock") { continue; }
 
-        scopes.push(format!("{rite}/{name}"));
+        if path.join("DRAFT").exists() && !include_drafts { continue; }
+
+        // Vérifier si ce répertoire contient directement des données corpus
+        // (sanctorale/ ou temporale/) — scope plat.
+        let has_corpus = path.join("sanctorale").exists()
+            || path.join("temporale").exists();
+
+        if has_corpus {
+            scopes.push(format!("{rite}/{name}"));
+        } else {
+            // Scope conteneur (ex: nationalia/, continentalia/) — descendre d'un niveau.
+            for sub in std::fs::read_dir(&path)? {
+                let sub  = sub?;
+                let spath = sub.path();
+                if !spath.is_dir() { continue; }
+                if spath.join("DRAFT").exists() && !include_drafts { continue; }
+                let subname = match spath.file_name().and_then(|n| n.to_str()) {
+                    Some(n) => n.to_owned(),
+                    None    => continue,
+                };
+                scopes.push(format!("{rite}/{name}/{subname}"));
+            }
+        }
     }
 
-    scopes.sort(); // ordre déterministe
+    scopes.sort();
     Ok(scopes)
 }
