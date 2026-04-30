@@ -7,6 +7,10 @@ edition = "2021"
 name = "kal-forge"
 path = "src/main.rs"
 
+[[bin]]
+name = "kal-read"
+path = "src/bin/kal_read.rs"
+
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_yml = "0.0.12"
