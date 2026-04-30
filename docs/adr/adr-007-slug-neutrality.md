@@ -42,15 +42,15 @@ Sur la plage de 430 ans couverte par la Forge, le nombre de canonisations future
 
 ### 3. Le statut est une propriété temporelle, pas une propriété d'identité
 
-Le statut liturgique (bienheureux, saint) est une information qui varie dans le temps — c'est exactement ce que le bloc `history` est conçu pour capturer. Le label textuel (« B. Ioannes Paulus II » vs « S. Ioannes Paulus II ») est externalisé dans les dictionnaires `i18n/` et versionné par `from`. Le slug n'a pas à porter cette information.
+Le statut liturgique (bienheureux, saint) est une information qui varie dans le temps — c'est exactement ce que le bloc `history` est conçu pour capturer. Le label textuel (« B. Ioannis Pauli II, papæ » vs « S. Ioannis Pauli II, papæ ») est externalisé dans les dictionnaires `i18n/` et versionné par `from`. Le slug n'a pas à porter cette information.
 
 ```yaml
 # Correct : le slug est neutre, le statut est dans l'i18n
 # i18n/la/ioannis_pauli_ii.yaml
 2011:
-  title: "B. Ioannes Paulus II, pp."
+  title: "B. Ioannis Pauli II, papæ"
 2014:
-  title: "S. Ioannes Paulus II, pp."
+  title: "S. Ioannis Pauli II, papæ"
 ```
 
 ### 4. Validation syntaxique préalable

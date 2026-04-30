@@ -6,6 +6,6 @@ date:
   day: 5
 history:
   - from: 2020
-    precedence: 12
+    precedence: 12 # Décrèt du 18 mai 2020
     nature: memoria
     color: albus

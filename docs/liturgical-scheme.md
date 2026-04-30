@@ -684,7 +684,7 @@ date:
 
 history:
   # Période 1 : Béatification (2011–2013)
-  # title → i18n/la/ioannis_pauli_ii.yaml : { 2011: { title: "B. Ioannes Paulus II" } }
+  # title → i18n/la/ioannis_pauli_ii.yaml : { 2011: { title: "B. Ioannis Pauli II, papæ" } }
   - from: 2011
     to: 2013
     precedence: 12
@@ -692,7 +692,7 @@ history:
     color: albus
 
   # Période 2 : Canonisation (2014 → indéfini)
-  # title → i18n/la/ioannis_pauli_ii.yaml : { 2014: { title: "S. Ioannes Paulus II" } }
+  # title → i18n/la/ioannis_pauli_ii.yaml : { 2014: { title: "S. Ioannis Pauli II, papæ" } }
   - from: 2014
     to: ~
     precedence: 13
@@ -745,10 +745,12 @@ La clé de premier niveau est l'année `from` du bloc `history` concerné. Les s
 
 ```yaml
 # i18n/la/ioannis_pauli_ii.yaml
-2011:
-  title: "B. Ioannes Paulus II"
-2014:
-  title: "S. Ioannes Paulus II"
+version: 1
+history:
+  - from: 2011
+    label: "B. Ioannis Pauli II, papæ"
+  - from: 2014
+    label: "S. Ioannis Pauli II, papæ"
 ```
 
 ### Clé composite implicite
@@ -1380,13 +1382,13 @@ history:
 
 ---
 
-### 9.3 Fête avec Historique — Ioannes Paulus II
+### 9.3 Fête avec Historique — Ioannis Pauli II
 
 Voir §4.3 pour l'exemple complet avec béatification (2011–2013) et canonisation (2014–présent).
 
-**Résolution de la Forge pour l'année 2012 :** `from=2011, to=2013` contient 2012 → `precedence = 11`, `nature = memoria`. Label via `ioannis_pauli_ii.2011.title` → `"B. Ioannes Paulus II"` (dict `i18n/la/`).
+**Résolution de la Forge pour l'année 2012 :** `from=2011, to=2013` contient 2012 → `precedence = 11`, `nature = memoria`. Label via `ioannis_pauli_ii.2011.title` → `"B. Ioannis Pauli II, papæ"` (dict `i18n/la/`).
 
-**Résolution pour l'année 2014 :** `from=2014, to=~` contient 2014 → `precedence = 12`, `nature = memoria`. Label via `ioannis_pauli_ii.2014.title` → `"S. Ioannes Paulus II"`.
+**Résolution pour l'année 2014 :** `from=2014, to=~` contient 2014 → `precedence = 12`, `nature = memoria`. Label via `ioannis_pauli_ii.2014.title` → `"S. Ioannis Pauli II, papæ"`.
 
 **Résolution pour l'année 2009 :** aucune entrée ne contient 2009 → `Ok(None)` → fête absente du dataset 2009.
 
@@ -1531,9 +1533,9 @@ history:
 ```yaml
 # i18n/la/ioannis_pauli_ii.yaml  ← source latine obligatoire
 2011:
-  title: "B. Ioannes Paulus II, pp."
+  title: "B. Ioannis Pauli II, papæ"
 2014:
-  title: "S. Ioannes Paulus II, pp."
+  title: "S. Ioannis Pauli II, papæ"
 ```
 
 ```yaml
@@ -1547,9 +1549,9 @@ history:
 
 | Clé composite                 | Source | Valeur résolue                                 |
 | ----------------------------- | ------ | ---------------------------------------------- |
-| `ioannis_pauli_ii.2011.title` | `la`   | `"B. Ioannes Paulus II, pp."`                  |
-| `ioannis_pauli_ii.2014.title` | `la`   | `"S. Ioannes Paulus II, pp."`                  |
-| `ioannis_pauli_ii.2011.title` | `fr`   | `"B. Ioannes Paulus II, pp."` ← fallback latin |
+| `ioannis_pauli_ii.2011.title` | `la`   | `"B. Ioannis Pauli II, papæ"`                  |
+| `ioannis_pauli_ii.2014.title` | `la`   | `"S. Ioannis Pauli II, papæ"`                  |
+| `ioannis_pauli_ii.2011.title` | `fr`   | `"B. Ioannis Pauli II, papæ"` ← fallback latin |
 | `ioannis_pauli_ii.2014.title` | `fr`   | `"Saint Jean-Paul II, pape"`                   |
 
 ---

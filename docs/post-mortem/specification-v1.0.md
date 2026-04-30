@@ -1575,7 +1575,7 @@ En cas de collision entre deux candidats sur le même jour :
 winner = argmin(precedence as u8)   ← valeur numérique minimale
 ```
 
-**Cas critique documenté — Ioannes Paulus II (canonisation 2014) :**
+**Cas critique documenté — Ioannis Pauli II (canonisation 2014) :**
 
 Après canonisation, `ioannis_pauli_ii` obtient `Precedence=12` (Memoria ad libitum, Calendarium Generale). Une Feria ordinaire du Temps Ordinaire a aussi `Precedence=12`. Il n'y a donc **pas de collision** : les deux candidats ont la même précédence, et c'est le candidat temporal qui prime par convention (§4.4 résolution d'égalité). Ce comportement est attendu pour une Memoria facultative : l'office local peut librement la célébrer ou non.
 
@@ -4779,11 +4779,9 @@ L'évolution du titre (Saint, Bienheureux, Vénérable) est portée par le champ
 ```
 slug : ioannis_pauli_ii   ← ne change jamais
   history:
-    - valid_from: 2011     ← Béatification
-      title: "B. Ioannes Paulus II"
+    - valid_from: 2011    ← Béatification
       precedence: 11
-    - valid_from: 2014     ← Canonisation
-      title: "S. Ioannes Paulus II"
+    - valid_from: 2014    ← Canonisation
       precedence: 12
 ```
 
@@ -4802,53 +4800,46 @@ slug : ioannis_pauli_ii   ← ne change jamais
 | `history`              | Séquence        | `Vec<FeastVersion>`       | Liste ordonnée des versions temporelles de la fête. Chaque entrée couvre une plage `[valid_from, valid_to]`. La Forge valide l'absence de chevauchement.                 |
 | `history[].valid_from` | Integer         | `i16`                     | Défaut : `1969`. Borne inclusive.                                                                                                                                        |
 | `history[].valid_to`   | Integer \| null | `Option<i16>`             | Défaut : `None` (version toujours active). Borne inclusive.                                                                                                              |
-| `history[].title`      | String          | `&'static str` (post-AOT) | Nom canonique displayable pour cette période (ex: `"B. Ioannes Paulus II"`). Stocké dans le `.lits`, absent du `.kald`.                                                  |
+| `history[].title`      | String          | `&'static str` (post-AOT) | Nom canonique displayable pour cette période (ex: `"B. Ioannis Pauli II, papæ"`). Stocké dans le `.lits`, absent du `.kald`.                                             |
 | `history[].precedence` | Integer         | `Precedence` (u8, 4 bits) | Domaine strict : [0, 12]. Valeurs 13–15 réservées système. **Hiérarchie inverse : valeur plus faible = priorité plus haute** (voir §4.4).                                |
 | `history[].nature`     | String (enum)   | `Nature`                  | Valeurs admises : `sollemnitas`, `festum`, `memoria`, `feria`, `commemoratio`. "Beatus/Beata" n'est pas une `Nature` — utiliser `memoria`.                               |
 | `history[].color`      | String (enum)   | `Color`                   | Valeurs : `albus`, `rubeus`, `viridis`, `violaceus`, `roseus`, `niger`. Normalisé par `normalize_color()` (Forge uniquement, §5.1).                                      |
 
 ---
 
-#### B.11.3 Exemple : Ioannes Paulus II — Slug Neutre et Versioning Temporel
+#### B.11.3 Exemple : Ioannis Pauli II — Slug Neutre et Versioning Temporel
 
 Jean-Paul II illustre deux invariants simultanément : la **neutralité du slug** et le **versioning temporel via `history`**.
 
 ```yaml
-# config/roman-rite-ordinary.yaml
-
-sanctoral_feasts:
-  - slug: ioannis_pauli_ii # ← neutre, stable, immuable après allocation
-    date: [10, 22]
-    scope: national
-    region: PL
-    category: 1
-
-    history:
-      # Version 1 : Béatification (2011)
-      # "Beatus" est un statut canonique, pas une Nature → Nature::Memoria
-      # precedence: 11 = MemoriaeObligatoriae dans le calendrier polonais
-      - valid_from: 2011
-        valid_to: 2013
-        title: "B. Ioannes Paulus II"
-        precedence: 11
-        nature: memoria
-        color: albus
-
-      # Version 2 : Canonisation (2014)
-      # Le slug ne change pas — seul le title et la precedence évoluent.
-      # precedence: 12 = FeriaePerAnnumEtMemoriaeAdLibitum (Memoria facultative)
-      #
-      # LECTURE DE LA HIÉRARCHIE (voir §4.4) :
-      # precedence 11 (obligation nationale) < precedence 12 (facultatif universel)
-      # → 11 a une priorité plus haute que 12 dans le moteur d'éviction.
-      # Les deux peuvent coexister : scopes distincts (national / universal),
-      # plages temporelles disjointes (2011-2013 / 2014-présent).
-      - valid_from: 2014
-        valid_to: ~ # None : version toujours active
-        title: "S. Ioannes Paulus II"
-        precedence: 12
-        nature: memoria
-        color: albus
+# ioannis_pauli_ii.yaml # ← neutre, stable
+version: 1
+category: 1
+class: saint
+date:
+  month: 10
+  day: 22
+history:
+  - from: 2011
+    # Béatification (2011)
+    # "Beatus" est un statut canonique, pas une Nature → Nature::Memoria
+    # precedence: 11 = MemoriaeObligatoriae dans le calendrier polonais
+    to: 2013
+    precedence: 10
+    nature: memoria
+    color: albus
+  - from: 2014
+    # Canonisation (2014)
+    # precedence: 12 = FeriaePerAnnumEtMemoriaeAdLibitum (Memoria facultative)
+    #
+    # LECTURE DE LA HIÉRARCHIE (voir §4.4) :
+    # precedence 11 (obligation nationale) < precedence 12 (facultatif universel)
+    # → 11 a une priorité plus haute que 12 dans le moteur d'éviction.
+    # Les deux peuvent coexister : scopes distincts (national / universal),
+    # plages temporelles disjointes (2011-2013 / 2014-présent).
+    precedence: 12
+    nature: memoria
+    color: albus
 ```
 
 **Pourquoi `precedence` monte de 11 à 12 à la canonisation :**

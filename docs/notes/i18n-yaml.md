@@ -16,10 +16,9 @@ Afin d'assurer une cohérence structurelle avec les fichiers de logique (`.kald`
 version: 1
 history:
   - from: 2011
-    to: 2013
-    label: "B. Ioannes Paulus II, pp."
+    label: "B. Ioannis Pauli II, papæ"
   - from: 2014
-    label: "S. Ioannes Paulus II, pp."
+    label: "S. Ioannis Pauli II, papæ"
     annotation: "Memoriae dies"
 ```
 
