@@ -3,6 +3,11 @@ name = "liturgical-calendar-core"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.77"
+license     = "MIT"          # ou "Apache-2.0" ou "MIT OR Apache-2.0"
+repository  = "https://github.com/scriptura/liturgical-calendar"
+readme      = "README.md"
+keywords    = ["liturgy", "calendar", "catholic"]
+categories  = ["science", "encoding"]
 
 [dependencies]
 sha2 = { version = "0.10", default-features = false }
