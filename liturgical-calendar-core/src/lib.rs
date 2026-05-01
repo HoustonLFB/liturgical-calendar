@@ -18,9 +18,11 @@ pub mod lits_provider;
 
 pub use entry::CalendarEntry;
 pub use ffi::{
-    kal_read_entry, kal_read_secondary, kal_validate_header, KAL_ENGINE_OK, KAL_ERR_BUF_TOO_SMALL,
-    KAL_ERR_CHECKSUM, KAL_ERR_FILE_SIZE, KAL_ERR_INDEX_OOB, KAL_ERR_MAGIC, KAL_ERR_NULL_PTR,
-    KAL_ERR_POOL_OOB, KAL_ERR_RESERVED, KAL_ERR_VERSION,
+    kal_read_entry, kal_read_secondary, kal_validate_header,
+    KAL_ENGINE_OK, KAL_ERR_BUF_TOO_SMALL, KAL_ERR_CHECKSUM,
+    KAL_ERR_FILE_SIZE, KAL_ERR_INDEX_OOB, KAL_ERR_MAGIC,
+    KAL_ERR_NULL_PTR, KAL_ERR_POOL_OOB, KAL_ERR_RESERVED,
+    KAL_ERR_SCHEMA, KAL_ERR_VERSION,
 };
 pub use header::Header;
 pub use types::{Color, DomainError, LiturgicalPeriod, Nature, Precedence};

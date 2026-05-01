@@ -5,7 +5,9 @@ date:
   month: 4
   day: 28
 history:
-  - from: 1969 # TODO: à checker
-    precedence: 12
+  # TODO: à checker
+  # entrée en vigueur avec Missel Romain 2002
+  - from: 2003
+    precedence: 10
     nature: memoria
     color: albus

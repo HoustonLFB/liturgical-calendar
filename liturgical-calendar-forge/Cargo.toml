@@ -2,13 +2,13 @@
 name = "liturgical-calendar-forge"
 version = "0.1.0"
 edition = "2021"
-desciription = "Ahead-of-time compiler for the Catholic liturgical calendar. Ingests a YAML corpus of feasts, precedence, and transfer rules, resolves all conflicts, and emits pre-validated binary artifacts (`.kald` / `.lits`) for zero-runtime-cost deployment."
+description = "Ahead-of-time compiler for the Catholic liturgical calendar. Ingests a YAML corpus of feasts, precedence, and transfer rules, resolves all conflicts, and emits pre-validated binary artifacts (`.kald` / `.lits`) for zero-runtime-cost deployment."
 default-run = "kal-forge"
-license     = "MIT"          # ou "Apache-2.0" ou "MIT OR Apache-2.0"
-repository  = "https://github.com/scriptura/liturgical-calendar"
-readme      = "README.md"
-keywords    = ["liturgical", "calendar", "yaml", "compiler", "aot"]
-categories  = ["compilers", "command-line-utilities", "parser-implementations"]
+license = "MIT"
+repository = "https://github.com/scriptura/liturgical-calendar"
+readme = "README.md"
+keywords = ["liturgical", "calendar", "yaml", "compiler", "aot"]
+categories = ["compilers", "command-line-utilities", "parser-implementations"]
 
 [[bin]]
 name = "kal-forge"
