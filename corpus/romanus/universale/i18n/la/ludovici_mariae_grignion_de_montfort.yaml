@@ -1,4 +1,5 @@
 version: 1
 history:
-  - from: 2003 # entrée en vigueur avec Missel Romain 2002
+  # entrée en vigueur avec Missel Romain 2002
+  - from: 2003
     label: "S. Ludovici Mariæ Grignion de Montfort, presbyteri"

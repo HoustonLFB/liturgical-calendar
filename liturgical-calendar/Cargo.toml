@@ -1,0 +1,13 @@
+[package]
+name        = "liturgical-calendar"
+version     = "0.1.0"
+edition     = "2021"
+description = "Liturgical calendar engine for the Catholic Novus Ordo (1969–2399) — runtime facade"
+license     = "MIT OR Apache-2.0"
+repository  = "https://github.com/nunn/liturgical-calendar"
+readme      = "README.md"
+keywords    = ["liturgy", "calendar", "catholic", "church", "novus-ordo"]
+categories  = ["science", "encoding", "no-std"]
+
+[dependencies]
+liturgical-calendar-core = { path = "../liturgical-calendar-core" }

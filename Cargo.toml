@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "liturgical-calendar",
     "liturgical-calendar-core",
     "liturgical-calendar-forge",
 ]
