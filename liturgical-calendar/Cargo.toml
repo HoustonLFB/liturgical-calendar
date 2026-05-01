@@ -10,4 +10,4 @@ keywords    = ["liturgical", "calendar", "catholic", "engine", "compiler"]
 categories  = ["data-structures", "embedded", "compilers", "command-line-utilities"]
 
 [dependencies]
-liturgical-calendar-core = { path = "../liturgical-calendar-core" }
+liturgical-calendar-core = { version = "0.1.0", path = "../liturgical-calendar-core" }
