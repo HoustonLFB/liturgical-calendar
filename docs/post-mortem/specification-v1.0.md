@@ -4247,7 +4247,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.1.2"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 authors = ["Liturgical Calendar Contributors"]
@@ -4980,7 +4980,7 @@ L'architecture résultante de ce jalon est capturée dans la présente spécific
 
 ```bash
 $ cargo tree -p liturgical-calendar-core
-liturgical-calendar-core v0.1.0
+liturgical-calendar-core v0.1.2
 # Arbre strictement vide — zéro dépendance externe.
 # Toute ligne supplémentaire invalide le jalon.
 ```

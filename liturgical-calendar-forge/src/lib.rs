@@ -40,10 +40,13 @@ use resolution::resolve_year;
 /// Si `None` est passé à `compile`, aucun `.lits` n'est produit (comportement
 /// Session B inchangé — `.kald` seul).
 pub struct I18nConfig<'a> {
-    /// Chemin vers `corpus/{rite}/i18n/` — racine de l'arborescence des dictionnaires.
+    /// Chemin vers `corpus/{rite}/` — racine du rite.
+    /// `discover_and_load_i18n` traverse la chaîne de scopes selon `scope_path`.
     pub i18n_root: &'a Path,
+    /// Scope cible — `None` = tout le rite, `Some("universale")` = universale seul.
+    /// Doit correspondre au scope utilisé pour `ingest_corpus_scoped`.
+    pub scope_path: Option<&'a str>,
     /// Répertoire de sortie pour les fichiers `.lits` produits.
-    /// Un fichier `{lang}.lits` y est écrit par langue découverte.
     pub lits_dir: &'a Path,
 }
 
@@ -89,7 +92,7 @@ pub fn compile(
     let i18n_artifacts = match &i18n {
         Some(cfg) => {
             let mut store = i18n::DictStore::new();
-            let langs     = i18n::discover_and_load_i18n(cfg.i18n_root, &mut store)?;
+            let langs = i18n::discover_and_load_i18n(cfg.i18n_root, cfg.scope_path, &mut store)?;
             i18n::remap_default_from_keys(&mut store, &registry);
             i18n::propagate_labels(&mut store, &registry);
             i18n::validate_i18n(&registry, &store)?;

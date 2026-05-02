@@ -10,3 +10,6 @@ history:
     nature: memoria
     color: albus
   - from: 1971 # Proclamation comme Docteur de l'Église par Paul VI le 4 octobre 1970, donc célébration effective à partir de 1971
+    precedence: 10
+    nature: memoria
+    color: albus

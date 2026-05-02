@@ -103,7 +103,11 @@ fn fixture() -> &'static Fixture {
             registry,
             &kald,
             0,
-            Some(I18nConfig { i18n_root: &base, lits_dir: &lits_dir }),
+            Some(I18nConfig {
+                i18n_root: &base,
+                scope_path: Some("universale"),
+                lits_dir: &lits_dir,
+            }),
             &base.join("feast_registry.lock"),
         )
         .expect("compile doit réussir");

@@ -146,42 +146,55 @@ pub fn parse_dict_file(
 // discover_and_load_i18n
 // ---------------------------------------------------------------------------
 //
-// Traverse la même hiérarchie de scopes qu'`ingest_corpus` :
-//   universale → continentalia/* → nationalia/* → dioecesana/* → ordines/*
+// Traverse la même chaîne de scopes qu'`ingest_corpus_scoped` :
+//   - scope_path = None        → tout le rite (universale + tous les sous-scopes)
+//   - scope_path = "universale" → universale uniquement
+//   - scope_path = "nationalia/FR" → universale + nationalia/FR
 //
-// Pour chaque scope, scanne `{scope}/i18n/{lang}/{slug}.yaml`.
-// Les langues sont accumulées sur l'ensemble des scopes (BTreeSet — déduplication).
-// Ordre de chargement : les scopes plus spécifiques écrasent les universels
-// (last-write-wins sur DictStore.insert) — conforme à l'algorithme Bottom-Up (§4).
+// Pour chaque scope_root, scanne `{scope}/i18n/{lang}/{slug}.yaml`.
+// Les scopes plus spécifiques écrasent les universels (last-write-wins).
 //
-// `rite_root` : chemin vers `corpus/{rite}/` (racine du rite, pas d'un scope).
+// `rite_root` : chemin vers `corpus/{rite}/`.
 
 pub fn discover_and_load_i18n(
-    rite_root: &Path,
-    store:     &mut DictStore,
+    rite_root:  &Path,
+    scope_path: Option<&str>,
+    store:      &mut DictStore,
 ) -> Result<Vec<String>, ForgeError> {
     use std::collections::BTreeSet;
 
-    // Collecte des scope_roots dans l'ordre ingest_corpus.
     let mut scope_roots: Vec<std::path::PathBuf> = Vec::new();
 
-    // 1. universale
+    // universale — toujours en premier (base)
     let universale = rite_root.join("universale");
     if universale.exists() { scope_roots.push(universale); }
 
-    // 2–5. niveaux multi-scopes
-    for level in &["continentalia", "nationalia", "dioecesana", "ordines"] {
-        let dir = rite_root.join(level);
-        if !dir.exists() { continue; }
-        let mut subs: Vec<_> = fs::read_dir(&dir)
-            .map_err(ForgeError::Io)?
-            .filter_map(|e| e.ok())
-            .map(|e| e.path())
-            .filter(|p| p.is_dir())
-            .filter(|p| !p.join("DRAFT").exists())
-            .collect();
-        subs.sort();
-        scope_roots.extend(subs);
+    match scope_path {
+        // scope cible = universale seul
+        Some("universale") => {}
+
+        // scope cible spécifique non-universel
+        Some(scope) => {
+            let scope_dir = rite_root.join(scope);
+            if scope_dir.exists() { scope_roots.push(scope_dir); }
+        }
+
+        // mode batch : tout le rite
+        None => {
+            for level in &["continentalia", "nationalia", "dioecesana", "ordines"] {
+                let dir = rite_root.join(level);
+                if !dir.exists() { continue; }
+                let mut subs: Vec<_> = fs::read_dir(&dir)
+                    .map_err(ForgeError::Io)?
+                    .filter_map(|e| e.ok())
+                    .map(|e| e.path())
+                    .filter(|p| p.is_dir())
+                    .filter(|p| !p.join("DRAFT").exists())
+                    .collect();
+                subs.sort();
+                scope_roots.extend(subs);
+            }
+        }
     }
 
     let mut all_langs: BTreeSet<String> = BTreeSet::new();
@@ -189,7 +202,6 @@ pub fn discover_and_load_i18n(
     for scope_root in &scope_roots {
         let i18n_root = scope_root.join("i18n");
         if !i18n_root.exists() { continue; }
-
         let langs = scan_i18n_root(&i18n_root, store)?;
         all_langs.extend(langs);
     }

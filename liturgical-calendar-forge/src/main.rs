@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use clap::Parser;
 use liturgical_calendar_forge::{
     compile,
-    parsing::ingest_corpus,
+    parsing::ingest_corpus_scoped,
     variant_lock::VariantRegistryLock,
     I18nConfig,
 };
@@ -115,7 +115,7 @@ fn compile_scope(
     eprintln!("[kal-forge] scope={scope_key}  variant_id={variant_id:#06x}");
 
     // ── Ingest corpus ─────────────────────────────────────────────────────────
-    let registry = ingest_corpus(rite_root)?;
+    let registry = ingest_corpus_scoped(rite_root, scope)?;
     eprintln!("[kal-forge] {} fêtes chargées", registry.len());
 
     // ── Résolution chemin de sortie ───────────────────────────────────────────
@@ -126,6 +126,7 @@ fn compile_scope(
     let i18n_config = if args.i18n {
         Some(I18nConfig {
             i18n_root: rite_root,
+            scope_path: Some(scope),
             lits_dir:  args.out.as_path(),
         })
     } else {

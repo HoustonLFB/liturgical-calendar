@@ -1,9 +1,9 @@
 version: 1
-category: 3
+category: 0
 class: lord
 mobile:
-  anchor: in_epiphania_domini
-  offset: 1
+  anchor: epiphania
+  offset: 0
 history:
   - precedence: 5
     nature: festum

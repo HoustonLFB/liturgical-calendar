@@ -127,6 +127,19 @@ pub fn resolve_epiphania(year: u16) -> u16 {
     5 + days
 }
 
+/// Premier dimanche tel que la date soit ≥ 2 janvier — plage [Jan 2, Jan 8] (DOY 1–7).
+///
+/// Utilisé par les scopes nationaux qui déplacent l'Épiphanie au dimanche
+/// le plus proche du 6 janvier dans la tradition romaine revisitée
+/// (France, Italie, Allemagne, Autriche, Suisse…).
+///
+/// `in_baptismate_domini` pour ces scopes utilise `anchor: epiphania_dominica, offset: 7`.
+pub fn resolve_epiphania_dominica(year: u16) -> u16 {
+    // Jan 2 = DOY 1. On cherche le premier dimanche dans DOY [1, 7].
+    let wd = weekday_of_doy(year, 1); // jour de la semaine du 2 janvier
+    if wd == 6 { 1 } else { 1 + (6 - wd) as u16 }
+}
+
 /// Nième dimanche du Temps Ordinaire en fonction du premier dimanche de l'Avent.
 pub fn resolve_tempus_ordinarium(adventus_doy: u16, ordinal: u8) -> u16 {
     adventus_doy.saturating_sub(7 * (35 - ordinal as u16))
@@ -140,16 +153,18 @@ pub type AnchorTable = BTreeMap<String, u16>;
 
 pub fn build_anchor_table(year: u16) -> AnchorTable {
     let mut t = BTreeMap::new();
-    let nativitas  = resolve_nativitas(year);
-    let epiphania  = resolve_epiphania(year);
-    let adventus   = resolve_adventus(year);
-    let easter     = compute_easter(year);
-    let pentecost  = easter + 49;
-    t.insert("nativitas".to_string(),  nativitas);
-    t.insert("epiphania".to_string(),  epiphania);
-    t.insert("adventus".to_string(),   adventus);
-    t.insert("pascha".to_string(),     easter);
-    t.insert("pentecostes".to_string(), pentecost);
+    let nativitas           = resolve_nativitas(year);
+    let epiphania           = resolve_epiphania(year);
+    let epiphania_dominica  = resolve_epiphania_dominica(year);
+    let adventus            = resolve_adventus(year);
+    let easter              = compute_easter(year);
+    let pentecost           = easter + 49;
+    t.insert("nativitas".to_string(),           nativitas);
+    t.insert("epiphania".to_string(),           epiphania);
+    t.insert("epiphania_dominica".to_string(),  epiphania_dominica);
+    t.insert("adventus".to_string(),            adventus);
+    t.insert("pascha".to_string(),              easter);
+    t.insert("pentecostes".to_string(),         pentecost);
     t
 }
 
@@ -159,26 +174,28 @@ pub fn build_anchor_table(year: u16) -> AnchorTable {
 
 #[derive(Debug, Clone)]
 pub struct SeasonBoundaries {
-    pub adventus:      u16,
-    pub nativitas:     u16,
-    pub epiphania:     u16,
-    pub ash_wednesday: u16,
-    pub palm_sunday:   u16,
-    pub easter:        u16,
-    pub pentecost:     u16,
+    pub adventus:             u16,
+    pub nativitas:            u16,
+    pub epiphania:            u16,
+    pub epiphania_dominica:   u16,
+    pub ash_wednesday:        u16,
+    pub palm_sunday:          u16,
+    pub easter:               u16,
+    pub pentecost:            u16,
 }
 
 impl SeasonBoundaries {
     pub fn compute(year: u16) -> Self {
         let easter = compute_easter(year);
         Self {
-            adventus:      resolve_adventus(year),
-            nativitas:     resolve_nativitas(year),
-            epiphania:     resolve_epiphania(year),
-            ash_wednesday: easter.saturating_sub(46),
-            palm_sunday:   easter.saturating_sub(7),
+            adventus:           resolve_adventus(year),
+            nativitas:          resolve_nativitas(year),
+            epiphania:          resolve_epiphania(year),
+            epiphania_dominica: resolve_epiphania_dominica(year),
+            ash_wednesday:      easter.saturating_sub(46),
+            palm_sunday:        easter.saturating_sub(7),
             easter,
-            pentecost:     easter + 49,
+            pentecost:          easter + 49,
         }
     }
 
@@ -333,7 +350,60 @@ mod tests {
         assert_eq!(resolve_tempus_ordinarium(333, 1), 95);
     }
 
-    // --- Adventus 2025 ---
+    // --- Epiphania (Baptême du Seigneur) ---
+
+    #[test]
+    fn epiphania_2025_after_jan6() {
+        // Jan 6 2025 = lundi (wd=0) → premier dimanche après = Jan 12 = DOY 11
+        assert_eq!(resolve_epiphania(2025), 11);
+    }
+
+    // --- Epiphania Dominica (Épiphanie au dimanche, scopes nationaux) ---
+
+    #[test]
+    fn epiphania_dominica_range_is_jan2_jan8() {
+        // Doit toujours tomber dans [DOY 1, DOY 7] = [Jan 2, Jan 8]
+        for year in 1969u16..=2399 {
+            let doy = resolve_epiphania_dominica(year);
+            assert!(
+                doy >= 1 && doy <= 7,
+                "year {}: epiphania_dominica DOY {} hors [1, 7]", year, doy
+            );
+        }
+    }
+
+    #[test]
+    fn epiphania_dominica_is_always_sunday() {
+        for year in 1969u16..=2399 {
+            let doy = resolve_epiphania_dominica(year);
+            assert_eq!(
+                weekday_of_doy(year, doy), 6,
+                "year {}: epiphania_dominica DOY {} n'est pas un dimanche", year, doy
+            );
+        }
+    }
+
+    #[test]
+    fn epiphania_dominica_2025_is_jan5() {
+        // Jan 2 2025 = jeudi (wd=3) → premier dimanche ≥ Jan 2 = Jan 5 = DOY 4
+        assert_eq!(resolve_epiphania_dominica(2025), 4);
+    }
+
+    #[test]
+    fn epiphania_dominica_2026_is_jan4() {
+        // Jan 2 2026 = vendredi (wd=4) → premier dimanche = Jan 4 = DOY 3
+        assert_eq!(resolve_epiphania_dominica(2026), 3);
+    }
+
+    #[test]
+    fn epiphania_dominica_when_jan2_is_sunday() {
+        // Trouver une année où Jan 2 est un dimanche → DOY doit être 1
+        // Jan 2 = dimanche si Jan 1 = samedi
+        // 2021 : Jan 1 = vendredi → Jan 2 = samedi → non
+        // 2000 : Jan 1 = samedi → Jan 2 = dimanche → DOY 1
+        assert_eq!(resolve_epiphania_dominica(2000), 1);
+        assert_eq!(weekday_of_doy(2000, 1), 6);
+    }
 
     #[test]
     fn adventus_2025_is_nov30() {

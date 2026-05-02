@@ -30,6 +30,9 @@
 //! let lits: Vec<u8> = std::fs::read("romanus_universale_la.lits").unwrap();
 //! let provider = LitsProvider::new(&lits).unwrap();
 //!
+//! // Définition de l'invariant de recherche (ID de la fête)
+//! let feast_id = 109;
+//!
 //! if let Some(entry) = provider.get(feast_id, 2025) {
 //!     println!("{}", entry.label);
 //!     if let Some(ann) = entry.annotation {

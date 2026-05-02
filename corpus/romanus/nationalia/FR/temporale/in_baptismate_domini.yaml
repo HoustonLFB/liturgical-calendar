@@ -3,8 +3,8 @@ category: 0
 class: lord
 mobile:
   anchor: epiphania_dominica
-  offset: 0
+  offset: 7
 history:
   - precedence: 2
-    nature: sollemnitas
+    nature: festum
     color: albus

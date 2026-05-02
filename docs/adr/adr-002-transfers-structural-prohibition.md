@@ -49,11 +49,13 @@ L'alternative retenue — étendre la liste des ancres mobiles — encapsule le 
 ## Conséquences
 
 **Positives :**
+
 - `transfers` conserve un sémantisme unique et auditable : collision entre slugs identifiés, jamais calcul de position.
 - L'Étape 3 reste indépendante du calendrier grégorien — elle opère sur des DOY résolus, pas sur des dates.
 - Les règles de `transfers` sont exhaustivement vérifiables au build (V-T1 à V-T4) sans simulation calendaire.
 
 **Contraintes acceptées :**
+
 - Tout nouveau cas de date mobile structurelle requiert l'extension du répertoire d'ancres et un patch `specification.md`. C'est un coût de conception, pas un coût runtime.
 
 ---

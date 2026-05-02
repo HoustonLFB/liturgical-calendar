@@ -383,21 +383,21 @@ checksum = "32a66949e030da00e8c7d4434b251670a91556f4144941d37452769c25d58a53"
 
 [[package]]
 name = "liturgical-calendar"
-version = "0.1.0"
+version = "0.1.2"
 dependencies = [
  "liturgical-calendar-core",
 ]
 
 [[package]]
 name = "liturgical-calendar-core"
-version = "0.1.0"
+version = "0.1.2"
 dependencies = [
  "sha2",
 ]
 
 [[package]]
 name = "liturgical-calendar-forge"
-version = "0.1.0"
+version = "0.1.2"
 dependencies = [
  "cbindgen",
  "clap 4.6.1",

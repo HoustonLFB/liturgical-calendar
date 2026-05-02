@@ -619,6 +619,72 @@ pub fn ingest_corpus(data_dir: &Path) -> Result<FeastRegistry, ForgeError> {
     Ok(registry)
 }
 
+/// Variante scoped d'`ingest_corpus` — ingère uniquement la chaîne de strates
+/// nécessaire pour compiler le `scope_path` cible.
+///
+/// Règle d'ingestion :
+/// - `universale` → universale uniquement.
+/// - `continentalia/{ID}` → universale + continentalia/{ID}.
+/// - `nationalia/{ISO}` → universale + nationalia/{ISO}.
+/// - `dioecesana/{ID}` → universale + dioecesana/{ID}.
+/// - `ordines/{ORDO}` → universale + ordines/{ORDO}.
+///
+/// Les strates intermédiaires (ex: continentalia quand scope = nationalia/FR)
+/// ne sont **pas** incluses automatiquement — chaque scope est autonome.
+/// Si une surcharge de continentalia est nécessaire, elle doit être intégrée
+/// via un scope dédié.
+///
+/// `rite_root` : chemin vers `corpus/{rite}/`.
+/// `scope_path` : chemin relatif du scope, ex: `"universale"`, `"nationalia/FR"`.
+pub fn ingest_corpus_scoped(
+    rite_root:  &Path,
+    scope_path: &str,
+) -> Result<FeastRegistry, ForgeError> {
+    let mut registry = FeastRegistry::new();
+
+    // Toujours ingérer universale en premier (base).
+    let universale = rite_root.join("universale");
+    if universale.exists() {
+        ingest_scope_dir(&universale, Scope::Universal, &mut registry, true)?;
+    }
+
+    // Si le scope cible est universale, on s'arrête ici.
+    if scope_path == "universale" {
+        validate_collides_targets(&registry)?;
+        return Ok(registry);
+    }
+
+    // Résolution du scope cible : "level/id" → rite_root/level/id
+    let scope_dir = rite_root.join(scope_path);
+    if !scope_dir.exists() {
+        return Err(ForgeError::Io(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("scope introuvable : {}", scope_dir.display()),
+        )));
+    }
+
+    // Déduction du Scope Rust depuis le chemin.
+    let scope_variant = scope_from_path(scope_path);
+    ingest_scope_dir(&scope_dir, scope_variant, &mut registry, false)?;
+
+    validate_collides_targets(&registry)?;
+    Ok(registry)
+}
+
+/// Déduit le variant `Scope` depuis un chemin de scope relatif.
+/// Ex: `"nationalia/FR"` → `Scope::National("FR")`.
+fn scope_from_path(scope_path: &str) -> Scope {
+    let parts: Vec<&str> = scope_path.splitn(2, '/').collect();
+    match parts.as_slice() {
+        [level, id] => match *level {
+            "nationalia" | "continentalia" => Scope::National(id.to_string()),
+            "dioecesana" | "ordines"       => Scope::Diocesan(id.to_string()),
+            _                              => Scope::Universal,
+        },
+        _ => Scope::Universal,
+    }
+}
+
 // Helpers extraits pour éviter la répétition
 fn sorted_subdirs(dir: &Path) -> Result<Vec<std::path::PathBuf>, ForgeError> {
     let mut dirs: Vec<_> = fs::read_dir(dir)

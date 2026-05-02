@@ -8,7 +8,7 @@ Point d'entrée unique pour les intégrateurs Rust. Ré-exporte l'intégralité 
 
 ```toml
 [dependencies]
-liturgical-calendar = "0.1"
+liturgical-calendar = "0.1.2"
 ```
 
 ```rust
@@ -71,8 +71,8 @@ Les artefacts `.kald` et `.lits` sont produits par [`liturgical-calendar-forge`]
 
 ## Crates du Projet
 
-| Crate | Rôle |
-|---|---|
-| `liturgical-calendar` | Façade — point d'entrée utilisateur (ce crate) |
-| [`liturgical-calendar-core`](https://crates.io/crates/liturgical-calendar-core) | Engine `no_std` — lecture des artefacts binaires |
-| [`liturgical-calendar-forge`](https://crates.io/crates/liturgical-calendar-forge) | Compilateur YAML → `.kald` + `.lits` |
+| Crate                                                                             | Rôle                                             |
+| --------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `liturgical-calendar`                                                             | Façade — point d'entrée utilisateur (ce crate)   |
+| [`liturgical-calendar-core`](https://crates.io/crates/liturgical-calendar-core)   | Engine `no_std` — lecture des artefacts binaires |
+| [`liturgical-calendar-forge`](https://crates.io/crates/liturgical-calendar-forge) | Compilateur YAML → `.kald` + `.lits`             |

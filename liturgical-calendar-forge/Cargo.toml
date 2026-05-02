@@ -1,6 +1,6 @@
 [package]
 name = "liturgical-calendar-forge"
-version = "0.1.0"
+version = "0.1.2"
 edition = "2021"
 description = "Ahead-of-time compiler for the Catholic liturgical calendar. Ingests a YAML corpus of feasts, precedence, and transfer rules, resolves all conflicts, and emits pre-validated binary artifacts (`.kald` / `.lits`) for zero-runtime-cost deployment."
 default-run = "kal-forge"
@@ -24,7 +24,7 @@ serde_yml = "0.0.12"
 sha2 = { version = "0.10", default-features = false }
 toml = "0.8"
 clap = { version = "4", features = ["derive"] }
-liturgical-calendar-core = { version = "0.1.0", path = "../liturgical-calendar-core" }
+liturgical-calendar-core = { version = "0.1.2", path = "../liturgical-calendar-core" }
 
 [features]
 std = []

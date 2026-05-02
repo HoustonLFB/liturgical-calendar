@@ -774,8 +774,8 @@ $ cargo tree -p liturgical-calendar-core
 
 **Livrables Concrets** :
 
-- `liturgical-calendar-core-0.1.0` (crate — `#![no_std]`, no alloc, 0 dépendances externes)
-- `kald-inspect-0.1.0` (binaire)
+- `liturgical-calendar-core-0.1.2` (crate — `#![no_std]`, no alloc, 0 dépendances externes)
+- `kald-inspect-0.1.2` (binaire)
 - Suite de tests avec 90%+ coverage
 - Certificat build `thumbv7em-none-eabihf`
 
@@ -1179,7 +1179,7 @@ $ liturgical-calendar-forge registry verify
 
 **Livrables** :
 
-- `liturgical-calendar-forge-0.1.0` (binaire)
+- `liturgical-calendar-forge-0.1.2` (binaire)
 - `france.kald` (fichier de test référence)
 
 ---
@@ -1906,7 +1906,7 @@ int main() {
 
 **Livrables** :
 
-- `liturgical-calendar-runtime-0.1.0` (crate + .so/.dylib)
+- `liturgical-calendar-runtime-0.1.2` (crate + .so/.dylib)
 - `kal.h` (header C Runtime)
 - `kal_engine.h` (header C Engine — no_std) **[v2.1]**
 - Tests FFI (C) : `test_ffi.c` + `test_engine_ffi.c`

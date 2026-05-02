@@ -1,12 +1,10 @@
 version: 1
-category: 3
+category: 0
 class: lord
-mobile:
-  anchor: nativitas_domini
-  # Dimanche compris entre le 2 et le 8 janvier
-  offset: 10
+date:
+  month: 1
+  day: 6
 history:
-  - to: ~
-    precedence: 2
+  - precedence: 2
     nature: sollemnitas
     color: albus
