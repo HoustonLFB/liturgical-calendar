@@ -121,10 +121,15 @@ fn full_range_triduum_2025_exactly_3_entries() {
 
     let rc = unsafe {
         kal_scan_flags(
-            kald.as_ptr(), kald.len(),
-            2025, 2025,  // ← bornes annuelles
-            0x000F, 0,
-            indices.as_mut_ptr(), 10, &mut count,
+            kald.as_ptr(),
+            kald.len(),
+            2025,
+            2025,  // ← bornes annuelles
+            0x000F,
+            0,
+            indices.as_mut_ptr(),
+            10,
+            &mut count,
         )
     };
     eprintln!("count = {}", count);

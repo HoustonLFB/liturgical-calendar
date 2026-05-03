@@ -737,7 +737,17 @@ mod tests {
         // Note : make_valid_kald calcule le checksum sans nos patches — le scan
         // ne vérifie pas le checksum, donc les lectures brutes restent valides.
         let rc = unsafe {
-            kal_scan_flags(kald.as_ptr(), kald.len(), 1969, 1969, 0x000F, 7, indices.as_mut_ptr(), 1, &mut count)
+            kal_scan_flags(
+                kald.as_ptr(),
+                kald.len(),
+                2025,
+                2025,  // ← bornes annuelles
+                0x000F,
+                0,
+                indices.as_mut_ptr(),
+                10,
+                &mut count,
+            )
         };
         assert_eq!(rc, KAL_ERR_BUF_TOO_SMALL);
         assert_eq!(count, 3, "count doit refléter le vrai nombre même si buffer insuffisant");
