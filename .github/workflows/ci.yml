@@ -50,11 +50,21 @@ jobs:
           targets: ${{ matrix.target }}
 
       # -----------------------------------------------------------------------
+      # Cache registry Cargo + artefacts compilés (clé par target)
+      # -----------------------------------------------------------------------
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+
+      # -----------------------------------------------------------------------
       # Outillage spécifique par cible
       # -----------------------------------------------------------------------
       - name: Install cross (aarch64)
         if: matrix.cross
-        run: cargo install cross --git https://github.com/cross-rs/cross
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cross
 
       - name: Install wasm-pack (wasm)
         if: matrix.wasm
@@ -111,6 +121,9 @@ jobs:
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+
       # Exécute le test `full_range_deterministic` défini dans full_range.rs.
       # Ce test compare les octets 24–55 (SHA-256 header) entre deux builds
       # successifs — il est moins coûteux et plus explicite qu'un sha256sum shell.
@@ -136,11 +149,16 @@ jobs:
       - name: Install Rust nightly (requis par cargo-fuzz / libFuzzer)
         uses: dtolnay/rust-toolchain@nightly
 
-      - name: Install cargo-fuzz
-        run: cargo install cargo-fuzz
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
 
-      # Chaque cible est limitée à 10 000 runs (-runs=10000).
-      # Un panic ou un crash fera échouer le step avec un exit code non-nul.
+      - name: Install cargo-fuzz
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-fuzz
+
+      # Chaque cible est un step indépendant : un crash sur l'une n'interrompt
+      # pas les suivantes et le statut de chacune est visible séparément.
       - name: Fuzz validate_header
         run: cargo fuzz run validate_header -- -runs=10000
 
