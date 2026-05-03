@@ -149,21 +149,27 @@ jobs:
       - name: Install Rust nightly (requis par cargo-fuzz / libFuzzer)
         uses: dtolnay/rust-toolchain@nightly
 
-      - name: Rust Cache
+      # Cache isolé : namespace distinct pour éviter toute pollution
+      # par un build.target musl ou aarch64 issu des autres jobs.
+      - name: Rust Cache (fuzz)
         uses: Swatinem/rust-cache@v2
+        with:
+          key: fuzz
 
       - name: Install cargo-fuzz
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-fuzz
 
-      # Chaque cible est un step indépendant : un crash sur l'une n'interrompt
-      # pas les suivantes et le statut de chacune est visible séparément.
+      # --target x86_64-unknown-linux-gnu explicite : force la liaison dynamique
+      # (GNU libc) requise par ASAN, quelle que soit la valeur de build.target
+      # dans .cargo/config.toml du dépôt.
+      # Chaque cible est un step indépendant : un crash n'interrompt pas les suivants.
       - name: Fuzz validate_header
-        run: cargo fuzz run validate_header -- -runs=10000
+        run: cargo fuzz run validate_header --target x86_64-unknown-linux-gnu -- -runs=10000
 
       - name: Fuzz read_entry
-        run: cargo fuzz run read_entry -- -runs=10000
+        run: cargo fuzz run read_entry --target x86_64-unknown-linux-gnu -- -runs=10000
 
       - name: Fuzz read_secondary
-        run: cargo fuzz run read_secondary -- -runs=10000
+        run: cargo fuzz run read_secondary --target x86_64-unknown-linux-gnu -- -runs=10000
