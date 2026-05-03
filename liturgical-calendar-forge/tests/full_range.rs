@@ -120,15 +120,15 @@ fn full_range_triduum_2025_exactly_3_entries() {
     let mut count = 0u32;
 
     let rc = unsafe {
-        kal_scan_flags(
+kal_scan_flags(
             kald.as_ptr(),
             kald.len(),
-            2025,
-            2025,  // ← bornes annuelles
-            0x000F,
-            0,
+            2025,                // year_from : 2025
+            2025,                // year_to   : 2025
+            0x000F,              // flag_mask : bits [3:0]
+            0,                   // flag_value : Precedence 0 (Triduum)
             indices.as_mut_ptr(),
-            10,
+            10,                  // out_capacity : aligné sur la taille de indices
             &mut count,
         )
     };

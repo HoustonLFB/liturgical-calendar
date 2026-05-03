@@ -740,12 +740,12 @@ mod tests {
             kal_scan_flags(
                 kald.as_ptr(),
                 kald.len(),
-                2025,
-                2025,  // ← bornes annuelles
-                0x000F,
-                0,
+                1969,          // year_from ← 1969 pour correspondre au buffer
+                1969,          // year_to   ← 1969
+                0x000F,        // flag_mask
+                7,             // flag_value
                 indices.as_mut_ptr(),
-                10,
+                1,
                 &mut count,
             )
         };
