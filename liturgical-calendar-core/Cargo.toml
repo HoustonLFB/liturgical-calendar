@@ -13,5 +13,15 @@ categories = ["embedded", "no-std", "parser-implementations", "data-structures"]
 [dependencies]
 sha2 = { version = "0.10", default-features = false }
 
+[dev-dependencies]
+# Benchmarking sub-microseconde — adapté aux accès O(1) et bitshift purs.
+# Nettement plus précis que Criterion sur cette plage de latence.
+divan = "0.1"
+
 [features]
 gen-headers = []
+
+# Divan requiert harness = false : il fournit son propre main().
+[[bench]]
+name = "core_bench"
+harness = false
