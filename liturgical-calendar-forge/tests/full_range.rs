@@ -188,3 +188,58 @@ fn full_range_petri_et_pauli_transfer_easter_april22() {
         );
     }
 }
+
+// ---------------------------------------------------------------------------
+// 7. Fabiani et Sebastiani — même DOY, primary + secondary
+// ---------------------------------------------------------------------------
+ 
+/// S. Fabianus (pape et martyr) et S. Sebastianus (martyr) tombent tous deux
+/// le 20 janvier (doy=19). Même précédence (Mémoire facultative).
+///
+/// Invariants vérifiés :
+/// - doy=19 : primary_id != 0 (l'une des deux fêtes occupe le slot).
+/// - secondary_count >= 1 (l'autre fête est en secondary).
+/// - Le FeastID de la fête secondaire est distinct du primaire.
+///
+/// Garantit que deux mémoires concomitantes ne s'évincent pas mutuellement
+/// et que le Secondary Pool est correctement alimenté.
+#[test]
+fn full_range_fabiani_et_sebastiani_same_doy() {
+    let kald = forge_full_range(1969..=2399).expect("forge plage complète");
+ 
+    // Choisir une année ordinaire sans conflit pascal sur doy=19.
+    for year in [2025u16, 2026, 2030] {
+        let mut e = CalendarEntry::zeroed();
+        let rc = unsafe { kal_read_entry(kald.as_ptr(), kald.len(), year, 19, &mut e) };
+        assert_eq!(rc, KAL_ENGINE_OK, "kal_read_entry KO — {year} doy=19");
+ 
+        assert_ne!(e.primary_id, 0,
+            "{year} doy=19 : primary_id nul — l'une des deux mémoires doit occuper le slot");
+ 
+        assert!(
+            e.secondary_count >= 1,
+            "{year} doy=19 : secondary_count={} — Fabiani ou Sebastiani doit être en secondary",
+            e.secondary_count
+        );
+ 
+        // Les deux FeastIDs doivent être distincts.
+        // Lecture du premier secondaire via kal_read_secondary.
+        use liturgical_calendar_core::ffi::kal_read_secondary;
+        let mut sec_ids = vec![0u16; e.secondary_count as usize];
+        let rc = unsafe {
+            kal_read_secondary(
+                kald.as_ptr(), kald.len(),
+                e.secondary_index,
+                e.secondary_count,
+                sec_ids.as_mut_ptr(),
+                e.secondary_count,
+            )
+        };
+        assert_eq!(rc, KAL_ENGINE_OK, "kal_read_secondary KO — {year} doy=19");
+        assert!(
+            sec_ids.iter().all(|&id| id != e.primary_id),
+            "{year} doy=19 : un FeastID secondaire est identique au primaire"
+        );
+    }
+}
+

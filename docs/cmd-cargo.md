@@ -34,3 +34,21 @@ cargo run -p liturgical-calendar-forge --bin kal-forge -- \
     --out ./artifacts \
     --i18n
 ```
+
+Voir les entrées du 20 janvier 2026 (doy 19) :
+
+```
+kal-read --kald ./artifacts/romanus_universale.kald --lits ./artifacts/romanus_universale_la.lits --year 2026 --doy 19
+```
+
+Voir toutes les fêtes du 1 au 31 janvier 2026 :
+
+```
+for doy in $(seq 0 30); do
+    echo -n "$(printf '%3d' $doy)  "
+    kal-read --kald ./artifacts/romanus_universale.kald \
+             --lits ./artifacts/romanus_universale_la.lits \
+             --year 2026 --doy $doy \
+    | grep -E "label|feast_id|precedence|nature|\["
+done
+```
