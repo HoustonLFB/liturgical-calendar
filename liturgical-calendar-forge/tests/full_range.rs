@@ -142,3 +142,49 @@ kal_scan_flags(
     assert_eq!(rc, KAL_ENGINE_OK);
     assert_eq!(count, 3, "Triduum pascal 2025 = exactement 3 jours Precedence-0");
 }
+
+// ---------------------------------------------------------------------------
+// 6. Transfer de Ss. Petri et Pauli
+// ---------------------------------------------------------------------------
+
+/// En 1973 et 1984, Pâques tombe le 22 avril. Le Sacré-Cœur (mobile, pascha+68)
+/// atterrit le 29 juin — date fixe de Ss. Petri et Pauli.
+/// La résolution de préséance transfère Ss. Petri et Pauli au 30 juin.
+///
+/// Ce phénomène se reproduit chaque fois que Pâques = 22 avril :
+/// 1973, 1984, 2057, 2068, 2114…
+///
+/// Invariants vérifiés :
+/// - doy=180 (29 juin) : Sacré-Cœur en primary — Ss. Petri et Pauli absent.
+/// - doy=181 (30 juin) : Ss. Petri et Pauli (0x10b3) en primary.
+#[test]
+fn full_range_petri_et_pauli_transfer_easter_april22() {
+    let kald = forge_full_range(1969..=2399).expect("forge plage complète");
+
+    // Résolution dynamique de l'ID — 1970 : Sacré-Cœur = 5 juin, pas de conflit sur doy=180.
+    let mut e_ref = CalendarEntry::zeroed();
+    let rc = unsafe { kal_read_entry(kald.as_ptr(), kald.len(), 1970, 180, &mut e_ref) };
+    assert_eq!(rc, KAL_ENGINE_OK, "kal_read_entry KO — référence 1970 doy=180");
+    let petri_et_pauli_id = e_ref.primary_id;
+    assert_ne!(petri_et_pauli_id, 0, "ID de référence nul — vérifier doy=180 en 1970");
+
+    // Années où Pâques = 22 avril → Sacré-Cœur (pascha+68) = 29 juin (doy=180).
+    // Ss. Petri et Pauli est transféré au 30 juin (doy=181).
+    for year in [1973u16, 1984] {
+        let mut e_june29 = CalendarEntry::zeroed();
+        let rc = unsafe { kal_read_entry(kald.as_ptr(), kald.len(), year, 180, &mut e_june29) };
+        assert_eq!(rc, KAL_ENGINE_OK, "kal_read_entry KO — {year} doy=180");
+        assert_ne!(
+            e_june29.primary_id, petri_et_pauli_id,
+            "doy=180 (29 juin {year}) : Ss. Petri et Pauli ne doit pas être en primary"
+        );
+
+        let mut e_june30 = CalendarEntry::zeroed();
+        let rc = unsafe { kal_read_entry(kald.as_ptr(), kald.len(), year, 181, &mut e_june30) };
+        assert_eq!(rc, KAL_ENGINE_OK, "kal_read_entry KO — {year} doy=181");
+        assert_eq!(
+            e_june30.primary_id, petri_et_pauli_id,
+            "doy=181 (30 juin {year}) : Ss. Petri et Pauli doit être en primary (transfert depuis doy=180)"
+        );
+    }
+}

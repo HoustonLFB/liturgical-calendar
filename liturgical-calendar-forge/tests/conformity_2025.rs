@@ -1,4 +1,4 @@
-//! Test d'intégration Jalon 2 — critères de sortie officiels.
+//! Test d'intégration, critères de sortie officiels.
 //!
 //! Vérifie :
 //!   1. `kal_validate_header` OK sur le `.kald` produit par `compile`.
