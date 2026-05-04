@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use clap::Parser;
 use liturgical_calendar_forge::{
     compile,
-    parsing::ingest_corpus_scoped,
+    ingestion::ingest_corpus_scoped,
     variant_lock::VariantRegistryLock,
     I18nConfig,
 };

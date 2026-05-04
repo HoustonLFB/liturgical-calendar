@@ -5,6 +5,8 @@ pub mod registry;
 pub mod lock;
 pub mod variant_lock;
 pub mod parsing;
+pub mod ingestion;
+pub mod id_alloc;
 pub mod canonicalization;
 pub mod resolution;
 pub mod materialization;
@@ -17,7 +19,9 @@ pub(crate) mod lits_writer;
 pub use variant_lock::VariantRegistryLock;
 pub use error::ForgeError;
 pub use registry::FeastRegistry;
-pub use parsing::{ingest_corpus, parse_feast_from_yaml, allocate_feast_ids};
+pub use parsing::parse_feast_from_yaml;
+pub use ingestion::ingest_corpus;
+pub use id_alloc::allocate_feast_ids;
 pub(crate) use packing::build_kald;
 pub use canonicalization::{
     CanonicalizedYear, PreResolvedTransfers, AnchorTable,
