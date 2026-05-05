@@ -14,6 +14,24 @@ cargo clippy -p liturgical-calendar-forge -- -D warnings
 cargo tree -p liturgical-calendar-forge
 ```
 
+Tout builder :
+
+```
+cargo build --workspace
+```
+
+Tout tester :
+
+```
+cargo test --workspace
+```
+
+Lancer clippmy sur le projet :
+
+```
+cargo clippy --workspace
+```
+
 Forger un binaire `.kald` :
 
 ```
