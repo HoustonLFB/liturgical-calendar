@@ -110,6 +110,10 @@ jobs:
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@nightly
+        with:
+          toolchain: nightly # ou votre version spécifique
+          targets: ${{ matrix.target }}
+          components: clippy
 
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
@@ -136,6 +140,10 @@ jobs:
 
       - name: Install Rust nightly (requis par cargo-fuzz / libFuzzer)
         uses: dtolnay/rust-toolchain@nightly
+        with:
+          toolchain: nightly # ou votre version spécifique
+          targets: ${{ matrix.target }}
+          components: clippy
 
       # ── Cache isolé : namespace distinct pour éviter toute pollution ─────────────────────
       # par un build.target musl ou aarch64 issu des autres jobs.
