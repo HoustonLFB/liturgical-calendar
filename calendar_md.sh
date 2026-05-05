@@ -118,9 +118,9 @@ print_day() {
 
     # Sortie en liste Markdown
     if [ -n "$labels" ]; then
-        printf -- '- **%03d** (%s) %s\n' "$doy" "$date_str" "$labels"
+        printf -- '- %03d **%s** %s\n' "$doy" "$date_str" "$labels"
     else
-        printf -- '- **%03d** (%s)\n' "$doy" "$date_str"
+        printf -- '- %03d **%s**\n' "$doy" "$date_str"
     fi
 }
 

@@ -32,6 +32,12 @@ Lancer clippmy sur le projet :
 cargo clippy --workspace
 ```
 
+Publier les crates sur crates.io (installation de cargo-release nécessaire) :
+
+```
+cargo publish --workspace
+```
+
 Forger un binaire `.kald` :
 
 ```
@@ -133,4 +139,16 @@ while [ $doy -le 365 ]; do
     doy=$(( doy + 7 ))
     [ $doy -eq 59 ] && doy=60
 done
+```
+
+Utiliser notre script shell pour visualiser toutes les labels d'une année :
+
+```
+./calendar_md.sh 2026
+```
+
+Idem avec création de markdowns consultables
+
+```
+./calendar_md.sh 2026 > calendar_2026.md
 ```
