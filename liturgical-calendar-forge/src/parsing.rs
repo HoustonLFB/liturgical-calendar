@@ -310,15 +310,14 @@ fn parse_history(slug: &str, entries: &[YamlHistoryEntry])
         let has_vigil_mass = entry.has_vigil_mass.unwrap_or(false);
 
         // V-Natura-Memoria — applicable uniquement si les deux champs sont présents.
-        if let (Some(nat), Some(prec)) = (nature.as_ref(), precedence) {
-            if *nat == Nature::Memoria && !matches!(prec, 9..=11) {
+        if let (Some(nat), Some(prec)) = (nature.as_ref(), precedence)
+            && *nat == Nature::Memoria && !matches!(prec, 9..=11) {
                 return Err(ParseError::InvalidMemoriaPrecedence {
                     slug:             slug.to_string(),
                     from,
                     found_precedence: prec,
                 }.into());
             }
-        }
 
         // V-Vigilia — applicable uniquement si nature est présente.
         if has_vigil_mass && nature.as_ref().is_some_and(|n| *n != Nature::Sollemnitas) {

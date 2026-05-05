@@ -46,15 +46,14 @@ pub fn allocate_feast_ids(
 
         if let Some(lock_id) = lock.get(slug) {
             // Slug connu dans le lock — vérification conflit YAML.id
-            if let Some(yaml_id) = feast.id {
-                if yaml_id != lock_id {
+            if let Some(yaml_id) = feast.id
+                && yaml_id != lock_id {
                     return Err(ForgeError::FeastIDLockConflict {
                         slug:    slug.clone(),
                         yaml_id,
                         lock_id,
                     });
                 }
-            }
             id_map.insert(slug.clone(), lock_id);
         } else {
             // Nouveau slug — allouer le prochain ID libre dans (scope, category)

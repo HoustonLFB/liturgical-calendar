@@ -613,8 +613,8 @@ pub(crate) fn resolve_year(
     // ── PASSE 5 ───────────────────────────────────────────────────────────────
 
     for (&doy, day) in &resolved_days {
-        if let Some(&expected_id) = feast_ids.get(&day.primary.slug) {
-            if expected_id != day.primary.feast_id {
+        if let Some(&expected_id) = feast_ids.get(&day.primary.slug)
+            && expected_id != day.primary.feast_id {
                 return Err(ForgeError::FeastIDMutated {
                     slug:        day.primary.slug.clone(),
                     expected_id,
@@ -622,7 +622,6 @@ pub(crate) fn resolve_year(
                     doy, year,
                 });
             }
-        }
     }
 
     Ok(ResolvedCalendar { year, days: resolved_days })
