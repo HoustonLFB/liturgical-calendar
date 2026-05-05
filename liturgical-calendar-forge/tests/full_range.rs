@@ -244,7 +244,7 @@ fn full_range_fabiani_et_sebastiani_same_doy() {
 }
 
 // ---------------------------------------------------------------------------
-// 7. 
+// 7. Dominica II per annum 2026 (DOY 17) doit être présent en primary
 // ---------------------------------------------------------------------------
 
 #[test]
@@ -255,4 +255,26 @@ fn full_range_dominica_ii_2026_segment_i() {
     let rc = unsafe { kal_read_entry(kald.as_ptr(), kald.len(), 2026, 17, &mut e) };
     assert_eq!(rc, KAL_ENGINE_OK);
     assert_ne!(e.primary_id, 0, "Dominica II 2026 absente du .kald");
+}
+
+
+// ---------------------------------------------------------------------------
+// 8. Test de non-régression
+// ---------------------------------------------------------------------------
+
+/// Mercredi des Cendres 2026 (DOY 48) doit être présent, DOY 49 doit être vide
+#[test]
+fn full_range_ash_wednesday_early_easter_2026() {
+    // Pâques 2026 = 5 avril (DOY 95 padded). Mercredi des Cendres = DOY 48 (18 fév).
+    // Régression : offset négatif franchissant le slot 59 retournait DOY 49.
+    let kald = forge_full_range(2026..=2026).unwrap();
+    let mut e = CalendarEntry::zeroed();
+    let rc = unsafe { kal_read_entry(kald.as_ptr(), kald.len(), 2026, 48, &mut e) };
+    assert_eq!(rc, KAL_ENGINE_OK);
+    assert_ne!(e.primary_id, 0, "Feria IV Cinerum absente du DOY 48 en 2026");
+    // DOY 49 doit être vide (Padding ou feria sans célébration).
+    let mut e49 = CalendarEntry::zeroed();
+    let rc = unsafe { kal_read_entry(kald.as_ptr(), kald.len(), 2026, 49, &mut e49) };
+    assert_eq!(rc, KAL_ENGINE_OK);
+    assert_eq!(e49.primary_id, 0, "DOY 49 doit être vide en 2026");
 }

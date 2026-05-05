@@ -256,8 +256,20 @@ fn feast_doy(feast_def: &FeastDef, anchors: &BTreeMap<String, u16>, year: u16) -
             Some(MONTH_STARTS[*month as usize - 1] + *day as u16 - 1)
         }
         RegistryTemporality::Mobile { anchor, offset } => {
-            let anchor_doy = anchors.get(anchor.as_str())?;
-            let doy = *anchor_doy as i32 + offset;
+            let anchor_doy = *anchors.get(anchor.as_str())? as i32;
+            let mut doy = anchor_doy + offset;
+            // Correction de franchissement du slot 59 (29 fév fictif) en année
+            // non-bissextile.  Le slot 59 est présent dans l'espace .kald mais
+            // n'existe pas dans le calendrier effectif ; un offset qui traverse
+            // ce slot en sens inverse (ancre ≥ 59, résultat < 59) compte un jour
+            // de trop.  L'inverse (ancre < 59, résultat ≥ 59) est symétrique.
+            if !is_leap_year(year) {
+                if anchor_doy >= 59 && doy < 59 {
+                    doy -= 1;
+                } else if anchor_doy < 59 && doy >= 59 {
+                    doy += 1;
+                }
+            }
             (0..=365).contains(&doy).then_some(doy as u16)
         }
         RegistryTemporality::Ordinal { ordinal } => {
