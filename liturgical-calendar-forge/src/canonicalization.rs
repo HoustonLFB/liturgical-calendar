@@ -141,8 +141,55 @@ pub fn resolve_epiphania_dominica(year: u16) -> u16 {
 }
 
 /// Nième dimanche du Temps Ordinaire en fonction du premier dimanche de l'Avent.
+/// Utilisé pour le Segment II (Pentecôte → Avent).
 pub fn resolve_tempus_ordinarium(adventus_doy: u16, ordinal: u8) -> u16 {
     adventus_doy.saturating_sub(7 * (35 - ordinal as u16))
+}
+
+/// Premier lundi après le Baptême du Seigneur (= `epiphania + 1`).
+///
+/// Ancre du Segment I du Temps Ordinaire.  Sémantiquement, c'est le
+/// début de la première semaine ordinaire ; le dimanche de cette semaine
+/// (Dominica II) tombe six jours plus tard, soit `epiphania + 7`.
+pub fn resolve_tempus_ordinarium_post_epiphaniam(year: u16) -> u16 {
+    resolve_epiphania(year) + 1
+}
+
+/// Dispatche la résolution d'un dimanche du Temps Ordinaire (ordinal N ≥ 2)
+/// entre Segment I (post-Épiphanie) et Segment II (ante-Adventum).
+///
+/// **Segment I** — `DOY = epiphania + 7·(N−1)`
+///   équivalent à `(post_epiphaniam − 1) + 7·(N−1)`.
+///
+/// **Segment II** — formule à rebours depuis l'Avent.
+///
+/// Le seuil de basculement (Mercredi des Cendres = `pascha − 46`) est calculé
+/// en interne depuis `year` — la fonction ne consulte aucun slot externe et
+/// reste conforme à INV-FORGE-4 (ADR-001).
+///
+/// **Correction pseudo-DOY** : le slot 59 (29 fév) n'existe pas en année
+/// non-bissextile.  Une séquence de dimanches issue de janvier traverse ce
+/// slot sans y atterrir : tout `seg1_raw ≥ 59` est incrémenté d'un jour pour
+/// rester sur un dimanche réel dans le calendrier effectif.
+pub fn resolve_tempus_ordinarium_dispatch(
+    year:            u16,
+    post_epiphaniam: u16,
+    adventus_doy:    u16,
+    ordinal:         u8,
+) -> u16 {
+    debug_assert!(ordinal >= 2, "L'ordinal I n'est pas associé à un dimanche propre");
+    let ash_wednesday = compute_easter(year).saturating_sub(46);
+    let seg1_raw = (post_epiphaniam - 1) + 7 * (ordinal as u16 - 1);
+    let seg1 = if !is_leap_year(year) && seg1_raw >= 59 {
+        seg1_raw + 1
+    } else {
+        seg1_raw
+    };
+    if seg1 < ash_wednesday {
+        seg1
+    } else {
+        resolve_tempus_ordinarium(adventus_doy, ordinal)
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -159,12 +206,14 @@ pub fn build_anchor_table(year: u16) -> AnchorTable {
     let adventus            = resolve_adventus(year);
     let easter              = compute_easter(year);
     let pentecost           = easter + 49;
-    t.insert("nativitas".to_string(),           nativitas);
-    t.insert("epiphania".to_string(),           epiphania);
-    t.insert("epiphania_dominica".to_string(),  epiphania_dominica);
-    t.insert("adventus".to_string(),            adventus);
-    t.insert("pascha".to_string(),              easter);
-    t.insert("pentecostes".to_string(),         pentecost);
+    let post_epiphaniam     = resolve_tempus_ordinarium_post_epiphaniam(year);
+    t.insert("nativitas".to_string(),                          nativitas);
+    t.insert("epiphania".to_string(),                          epiphania);
+    t.insert("epiphania_dominica".to_string(),                 epiphania_dominica);
+    t.insert("adventus".to_string(),                           adventus);
+    t.insert("pascha".to_string(),                             easter);
+    t.insert("pentecostes".to_string(),                        pentecost);
+    t.insert("tempus_ordinarium_post_epiphaniam".to_string(),  post_epiphaniam);
     t
 }
 
@@ -348,6 +397,84 @@ mod tests {
     #[test]
     fn tempus_ordinarium_1st() {
         assert_eq!(resolve_tempus_ordinarium(333, 1), 95);
+    }
+
+    // --- Tempus Ordinarium — Segment I (post-Épiphanie) ---
+
+    #[test]
+    fn post_epiphaniam_2026() {
+        // epiphania(2026) = DOY 10 (Jan 11) → post_epiphaniam = DOY 11 (lun. Jan 12)
+        assert_eq!(resolve_tempus_ordinarium_post_epiphaniam(2026), 11);
+    }
+
+    #[test]
+    fn post_epiphaniam_is_monday() {
+        // Le lundi suit immédiatement le dimanche du Baptême.
+        // Donc post_epiphaniam − 1 = epiphania = dimanche (wd 6).
+        // post_epiphaniam doit être un lundi (wd 0).
+        for year in 1969u16..=2399 {
+            let doy = resolve_tempus_ordinarium_post_epiphaniam(year);
+            assert_eq!(
+                weekday_of_doy(year, doy), 0,
+                "year {}: post_epiphaniam DOY {} n'est pas un lundi", year, doy
+            );
+        }
+    }
+
+    #[test]
+    fn dispatch_2026_segment_i_ordinaux_ii_vi() {
+        // 2026 : epiphania = 10, ash_wednesday = 49, adventus = 333
+        // Dominica II–VI restent dans le Segment I.
+        let post_ep  = resolve_tempus_ordinarium_post_epiphaniam(2026);
+        let adventus = resolve_adventus(2026);
+        let expected = [17u16, 24, 31, 38, 45];        // ordinaux II–VI
+        for (i, &exp) in expected.iter().enumerate() {
+            let ord = (i + 2) as u8;
+            assert_eq!(
+                resolve_tempus_ordinarium_dispatch(2026, post_ep, adventus, ord),
+                exp,
+                "Dominica {} per annum 2026", ord
+            );
+        }
+    }
+
+    #[test]
+    fn dispatch_2026_segment_i_boundary() {
+        // Dominica VII 2026 : DOY seg1 = 10 + 42 = 52 ≥ ash(49) → Segment II.
+        let post_ep  = resolve_tempus_ordinarium_post_epiphaniam(2026);
+        let adventus = resolve_adventus(2026);
+        let seg2 = resolve_tempus_ordinarium_dispatch(2026, post_ep, adventus, 7);
+        assert_eq!(seg2, resolve_tempus_ordinarium(adventus, 7));
+        assert_ne!(seg2, 52);
+    }
+
+    #[test]
+    fn dispatch_2003_pseudo_doy_gap_ordinal_8() {
+        // 2003 (non-bissextile) : epiphania = DOY 11, ordinal 8 → seg1_raw = 60.
+        // Le slot DOY 59 (29 fév fictif) est traversé sans y atterrir : +1 de correction.
+        // seg1 = 61 (2 mars) < ash_wednesday(63) → Segment I.
+        // Sans correction : DOY 60 = 1er mars = samedi (décalage d'un jour après le gap).
+        let post_ep  = resolve_tempus_ordinarium_post_epiphaniam(2003);
+        let adventus = resolve_adventus(2003);
+        let doy = resolve_tempus_ordinarium_dispatch(2003, post_ep, adventus, 8);
+        assert_eq!(doy, 61, "Dominica VIII 2003 : DOY 61 attendu (2 mars)");
+        assert_eq!(weekday_of_doy(2003, doy), 6, "DOY 61 doit être un dimanche");
+    }
+
+    #[test]
+    fn dispatch_segment_i_invariant_all_years() {
+        // Pour tout ordinal en Segment I, le DOY résolu doit être un dimanche.
+        for year in 1969u16..=2399 {
+            let post_ep  = resolve_tempus_ordinarium_post_epiphaniam(year);
+            let adventus = resolve_adventus(year);
+            for ord in 2u8..=8 {
+                let doy = resolve_tempus_ordinarium_dispatch(year, post_ep, adventus, ord);
+                assert_eq!(
+                    weekday_of_doy(year, doy), 6,
+                    "year {} ord {}: DOY {} n'est pas un dimanche", year, ord, doy
+                );
+            }
+        }
     }
 
     // --- Epiphania (Baptême du Seigneur) ---

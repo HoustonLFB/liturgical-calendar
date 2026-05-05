@@ -74,7 +74,21 @@ fn allocate_next(
     scope:    u8,
     category: u8,
 ) -> Result<u16, ForgeError> {
-    let counter = counters.entry((scope, category)).or_insert(1u16);
+    let counter = counters.entry((scope, category)).or_insert_with(|| {
+        // Initialiser au-delà du maximum déjà pinned dans ce bucket,
+        // afin de ne jamais émettre un ID déjà attribué à un slug existant.
+        let max_seq = lock
+            .entries
+            .values()
+            .copied()
+            .filter(|&id| {
+                ((id >> 14) as u8) == scope && (((id >> 12) & 0x3) as u8) == category
+            })
+            .map(|id| id & 0x0FFF)
+            .max()
+            .unwrap_or(0);
+        max_seq + 1
+    });
     loop {
         let candidate = build_feast_id(scope, category, *counter);
         *counter += 1;

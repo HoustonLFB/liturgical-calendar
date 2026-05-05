@@ -1,0 +1,10 @@
+version: 1
+category: 0
+class: lord
+mobile:
+  anchor: epiphania
+  offset: -7
+history:
+  - precedence: 6
+    nature: dominica
+    color: albus

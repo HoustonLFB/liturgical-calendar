@@ -8,7 +8,7 @@ Point d'entrée unique pour les intégrateurs Rust. Ré-exporte l'intégralité 
 
 ```toml
 [dependencies]
-liturgical-calendar = "0.1.2"
+liturgical-calendar = "0.1.3"
 ```
 
 ```rust

@@ -38,7 +38,8 @@ use crate::registry::LiturgicalPeriod as RegistryPeriod;
 
 use crate::{
     canonicalization::{
-        is_leap_year, resolve_tempus_ordinarium, CanonicalizedYear, MONTH_STARTS,
+        is_leap_year, resolve_tempus_ordinarium_dispatch,
+        resolve_tempus_ordinarium_post_epiphaniam, CanonicalizedYear, MONTH_STARTS,
     },
     error::ForgeError,
     registry::{
@@ -249,7 +250,7 @@ pub(crate) fn should_demote_to_commemoratio(
 // ─── DOY depuis FeastDef.temporality ─────────────────────────────────────────
 // Temporality est sur FeastDef, pas sur FeastHistoryEntry.
 
-fn feast_doy(feast_def: &FeastDef, anchors: &BTreeMap<String, u16>) -> Option<u16> {
+fn feast_doy(feast_def: &FeastDef, anchors: &BTreeMap<String, u16>, year: u16) -> Option<u16> {
     match feast_def.temporality.as_ref()? {  // None temporality → None DOY → skip
         RegistryTemporality::Fixed { month, day } => {
             Some(MONTH_STARTS[*month as usize - 1] + *day as u16 - 1)
@@ -260,8 +261,13 @@ fn feast_doy(feast_def: &FeastDef, anchors: &BTreeMap<String, u16>) -> Option<u1
             (0..=365).contains(&doy).then_some(doy as u16)
         }
         RegistryTemporality::Ordinal { ordinal } => {
-            let adventus = *anchors.get("adventus")?;
-            Some(resolve_tempus_ordinarium(adventus, *ordinal))
+            let adventus        = *anchors.get("adventus")?;
+            // post_epiphaniam est une fonction pure de year — calculé directement
+            // plutôt que via l'AnchorTable (ADR-001 §4 : pas de dépendance à l'état global).
+            let post_epiphaniam = resolve_tempus_ordinarium_post_epiphaniam(year);
+            Some(resolve_tempus_ordinarium_dispatch(
+                year, post_epiphaniam, adventus, *ordinal,
+            ))
         }
     }
 }
@@ -330,7 +336,7 @@ pub(crate) fn resolve_year(
             None    => continue,
         };
 
-        let doy = match feast_doy(feast_def, &canonicalized.anchors) {
+        let doy = match feast_doy(feast_def, &canonicalized.anchors, canonicalized.year) {
             Some(d) => d,
             None    => continue,
         };

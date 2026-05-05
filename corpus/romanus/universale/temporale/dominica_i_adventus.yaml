@@ -2,10 +2,9 @@ version: 1
 category: 3
 class: lord
 mobile:
-  anchor: nativitas_domini
-  # Alignement sur le 4e dimanche précédant le 25 décembre
+  anchor: adventus
   # Intervalle [27 nov, 3 déc]
-  offset: -28
+  offset: 0
 history:
   - precedence: 2
     nature: dominica

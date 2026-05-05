@@ -2,8 +2,8 @@ version: 1
 category: 3
 class: lord
 mobile:
-  anchor: nativitas_domini
-  offset: -14
+  anchor: adventus
+  offset: 14
 history:
   - precedence: 2
     nature: dominica

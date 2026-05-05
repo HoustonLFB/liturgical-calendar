@@ -243,3 +243,16 @@ fn full_range_fabiani_et_sebastiani_same_doy() {
     }
 }
 
+// ---------------------------------------------------------------------------
+// 7. 
+// ---------------------------------------------------------------------------
+
+#[test]
+fn full_range_dominica_ii_2026_segment_i() {
+    let kald = forge_full_range(2026..=2026).unwrap();
+    let mut e = CalendarEntry::zeroed();
+    // DOY 17 = Dominica II per annum 2026 (Segment I)
+    let rc = unsafe { kal_read_entry(kald.as_ptr(), kald.len(), 2026, 17, &mut e) };
+    assert_eq!(rc, KAL_ENGINE_OK);
+    assert_ne!(e.primary_id, 0, "Dominica II 2026 absente du .kald");
+}

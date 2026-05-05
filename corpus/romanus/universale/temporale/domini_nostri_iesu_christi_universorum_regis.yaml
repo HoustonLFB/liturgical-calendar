@@ -2,8 +2,8 @@ version: 1
 category: 3
 class: lord
 mobile:
-  anchor: nativitas_domini
-  offset: -35
+  anchor: adventus
+  offset: -7
 history:
   - precedence: 3
     nature: sollemnitas
