@@ -1,9 +1,9 @@
 [package]
 name = "liturgical-calendar-core"
 version = "0.1.3"
-edition = "2021"
+edition = "2024"
+rust-version = "1.97.0"
 description = "Lightning-fast, no_std, no_alloc runtime for the Catholic liturgical calendar (Novus Ordo, 1969–2399). Provides O(1) read access to pre-compiled `.kald` binary tables via a C-compatible FFI."
-rust-version = "1.77"
 license = "MIT"                                                                                                                                                                                                # ou "Apache-2.0" ou "MIT OR Apache-2.0"
 repository = "https://github.com/scriptura/liturgical-calendar"
 readme = "README.md"

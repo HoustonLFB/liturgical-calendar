@@ -58,7 +58,7 @@ fn map_header_err(code: i32) -> i32 {
 /// - `data` doit pointer sur un buffer valide d'au moins `len` octets,
 ///   ou être NULL (→ `KAL_ERR_NULL_PTR`).
 /// - `out_header`, si non-NULL, doit pointer sur un `KalHeader` accessible en écriture.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn kal_validate_header(
     data: *const u8,
     len: usize,
@@ -97,7 +97,7 @@ pub unsafe extern "C" fn kal_validate_header(
 /// # Safety
 /// - `data` doit pointer sur un buffer valide d'au moins `len` octets.
 /// - `out_entry` doit pointer sur un `KalCalendarEntry` accessible en écriture.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn kal_read_entry(
     data: *const u8,
     len: usize,
@@ -169,7 +169,7 @@ pub unsafe extern "C" fn kal_read_entry(
 /// # Safety
 /// - `data` : buffer `.kald` valide d'au moins `len` octets.
 /// - `out_ids` : buffer accessible en écriture d'au moins `out_capacity` u16s.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn kal_read_secondary(
     data:            *const u8,
     len:             usize,
@@ -177,7 +177,7 @@ pub unsafe extern "C" fn kal_read_secondary(
     secondary_count: u8,
     out_ids:         *mut u16,
     out_capacity:    u8,
-) -> i32 {
+) -> i32 { unsafe {
     // 1. NULL checks — première instruction.
     if data.is_null() || out_ids.is_null() {
         return KAL_ERR_NULL_PTR;
@@ -225,7 +225,7 @@ pub unsafe extern "C" fn kal_read_secondary(
     }
 
     KAL_ENGINE_OK
-}
+}}
 
 // ── kal_scan_flags ────────────────────────────────────────────────────────────
 
@@ -240,7 +240,7 @@ pub unsafe extern "C" fn kal_read_secondary(
 /// - `data` : buffer `.kald` valide d'au moins `len` octets.
 /// - `out_indices` : buffer accessible en écriture d'au moins `out_capacity` u32s.
 /// - `out_count` : pointeur u32 accessible en écriture.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn kal_scan_flags(
     data:         *const u8,
     len:          usize,
@@ -251,7 +251,7 @@ pub unsafe extern "C" fn kal_scan_flags(
     out_indices:  *mut u32,
     out_capacity: u32,
     out_count:    *mut u32,
-) -> i32 {
+) -> i32 { unsafe {
     if data.is_null() || out_indices.is_null() || out_count.is_null() {
         return KAL_ERR_NULL_PTR;
     }
@@ -300,7 +300,7 @@ pub unsafe extern "C" fn kal_scan_flags(
 
     out_count.write(found);
     if found > out_capacity { KAL_ERR_BUF_TOO_SMALL } else { KAL_ENGINE_OK }
-}
+}}
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
