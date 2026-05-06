@@ -136,6 +136,36 @@ pub fn compile(
             let lits_path = cfg.lits_dir.join(format!("{}.lits", lang));
             crate::lits_writer::write_lits(&lits_path, &table, lang, &kald_checksum)?;
         }
+
+        // ── Vérification de cohérence build ID ───────────────────────────────
+        // Relit les 20 premiers octets de chaque `.lits` produit et compare
+        // kald_build_id (octets 12–19) avec kald_checksum[..8].
+        // Détecte une désynchro si un artefact périmé subsiste sur disque.
+        let expected_build_id = &kald_checksum[..8];
+        for lang in &lang_refs {
+            let lits_path = cfg.lits_dir.join(format!("{}.lits", lang));
+            let header = std::fs::read(&lits_path)
+                .map_err(|e| ForgeError::ArtifactVerificationFailed {
+                    kald_path: lits_path.clone(),
+                    reason:    e.to_string(),
+                })?;
+            if header.len() < 20 {
+                return Err(ForgeError::ArtifactVerificationFailed {
+                    kald_path: lits_path.clone(),
+                    reason:    format!("header tronqué ({} octets)", header.len()),
+                });
+            }
+            let lits_build_id: [u8; 8] = header[12..20].try_into().unwrap();
+            if lits_build_id != expected_build_id {
+                let mut kald_id = [0u8; 8];
+                kald_id.copy_from_slice(expected_build_id);
+                return Err(ForgeError::ArtifactBuildIdMismatch {
+                    lits_path,
+                    lits_build_id,
+                    kald_build_id: kald_id,
+                });
+            }
+        }
     }
 
     Ok(kald_checksum)

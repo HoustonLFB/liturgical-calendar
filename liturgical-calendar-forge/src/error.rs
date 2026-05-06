@@ -121,7 +121,25 @@ pub enum ForgeError {
     ResolutionIncomplete { doy: u16, year: u16, detail: String },
     /// Validation post-écriture kal_validate_header échouée.
     
-    /// Conflit entre l'ID du fichier lock et l'ID forcé dans le YAML.
+    /// Le `.lits` existant a été produit depuis un `.kald` différent.
+    /// `kald_build_id` (octets 12–19 du header `.lits`) ne correspond pas au
+    /// `kald_checksum[..8]` du `.kald` courant.
+    ///
+    /// Cause typique : un seul des deux artefacts a été recompilé.
+    /// Fix : supprimer les deux artefacts et relancer un build complet.
+    ArtifactBuildIdMismatch {
+        lits_path:        std::path::PathBuf,
+        lits_build_id:    [u8; 8],
+        kald_build_id:    [u8; 8],
+    },
+
+    /// Le `.kald` sur disque n'a pas pu être relu pour vérification du build ID.
+    /// Cause typique : le fichier a été supprimé ou déplacé entre l'écriture et
+    /// la vérification (race condition ou erreur de script).
+    ArtifactVerificationFailed {
+        kald_path: std::path::PathBuf,
+        reason:    String,
+    },
     FeastIDLockConflict { slug: String, yaml_id: u16, lock_id: u16 },
     /// Plus d'IDs disponibles pour ce couple (scope, category).
     FeastIDExhausted { scope: u8, category: u8 },
