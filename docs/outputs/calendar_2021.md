@@ -57,7 +57,7 @@
 | 054 | **24 feb** |  |
 | 055 | **25 feb** |  |
 | 056 | **26 feb** |  |
-| 057 | **27 feb** |  |
+| 057 | **27 feb** | S. Gregorii Narecensis, abbatis et Ecclesiæ doctoris |
 | 058 | **28 feb** |  |
 | 060 | **01 mar** |  |
 | 061 | **02 mar** |  |
@@ -129,7 +129,7 @@
 | 127 | **07 may** |  |
 | 128 | **08 may** |  |
 | 129 | **09 may** | Dominica VI Paschæ |
-| 130 | **10 may** |  |
+| 130 | **10 may** | S. Ioannis de Avila, presbyteri et Ecclesiæ doctoris |
 | 131 | **11 may** |  |
 | 132 | **12 may** | Ss. Nerei et Achillei, martyrum ; S. Pancratii, martyris |
 | 133 | **13 may** | In Ascensione Domini ; Beatæ Mariæ Virginis de Fatima |
@@ -143,12 +143,12 @@
 | 141 | **21 may** | Ss. Christophori Magallanes, presbyteri, et sociorum, martyrum |
 | 142 | **22 may** | S. Ritæ de Cascia, religiosæ |
 | 143 | **23 may** | Dominica Pentecostes |
-| 144 | **24 may** |  |
+| 144 | **24 may** | Beatæ Mariæ Virginis Ecclesiæ Matris |
 | 145 | **25 may** | S. Bedæ Venerabilis, presbyteri et Ecclesiæ doctoris ; S. Gregorii VII, papæ ; S. Mariæ Magdalenæ de’ Pazzi, virginis |
 | 146 | **26 may** | S. Philippi Neri, presbyteri |
 | 147 | **27 may** | S. Augustini Cantuariensis, episcopi |
 | 148 | **28 may** |  |
-| 149 | **29 may** |  |
+| 149 | **29 may** | S. Pauli VI, papæ |
 | 150 | **30 may** | Sanctissimæ Trinitatis |
 | 151 | **31 may** | In Visitatione Beatæ Mariæ Virginis |
 | 152 | **01 jun** | S. Iustini, martyris |
@@ -209,7 +209,7 @@
 | 207 | **26 jul** | Ss. Ioachim et Annæ, parentum beatæ Mariæ Virginis |
 | 208 | **27 jul** |  |
 | 209 | **28 jul** |  |
-| 210 | **29 jul** |  |
+| 210 | **29 jul** | Ss. Marthæ, Mariæ et Lazari |
 | 211 | **30 jul** | S. Petri Chrysologi, episcopi et Ecclesiæ doctoris |
 | 212 | **31 jul** | S. Ignatii de Loyola, presbyteri |
 | 213 | **01 aug** | Dominica XVIII per annum ; S. Alfonsi Mariæ de Liguori, episcopi et Ecclesiæ doctoris |
@@ -259,7 +259,7 @@
 | 257 | **14 sep** | In Exaltatione Sanctæ Crucis |
 | 258 | **15 sep** | Beatæ Mariæ Virginis Perdolentis |
 | 259 | **16 sep** | Ss. Cornelii, papæ, et Cypriani, episcopi, martyrum |
-| 260 | **17 sep** | S. Roberti Bellarmino, episcopi et Ecclesiæ doctoris |
+| 260 | **17 sep** | S. Hildegardis Bingensis, virginis et Ecclesiæ doctoris ; S. Roberti Bellarmino, episcopi et Ecclesiæ doctoris |
 | 261 | **18 sep** |  |
 | 262 | **19 sep** | Dominica XXV per annum ; S. Ianuarii, episcopi et martyris |
 | 263 | **20 sep** | Ss. Andreæ Kim Tæ-gon presbyteri et Pauli Chong Ha-sang et sociorum, martyrum |
@@ -277,13 +277,13 @@
 | 275 | **02 oct** | Ss. Angelorum Custodum |
 | 276 | **03 oct** | Dominica XXVII per annum |
 | 277 | **04 oct** | S. Francisci Assisiensis |
-| 278 | **05 oct** |  |
+| 278 | **05 oct** | S. Faustinæ Mariæ Kowalska, virginis |
 | 279 | **06 oct** | S. Brunonis, presbyteri |
 | 280 | **07 oct** | Beatæ Mariæ Virginis a Rosario |
 | 281 | **08 oct** |  |
 | 282 | **09 oct** | Ss. Dionysii, episcopi, et sociorum, martyrum ; S. Ioannis Leonardi, presbyteri |
 | 283 | **10 oct** | Dominica XXVIII per annum |
-| 284 | **11 oct** |  |
+| 284 | **11 oct** | S. Ioannis XXIII, papæ |
 | 285 | **12 oct** |  |
 | 286 | **13 oct** |  |
 | 287 | **14 oct** | S. Callisti I, papæ et martyris |
@@ -294,7 +294,7 @@
 | 292 | **19 oct** | Ss. Ioannis de Brébeuf et Isaac Jogues, presbyterorum, et sociorum, martyrum ; S. Pauli a Cruce, presbyteri |
 | 293 | **20 oct** |  |
 | 294 | **21 oct** |  |
-| 295 | **22 oct** |  |
+| 295 | **22 oct** | S. Ioannis Pauli II, papæ |
 | 296 | **23 oct** | S. Ioannis de Capestrano, presbyteri |
 | 297 | **24 oct** | Dominica XXX per annum ; S. Antonii Mariæ Claret, episcopi |
 | 298 | **25 oct** |  |
@@ -321,7 +321,7 @@
 | 319 | **15 nov** | S. Alberti Magni, episcopi et Ecclesiæ doctoris |
 | 320 | **16 nov** | S. Gertrudis, virginis ; S. Margaritæ Scotiæ |
 | 321 | **17 nov** | S. Elisabeth Hungariæ, religiosæ |
-| 322 | **18 nov** |  |
+| 322 | **18 nov** | In Dedicatione Basilicarum Sanctorum Petri et Pauli Apostolorum |
 | 323 | **19 nov** |  |
 | 324 | **20 nov** |  |
 | 325 | **21 nov** | Domini nostri Iesu Christi universorum Regis ; In Præsentatione Beatæ Mariæ Virginis |
@@ -343,11 +343,11 @@
 | 341 | **07 dec** | S. Ambrosii, episcopi et Ecclesiæ doctoris |
 | 342 | **08 dec** | In Conceptione Immaculata Beatæ Mariæ Virginis |
 | 343 | **09 dec** | S. Ioannis Didaci Cuauhtlatoatzin |
-| 344 | **10 dec** |  |
+| 344 | **10 dec** | Beatæ Mariæ Virginis de Loreto |
 | 345 | **11 dec** | S. Damasi I, papæ |
 | 346 | **12 dec** | Dominica III Adventus ; Beatæ Mariæ Virginis de Guadalupe |
 | 347 | **13 dec** | S. Luciæ, virginis et martyris |
-| 348 | **14 dec** | Ioannis a Cruce |
+| 348 | **14 dec** | S. Ioannis a Cruce, presbyteri et Ecclesiæ doctoris |
 | 349 | **15 dec** |  |
 | 350 | **16 dec** |  |
 | 351 | **17 dec** |  |

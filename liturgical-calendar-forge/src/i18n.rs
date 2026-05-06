@@ -353,7 +353,35 @@ pub fn propagate_labels(
 }
 
 // ---------------------------------------------------------------------------
-// validate_i18n — V-I1, V-I2
+// validate_label — V-I3
+// ---------------------------------------------------------------------------
+
+/// Valide un label brut extrait du DictStore.
+/// Retourne `Some(reason)` si le label est invalide, `None` si OK.
+///
+/// Critères (par ordre de priorité) :
+/// 1. Leading ou trailing whitespace — indique un copier-coller mal maîtrisé.
+/// 2. Uniquement whitespace (couvre les chaînes vides après trim).
+/// 3. Longueur < 3 caractères après trim — exclut les placeholders ("?", "—").
+/// 4. Caractère de contrôle (U+0000–U+001F hors TAB) — corrompt le String Pool.
+fn validate_label(label: &str) -> Option<&'static str> {
+    if label != label.trim() {
+        return Some("leading ou trailing whitespace");
+    }
+    if label.trim().is_empty() {
+        return Some("label vide ou uniquement whitespace");
+    }
+    if label.trim().chars().count() < 3 {
+        return Some("label trop court (< 3 caractères après trim)");
+    }
+    if label.chars().any(|c| c.is_control() && c != '\t') {
+        return Some("caractère de contrôle interdit");
+    }
+    None
+}
+
+// ---------------------------------------------------------------------------
+// validate_i18n — V-I1, V-I2, V-I3
 // ---------------------------------------------------------------------------
 
 pub fn validate_i18n(
@@ -389,6 +417,21 @@ pub fn validate_i18n(
                 lang:  lang.to_owned(),
                 from,
                 field: "label".to_owned(),
+            }.into());
+        }
+    }
+
+    // V-I3 — chaque label présent dans le store doit être non-vide, ≥ 3 caractères,
+    // sans whitespace superflu ni caractère de contrôle.
+    for (lang, slug, from) in store.iter_keys() {
+        let resolved = store.get(lang, slug, from)
+            .expect("iter_keys() et get() cohérents");
+        if let Some(reason) = validate_label(&resolved.label) {
+            return Err(ParseError::I18nInvalidLabel {
+                slug: slug.to_owned(),
+                lang: lang.to_owned(),
+                from,
+                reason,
             }.into());
         }
     }

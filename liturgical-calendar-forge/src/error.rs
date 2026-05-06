@@ -50,6 +50,10 @@ pub enum ParseError {
     /// V-I2 — Clé orpheline dans un dictionnaire i18n : la valeur `from`
     /// ne correspond à aucun `from` déclaré dans history[] pour ce slug.
     I18nOrphanKey { slug: String, lang: String, from: u16, field: String },
+    /// V-I3 — Label i18n présent mais invalide : vide, trop court (< 3 caractères
+    /// après trim), uniquement whitespace, contient un caractère de contrôle,
+    /// ou contient du leading/trailing whitespace non intentionnel.
+    I18nInvalidLabel { slug: String, lang: String, from: u16, reason: &'static str },
 }
 
 // ---------------------------------------------------------------------------
