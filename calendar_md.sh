@@ -90,6 +90,7 @@ print_day() {
 
     # Date au format "JJ mmm" en minuscules
     date_str=$(LC_TIME=C date -d "$YEAR-01-01 +$offset days" +"%d %b" | tr '[:upper:]' '[:lower:]')
+    date_str="${date_str/ /$'\u00A0'}"
 
     # Récupération des labels (principal et secondaires)
     labels=$(kal-read --kald "$KALD_FILE" --lits "$LITS_FILE" --year "$YEAR" --doy "$doy" |
