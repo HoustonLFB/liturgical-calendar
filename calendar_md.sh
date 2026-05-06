@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-# Affiche en Markdown la liste des jours de l’année liturgique (calendrier DOD)
-# avec DOY, date (JJ mmm) et les labels (principal | secondaires).
+# Affiche en Markdown un tableau des jours de l’année liturgique (calendrier DOD)
+# avec DOY, date (JJ mmm) et les labels (principal ; secondaires).
 # Usage : ./calendar_md.sh [-d] [-f KALD_FILE] [-l LITS_FILE] ANNÉE
 # Exemple : ./calendar_md.sh 2026 > calendar_2026.md
 # Pour les dimanches uniquement :
@@ -19,9 +19,9 @@ usage() {
     cat <<EOF
 Usage: $0 [-d] [-f KALD_FILE] [-l LITS_FILE] YEAR
 
-Produit une liste Markdown de tous les jours de l’année liturgique
+Produit un tableau Markdown de tous les jours de l’année liturgique
 (ou seulement les dimanches avec -d) au format :
-  - **DOY** (JJ mmm) Label1 | Label2
+  | DOY | date | festums |
 
 Options :
   -d    dimanches uniquement (commence au DOY 3)
@@ -73,7 +73,7 @@ else
     LEAP_YEAR=false
 fi
 
-# --- Fonction d’affichage d’un jour ---
+# --- Fonction d’affichage d’un jour (version tableau) ---
 print_day() {
     local doy=$1
 
@@ -116,13 +116,21 @@ print_day() {
                  }
              ')
 
-    # Sortie en liste Markdown
+    # Remplacement du séparateur " | " par " ; " pour ne pas casser le tableau Markdown
+    local labels_clean
     if [ -n "$labels" ]; then
-        printf -- '- %03d **%s** %s\n' "$doy" "$date_str" "$labels"
+        labels_clean=$(echo "$labels" | sed 's/ | / ; /g')
     else
-        printf -- '- %03d **%s**\n' "$doy" "$date_str"
+        labels_clean=""
     fi
+
+    # Ligne du tableau
+    printf '| %03d | **%s** | %s |\n' "$doy" "$date_str" "$labels_clean"
 }
+
+# --- En-tête du tableau ---
+echo "| doy | date | festums |"
+echo "|---|---|---|"
 
 # --- Boucle principale ---
 if $SUNDAYS_ONLY; then
