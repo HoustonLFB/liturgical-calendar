@@ -21,14 +21,14 @@
 - 020 **21 jan** S. Agnetis, virginis et martyris
 - 021 **22 jan** S. Vincentii, diaconi et martyris
 - 022 **23 jan**
-- 023 **24 jan** S. Francisci de Sales, episcopi et Ecclesiæ
+- 023 **24 jan** S. Francisci de Sales, episcopi et Ecclesiæ doctoris
 - 024 **25 jan** In Conversione S. Pauli, apostoli
 - 025 **26 jan** Ss. Timothei et Titi, episcoporum
 - 026 **27 jan** Dominica III per annum | S. Angelæ Merici, virginis
 - 027 **28 jan** S. Thomæ de Aquino, presbyteri et Ecclesiæ doctoris
 - 028 **29 jan**
 - 029 **30 jan**
-- 030 **31 jan** Ioannis Bosco
+- 030 **31 jan** S. Ioannis Bosco, presbyteri
 - 031 **01 feb**
 - 032 **02 feb** In Præsentatione Domini
 - 033 **03 feb** Dominica IV per annum | S. Ansgarii, episcopi | S. Blasii, episcopi et martyris
@@ -64,7 +64,7 @@
 - 064 **05 mar**
 - 065 **06 mar**
 - 066 **07 mar** Ss. Perpetuæ et Felicitatis, martyrum
-- 067 **08 mar** Ioannis a Deo
+- 067 **08 mar** S. Ioannis a Deo, religiosi
 - 068 **09 mar** S. Franciscæ Romanæ, religiosæ
 - 069 **10 mar** Dominica II Quadragesimæ
 - 070 **11 mar**
@@ -94,7 +94,7 @@
 - 094 **04 apr** S. Isidori, episcopi et Ecclesiæ doctoris
 - 095 **05 apr** S. Vincentii Ferrer, presbyteri
 - 096 **06 apr**
-- 097 **07 apr** Dominica in Palmis de Passione Domini | Ioannis Baptistæ de La Salle
+- 097 **07 apr** Dominica in Palmis de Passione Domini | S. Ioannis Baptistæ de la Salle, presbyteri
 - 098 **08 apr** Feria II Hebdomadæ Sanctæ
 - 099 **09 apr** Feria III Hebdomadæ Sanctæ
 - 100 **10 apr** Feria IV Hebdomadæ Sanctæ
@@ -199,7 +199,7 @@
 - 199 **18 jul**
 - 200 **19 jul**
 - 201 **20 jul**
-- 202 **21 jul** Dominica XVI per annum | S. Laurentii de Brindisi
+- 202 **21 jul** Dominica XVI per annum | S. Laurentii de Brindisi, presbyteri et Ecclesiæ doctoris
 - 203 **22 jul** S. Mariæ Magdalenæ
 - 204 **23 jul** S. Birgittæ, religiosæ, patronæ Europæ
 - 205 **24 jul**
@@ -238,7 +238,7 @@
 - 238 **26 aug**
 - 239 **27 aug** S. Monicæ
 - 240 **28 aug** S. Augustini, episcopi et Ecclesiæ doctoris
-- 241 **29 aug** In Passione S. Ioannis Baptistæ
+- 241 **29 aug** In Passione S. Ioannis Baptistæ, martyris
 - 242 **30 aug**
 - 243 **31 aug**
 - 244 **01 sep** Dominica XXII per annum
@@ -253,7 +253,7 @@
 - 253 **10 sep**
 - 254 **11 sep**
 - 255 **12 sep**
-- 256 **13 sep** Ioannis Chrysostomi
+- 256 **13 sep** S. Ioannis Chrysostomi, episcopi et Ecclesiæ doctoris
 - 257 **14 sep** In Exaltatione Sanctæ Crucis
 - 258 **15 sep** Dominica XXIV per annum | Beatæ Mariæ Virginis Perdolentis
 - 259 **16 sep** Ss. Cornelii, papæ, et Cypriani, episcopi, martyrum
@@ -285,7 +285,7 @@
 - 285 **12 oct**
 - 286 **13 oct** Dominica XXVIII per annum
 - 287 **14 oct** S. Callisti I, papæ et martyris
-- 288 **15 oct** S. Teresiæ a Iesu, virginis
+- 288 **15 oct** S. Teresiæ a Iesu, virginis et Ecclesiæ doctoris
 - 289 **16 oct** S. Hedvigis, religiosæ | S. Margaritæ Mariæ Alacoque, virginis
 - 290 **17 oct** S. Ignatii Antiocheni, episcopi et martyris
 - 291 **18 oct** S. Lucæ, evangelistæ
@@ -318,7 +318,7 @@
 - 318 **14 nov**
 - 319 **15 nov** S. Alberti Magni, episcopi et Ecclesiæ doctoris
 - 320 **16 nov** S. Gertrudis, virginis | S. Margaritæ Scotiæ
-- 321 **17 nov** Dominica XXXIII per annum | S. Elisabeth Hungariæ
+- 321 **17 nov** Dominica XXXIII per annum | S. Elisabeth Hungariæ, religiosæ
 - 322 **18 nov**
 - 323 **19 nov**
 - 324 **20 nov**
@@ -335,7 +335,7 @@
 - 335 **01 dec** Dominica I Adventus
 - 336 **02 dec**
 - 337 **03 dec** S. Francisci Xavier, presbyteri
-- 338 **04 dec** Ioannis Damasceni
+- 338 **04 dec** S. Ioannis Damasceni, presbyteri et Ecclesiæ doctoris
 - 339 **05 dec**
 - 340 **06 dec** S. Nicolai, episcopi
 - 341 **07 dec** S. Ambrosii, episcopi et Ecclesiæ doctoris
@@ -354,11 +354,11 @@
 - 354 **20 dec**
 - 355 **21 dec** S. Petri Canisii, presbyteri et Ecclesiæ doctoris
 - 356 **22 dec** Dominica IV Adventus
-- 357 **23 dec**
+- 357 **23 dec** S. Ioannis de Kęty, presbyteri
 - 358 **24 dec**
 - 359 **25 dec** In Nativitate Domini
-- 360 **26 dec** Stephani, protomartyris
-- 361 **27 dec** Ioannis
+- 360 **26 dec** S. Stephani, protomartyris
+- 361 **27 dec** S. Ioannis, apostoli et evangelistæ
 - 362 **28 dec** Ss. Innocentium, Martyrum
 - 363 **29 dec** Sanctæ Familiæ Iesu, Mariæ et Ioseph | S. Thomæ Becket, episcopi et martyris
 - 364 **30 dec**
