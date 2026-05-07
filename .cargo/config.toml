@@ -1,0 +1,9 @@
+[build]
+# cible host par défaut — ne pas mettre wasm32 ici, ça casserait les autres crates
+
+# Override par crate via un manifest path n'est pas supporté directement,
+# mais on peut cibler via un profil ou un alias :
+
+[alias]
+publish-wasm = "publish -p liturgical-calendar-wasm --target wasm32-unknown-unknown"
+build-wasm = "build -p liturgical-calendar-wasm --target wasm32-unknown-unknown --profile wasm-release"
