@@ -3,11 +3,24 @@ members = [
     "liturgical-calendar",
     "liturgical-calendar-core",
     "liturgical-calendar-forge",
+    "crates/liturgical-calendar-wasm",
+]
+default-members = [
+    "liturgical-calendar",
+    "liturgical-calendar-core",
+    "liturgical-calendar-forge",
 ]
 resolver = "2"
 
 [profile.release]
 panic = "abort"
+
+[profile.wasm-release]
+inherits = "release"
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
 
 [profile.dev]
 panic = "abort"

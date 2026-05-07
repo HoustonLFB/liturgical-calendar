@@ -120,7 +120,7 @@ for doy in $(seq 0 30); do
     kal-read --kald ./artifacts/romanus_universale.kald \
              --lits ./artifacts/romanus_universale_la.lits \
              --year 2026 --doy $doy \
-    | grep -E "label|feast_id|precedence|nature|\["
+    | grep -E "label|feast_id|precedence|nature|color|\["
 done
 ```
 

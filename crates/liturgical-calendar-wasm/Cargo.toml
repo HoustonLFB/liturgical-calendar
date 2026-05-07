@@ -1,0 +1,11 @@
+[package]
+name = "liturgical-calendar-wasm"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.97.0"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+liturgical-calendar-core = { path = "../../liturgical-calendar-core" }
