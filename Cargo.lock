@@ -443,7 +443,7 @@ dependencies = [
 
 [[package]]
 name = "liturgical-calendar-wasm"
-version = "0.1.0"
+version = "0.1.4"
 dependencies = [
  "liturgical-calendar-core",
 ]
