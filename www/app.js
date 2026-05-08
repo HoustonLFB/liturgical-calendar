@@ -172,13 +172,18 @@ function renderYear(year, exports, memory) {
         }
 
         // Fêtes secondaires
+        // kal_read_secondary retourne KAL_ENGINE_OK (0) en cas de succès —
+        // pas le compte. On utilise secondaryCount comme borne de boucle.
         if (secondaryCount > 0) {
-            const n = exports.kal_wasm_read_secondary(secondaryIndex, secondaryCount);
-            if (n > 0) {
-                const secView = new DataView(memory.buffer, exports.kal_wasm_secondary_ptr(), n * 2);
-                for (let i = 0; i < n; i++) {
+            const rc = exports.kal_wasm_read_secondary(secondaryIndex, secondaryCount);
+            if (rc === KAL_ENGINE_OK) {
+                const secView = new DataView(
+                    memory.buffer, exports.kal_wasm_secondary_ptr(), secondaryCount * 2
+                );
+                for (let i = 0; i < secondaryCount; i++) {
                     const secId = secView.getUint16(i * 2, true);
-                    const res   = resolveById(exports, memory, secId, year);
+                    if (secId === 0) continue;
+                    const res = resolveById(exports, memory, secId, year);
                     if (res) {
                         featsHtml += `<p class="secondary"><a href="${href}">${res.label}</a></p>`;
                     }
@@ -247,22 +252,25 @@ function renderDay(year, month, day, exports, memory) {
         <dt>Couleur</dt>    <dd>${COLOR[color] ?? color} (${color})</dd>
         <dt>Période</dt>    <dd>${PERIOD[period] ?? period}</dd>
         <dt>Nature</dt>     <dd>${NATURE[nature] ?? nature}</dd>`;
+    if (annotation)   html += `<dt>Annotation</dt><dd>${renderMarkdown(annotation)}</dd>`;
     if (hasVesperaeI) html += `<dt>Vêpres I</dt><dd>oui</dd>`;
     if (hasVigilia)   html += `<dt>Vigile</dt>  <dd>oui</dd>`;
     html += `</dl></section>`;
 
     // Fêtes secondaires
     if (secondaryCount > 0) {
-        const n = exports.kal_wasm_read_secondary(secondaryIndex, secondaryCount);
-        if (n > 0) {
-            const secView = new DataView(memory.buffer, exports.kal_wasm_secondary_ptr(), n * 2);
+        const rcSec = exports.kal_wasm_read_secondary(secondaryIndex, secondaryCount);
+        if (rcSec === KAL_ENGINE_OK) {
+            const secView = new DataView(
+                memory.buffer, exports.kal_wasm_secondary_ptr(), secondaryCount * 2
+            );
             html += `<section class="secondaries"><h4>Commémorations</h4>`;
-            for (let i = 0; i < n; i++) {
+            for (let i = 0; i < secondaryCount; i++) {
                 const secId = secView.getUint16(i * 2, true);
-                const res   = resolveById(exports, memory, secId, year);
+                if (secId === 0) continue;
+                const res = resolveById(exports, memory, secId, year);
                 if (res) {
-                    html += `<div class="feast secondary">
-                        <strong>${res.label}</strong>`;
+                    html += `<div class="feast secondary"><strong>${res.label}</strong>`;
                     if (res.annotation) {
                         html += `<p class="annotation">${renderMarkdown(res.annotation)}</p>`;
                     }
