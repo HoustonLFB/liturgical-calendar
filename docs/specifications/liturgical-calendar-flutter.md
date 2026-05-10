@@ -1,4 +1,6 @@
-Maintenant voici une nouvelle proposition pour un nouveau crate dédié à Flutter ; il faut évaluer cette proposition que j'ai préparé avec DeepSeek et Gemini :
+Merci, j'ai prélevé le scipt dans votre "buffer" et il est fonctionnel.
+
+Maintenant voici une nouvelle proposition pour un nouveau crate dédié à Flutter ; il faut évaluer cette proposition que j'ai préparé avec DeepSeek et Gemini, sachant que nous avons eu un breaking change du `.kald` en 2 segments entre temps :
 
 ---
 
@@ -9,6 +11,7 @@ Expertise requise en Rust, Dart, Flutter et interopérabilité native via dart:f
 Nous allons créer le crate `liturgical-calendar-flutter` et le package Flutter associé, qui permet d’utiliser l’Engine liturgique existant (`liturgical-calendar-core`) dans une application Flutter native (Android, Linux, Windows, macOS).
 
 Contexte technique :
+
 - L’Engine (crate `liturgical-calendar-core`) est no_std, no_alloc. Il expose des fonctions C-ABI dans `ffi.rs` :
   - `kal_validate_header(data, len, out_header) -> i32`
   - `kal_read_entry(data, len, year, doy, out_entry) -> i32`
@@ -23,6 +26,7 @@ Objectif :
 Créer un nouveau crate Rust `liturgical-calendar-flutter` qui enveloppe l’Engine avec des fonctions `extern "C"` dédiées, conçues pour être appelées depuis Dart via `dart:ffi`. Il doit fournir une API haut niveau : chargement des binaires, accès à une entrée par date, récupération du label/annotation depuis le `.lits`, scan de flags, et gestion d’erreur.
 
 Puis, créer le package Flutter (`liturgical_calendar`) en Dart, qui :
+
 - Charge la bibliothèque native (`libkal_flutter.so` / `kal_flutter.dll` / `libkal_flutter.dylib`) selon la plateforme.
 - Définit les signatures FFI Dart.
 - Fournit une classe `LiturgicalCalendar` avec :
@@ -34,6 +38,7 @@ Puis, créer le package Flutter (`liturgical_calendar`) en Dart, qui :
 - Inclut des tests unitaires Dart avec des buffers `.kald`/`.lits` de test embarqués dans le package.
 
 Contraintes :
+
 - Le code Rust doit rester `no_std` si possible.
 - Utiliser `dart:ffi` directement, pas de `flutter_rust_bridge` (pour une intégration plus légère).
 - Fournir des exemples d’utilisation.
@@ -41,6 +46,7 @@ Contraintes :
 - Le package Flutter doit être pub.dev ready (nom `liturgical_calendar`, version `0.1.0`, licence MIT).
 
 Structure attendue du crate Rust :
+
 ```
 
 liturgical-calendar-flutter/
@@ -52,6 +58,7 @@ liturgical-calendar-flutter/
 ```
 
 Structure attendue du package Flutter :
+
 ```
 
 liturgical_calendar/
@@ -87,6 +94,7 @@ L'Engine Rust ne doit conserver AUCUN état global (ni Mutex, ni Vec). Dart est 
 - (Interdit) : Aucune fonction `_free`, aucune allocation dynamique, aucune dépendance à `std`.
 
 Côté Dart (Gestion mémoire) :
+
 - Dart chargera les assets `.kald` et `.lits` en mémoire (ex: via `calloc` de ffi, ou en pinant des Uint8List).
 - La classe `LiturgicalCalendar` stockera ces pointeurs (`Pointer<Uint8>`).
 - À chaque appel (ex: `getEntry`), Dart passera ces pointeurs à la fonction C correspondante.
