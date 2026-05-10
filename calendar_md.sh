@@ -93,29 +93,34 @@ print_day() {
     date_str="${date_str/ /$'\u00A0'}"
 
     # Récupération des labels (principal et secondaires)
-    labels=$(kal-read --kald "$KALD_FILE" --lits "$LITS_FILE" --year "$YEAR" --doy "$doy" |
-             awk '
-                 /^[[:space:]]*label[[:space:]]*:/ {
-                     sub(/^[^:]*:[[:space:]]*/, "")
-                     main = $0
-                 }
-                 # ne rien faire pour les lignes [Padding …], on laisse main vide
-                 /^[[:space:]]+\[[0-9]+\][[:space:]]/ && !/feast_id/ {
-                     sub(/^[[:space:]]+\[[0-9]+\][[:space:]]*/, "")
-                     if ($0 != "") secondary[++s] = $0
-                 }
-                 END {
-                     sep = ""
-                     if (main != "") {
-                         printf "%s", main
-                         sep = " | "
-                     }
-                     for (i=1; i<=s; i++) {
-                         printf "%s%s", sep, secondary[i]
-                         sep = " | "
-                     }
-                 }
-             ')
+    labels=$(cargo run -q -p liturgical-calendar-forge --bin kal-read -- \
+            --kald "$KALD_FILE" --lits "$LITS_FILE" --year "$YEAR" --doy "$doy" 2>/dev/null |
+            awk '
+                /^[[:space:]]*label[[:space:]]*:/ {
+                    sub(/^[^:]*:[[:space:]]*/, "")
+                    main = $0
+                }
+                /^[[:space:]]+\[[0-9]+\][[:space:]]/ && !/feast_id/ && !/registry_index/ {
+                    sub(/^[[:space:]]+\[[0-9]+\][[:space:]]*/, "")
+                    # Supprimer "registry_index=xxx" et "feast_id=0x..."
+                    gsub(/registry_index=[0-9]+[[:space:]]*/, "")
+                    gsub(/feast_id=0x[0-9a-f]+[[:space:]]*/, "")
+                    gsub(/[[:space:]]+/, " ")
+                    gsub(/^[[:space:]]+|[[:space:]]+$/, "")
+                    if ($0 != "") secondary[++s] = $0
+                }
+                END {
+                    sep = ""
+                    if (main != "") {
+                        printf "%s", main
+                        sep = " | "
+                    }
+                    for (i=1; i<=s; i++) {
+                        printf "%s%s", sep, secondary[i]
+                        sep = " | "
+                    }
+                }
+            ')
 
     # Remplacement du séparateur " | " par " ; " pour ne pas casser le tableau Markdown
     local labels_clean

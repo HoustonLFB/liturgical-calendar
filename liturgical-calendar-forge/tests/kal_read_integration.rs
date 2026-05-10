@@ -255,11 +255,11 @@ fn kal_read_lits_shows_annotation() {
 }
 
 // ---------------------------------------------------------------------------
-// 5. --lits : annotation absente → "—"
+// 5. --lits : annotation absente → ligne omise
 // ---------------------------------------------------------------------------
 
 #[test]
-fn kal_read_lits_no_annotation_shows_dash() {
+fn kal_read_lits_no_annotation_not_shown() {
     let f   = fixture();
     let out = run(&[
         "--kald", f.kald_path.to_str().unwrap(),
@@ -269,9 +269,12 @@ fn kal_read_lits_no_annotation_shows_dash() {
     ]);
     assert!(out.status.success(), "exit code doit être 0 : {}", stderr(&out));
     let s = stdout(&out);
+    // Le label doit être présent.
+    assert!(s.contains("Dominica Resurrectionis"), "label absent :\n{s}");
+    // La ligne annotation ne doit PAS apparaître quand elle est absente.
     assert!(
-        s.contains("annotation  : —"),
-        "stdout doit afficher '—' pour annotation absente :\n{s}"
+        !s.contains("annotation"),
+        "annotation ne doit pas s'afficher quand elle est absente :\n{s}"
     );
 }
 

@@ -32,25 +32,34 @@ Le système se divise en deux composants asymétriques :
 ## 📐 Architecture des Artefacts
 
 ```
-.kald  —  431 années × 366 slots × 8 octets = ~1.3 Mo
-          Header 64 octets (magic, version, SHA-256, layout discriminant)
-          Data Body : CalendarEntry par slot (feast_id, flags, secondary)
-          Secondary Pool : listes de fêtes secondaires par slot
+.kald  —  Header 80 octets (magic, version, SHA-256, layout_discriminant, registry_count…)
+          Feast Registry : FeastEntry × registry_count  (4 octets chacune — invariants AOT)
+          Timeline       : TimelineEntry × 157 746      (8 octets chacune — occurrences)
+          Secondary Pool : registry_index values (u16)
 
 .lits  —  Entry Table (feast_id, from, to, label_offset, annotation_offset)
           String Pool UTF-8 (labels + annotations, null-terminés)
           Couplé au .kald via build_id (kald_checksum[..8])
 ```
 
-`CalendarEntry` — 8 octets, stride constant :
+`FeastEntry` — 4 octets, stride constant (invariants de la fête, indépendants de l'année) :
 
 ```
-primary_id      u16   —  FeastID (0 = Padding Entry)
-secondary_index u16   —  index dans le Secondary Pool
-flags           u16   —  precedence[3:0] | color[7:4] | period[10:8] | nature[13:11]
-secondary_count u8    —  nombre de fêtes secondaires
-_reserved       u8    —  0x00
+feast_id  u16   —  identifiant corpus (pour vérification croisée .lits)
+flags     u16   —  precedence[3:0] | color[7:4] | period[10:8] | nature[13:11] | vigil[14]
 ```
+
+`TimelineEntry` — 8 octets, stride constant (occurrence journalière) :
+
+```
+primary_index    u16   —  registry_index de la fête principale (0 = Padding Entry)
+secondary_offset u16   —  offset dans le Secondary Pool
+occurrence_flags u8    —  bit 0 = vesperae_i, bit 1 = vigilia
+secondary_count  u8    —  nombre de fêtes secondaires
+_reserved        u16   —  0x0000
+```
+
+Les invariants d'une fête (couleur, nature, préséance) ne sont stockés qu'une seule fois dans le Feast Registry, indépendamment du nombre d'années où elle est célébrée.
 
 ---
 
@@ -111,34 +120,43 @@ romanus_nationalia_FR_fr.lits
 ### Lire une entrée
 
 ```bash
-kal-read --kald ./artifacts/romanus_universale.kald \
-         --lits ./artifacts/romanus_universale_la.lits \
-         --year 2025 --doy 109
+cargo run -q -p liturgical-calendar-forge --bin kal-read -- \
+    --kald ./artifacts/romanus_universale.kald \
+    --lits ./artifacts/romanus_universale_la.lits \
+    --year 2026 --doy 354
 ```
 
 ```
-year=2025  doy=109
-  feast_id    : 0x0001
-  precedence  : TriduumSacrum (0)
-  color       : Albus (0)
-  period      : TempusPaschale (5)
-  nature      : Sollemnitas (0)
-  vesperae_i  : false
-  vigilia     : false
-
-  label       : Dominica Resurrectionis
-  annotation  : —
+year=2026  doy=354
+  registry_index : 245
+  feast_id       : 0x3006
+  flags          : 0x1131
+  precedence     : SollemnitatesMaiores (1)
+  color          : Violaceus (3)
+  period         : TempusAdventus (1)
+  nature         : Dominica (2)
+  has_vigil_mass : false
+  secondary      : 0 entrée(s) (offset=0)
+  vesperae_i     : false
+  vigilia        : false
+  label          : Dominica IV Adventus
+  annotation     : *Rorate cæli*
 ```
 
 ### Intégration Engine (API C)
 
 ```c
-// Accès à une entrée
-CalendarEntry entry;
-int rc = kal_read_entry(kald_data, kald_len, 2025, 109, &entry);
+// Validation au chargement (avec SHA-256) — appeler une seule fois
+int rc = kal_validate_header(kald_data, kald_len, NULL);
 
-// Validation d'un fichier .kald
-rc = kal_validate_header(kald_data, kald_len, NULL);
+// Lecture d'une occurrence journalière — O(1)
+TimelineEntry entry;
+rc = kal_read_entry(kald_data, kald_len, 2025, 109, &entry);
+
+// Résolution des invariants de la fête — O(1)
+FeastEntry feast;
+rc = kal_read_feast(kald_data, kald_len, entry.primary_index, &feast);
+uint8_t precedence = feast.flags & 0x000F;
 ```
 
 ---
@@ -149,9 +167,9 @@ rc = kal_validate_header(kald_data, kald_len, NULL);
 liturgical-calendar/
 ├── liturgical-calendar-core/     ← Engine (no_std, no_alloc, FFI C)
 │   └── src/
-│       ├── entry.rs              ← CalendarEntry, LAYOUT_DISCRIMINANT
-│       ├── ffi.rs                ← kal_read_entry, kal_validate_header, …
-│       ├── header.rs             ← validation .kald
+│       ├── entry.rs              ← TimelineEntry, FeastEntry, LAYOUT_DISCRIMINANT
+│       ├── ffi.rs                ← kal_read_entry, kal_read_feast, kal_validate_header, …
+│       ├── header.rs             ← validation .kald (fast + checksum)
 │       ├── lits_provider.rs      ← LitsProvider (zero-copy)
 │       └── types.rs              ← Precedence, Nature, Color, LiturgicalPeriod
 ├── liturgical-calendar-forge/    ← Compilateur YAML → binaire
@@ -161,8 +179,8 @@ liturgical-calendar/
 │       ├── parsing.rs            ← ingestion YAML, FeastRegistry
 │       ├── canonicalization.rs   ← Pâques, ancres, DOY
 │       ├── resolution.rs         ← conflit de préséance, transfers
-│       ├── materialization.rs    ← CalendarEntry, Secondary Pool
-│       ├── packing.rs            ← sérialisation .kald
+│       ├── materialization.rs    ← FeastRegistryBuilder, TimelineEntry, Secondary Pool
+│       ├── packing.rs            ← sérialisation .kald (2 passes AOT)
 │       ├── i18n.rs               ← DictStore, LabelTable, fallback latin
 │       ├── lits_writer.rs        ← sérialisation .lits
 │       ├── lock.rs               ← feast_registry.lock

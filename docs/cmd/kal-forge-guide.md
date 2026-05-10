@@ -47,6 +47,7 @@ cargo run -p liturgical-calendar-forge --bin kal-forge -- \
 ```
 
 Produit :
+
 ```
 artifacts/
   romanus_universale.kald
@@ -71,14 +72,14 @@ Produit : `artifacts/romanus_nationalia_FR.kald` + `.lits` associés.
 
 ## Arguments
 
-| Argument          | Défaut        | Description                                              |
-|-------------------|---------------|----------------------------------------------------------|
-| `--rite`          | `romanus`     | Rite à compiler                                          |
-| `--scope`         | `universale`  | Scope dans la hiérarchie du rite                         |
-| `--corpus`        | `./corpus`    | Racine du corpus YAML                                    |
-| `--out`           | `./artifacts` | Répertoire de sortie                                     |
-| `--i18n`          | _(désactivé)_ | Active la production des `.lits`                         |
-| `--include-drafts`| _(désactivé)_ | Compile les scopes marqués `DRAFT`                       |
+| Argument           | Défaut        | Description                        |
+| ------------------ | ------------- | ---------------------------------- |
+| `--rite`           | `romanus`     | Rite à compiler                    |
+| `--scope`          | `universale`  | Scope dans la hiérarchie du rite   |
+| `--corpus`         | `./corpus`    | Racine du corpus YAML              |
+| `--out`            | `./artifacts` | Répertoire de sortie               |
+| `--i18n`           | _(désactivé)_ | Active la production des `.lits`   |
+| `--include-drafts` | _(désactivé)_ | Compile les scopes marqués `DRAFT` |
 
 ---
 
@@ -86,11 +87,11 @@ Produit : `artifacts/romanus_nationalia_FR.kald` + `.lits` associés.
 
 Le nom de fichier est le chemin de scope **aplati** avec `_` comme séparateur :
 
-| Scope                    | Artefact                            |
-|--------------------------|-------------------------------------|
-| `romanus/universale`     | `romanus_universale.kald`           |
-| `romanus/nationalia/FR`  | `romanus_nationalia_FR.kald`        |
-| `ambrosianus/universale` | `ambrosianus_universale.kald`       |
+| Scope                    | Artefact                      |
+| ------------------------ | ----------------------------- |
+| `romanus/universale`     | `romanus_universale.kald`     |
+| `romanus/nationalia/FR`  | `romanus_nationalia_FR.kald`  |
+| `ambrosianus/universale` | `ambrosianus_universale.kald` |
 
 Les `.lits` reçoivent le code langue en suffixe :
 `romanus_universale_la.lits`, `romanus_universale_fr.lits`
@@ -130,10 +131,10 @@ Les scopes plus spécifiques surchargent les scopes parents (last-write-wins).
 ```yaml
 version: 1
 history:
-  - from: 1969        # optionnel — défaut : 1969
-    to: 2001          # optionnel — parsé pour lisibilité, non stocké
+  - from: 1969 # optionnel — défaut : 1969
+    to: 2001 # optionnel — parsé pour lisibilité, non stocké
     label: "Dominica II Paschæ"
-    annotation: "*In albis*"   # optionnel, Markdown admis
+    annotation: "*In albis*" # optionnel, Markdown admis
   - from: 2002
     label: "Dominica II Paschæ"
     annotation: "Dominica in octava paschæ seu de sacra misericordia, *In albis*"
@@ -165,10 +166,10 @@ corpus/romanus/dioecesana/VIENNE/
 
 Deux fichiers lock garantissent la stabilité des IDs entre compilations :
 
-| Fichier                                    | Rôle                                      |
-|--------------------------------------------|-------------------------------------------|
-| `corpus/{rite}/feast_registry.lock`        | FeastID stables par slug de fête          |
-| `corpus/{rite}/variant_registry.lock`      | variant_id stables par scope              |
+| Fichier                               | Rôle                             |
+| ------------------------------------- | -------------------------------- |
+| `corpus/{rite}/feast_registry.lock`   | FeastID stables par slug de fête |
+| `corpus/{rite}/variant_registry.lock` | variant_id stables par scope     |
 
 Ces fichiers sont **versionnés dans le repo**. Ne pas les supprimer ni les éditer manuellement.
 

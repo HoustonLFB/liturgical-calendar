@@ -38,17 +38,7 @@ Publier les crates sur crates.io (installation de cargo-release nécessaire) :
 cargo publish --workspace
 ```
 
-Forger un binaire `.kald` :
-
-```
-cargo run -p liturgical-calendar-forge --bin kal-forge -- \
-    --rite romanus \
-    --scope universale \
-    --corpus ./corpus \
-    --out ./artifacts
-```
-
-Forger un binaire `.lits` :
+Forger les binaires `.kald` + `.lits` ensembles (pour éviter une désynchronisation) :
 
 ```
 cargo run -p liturgical-calendar-forge --bin kal-forge -- \
@@ -64,40 +54,38 @@ cargo run -p liturgical-calendar-forge --bin kal-forge -- \
 Lister les entrées du 20 janvier 2026 (doy 19) :
 
 ```
-kal-read --kald ./artifacts/romanus_universale.kald --lits ./artifacts/romanus_universale_la.lits --year 2026 --doy 19
+cargo run -q -p liturgical-calendar-forge --bin kal-read -- \
+    --kald ./artifacts/romanus_universale.kald \
+    --lits ./artifacts/romanus_universale_la.lits \
+    --year 2026 --doy 19
 ```
 
 Lister tous les jours de l'année 2026, uniquement doy + date + label :
 
 ```
 for doy in $(seq 0 365); do
-    [ "$doy" -eq 59 ] && continue   # saut du 29 février DOD
+    [ "$doy" -eq 59 ] && continue # Padding Entry en années non-bissextiles
 
-    # Calcul du décalage réel (le 29 février n’existe pas en 2026)
     if [ "$doy" -lt 59 ]; then
         offset=$doy
     else
         offset=$((doy - 1))
     fi
 
-    # Date au format "JJ mmm" en minuscules
     date_str=$(LC_TIME=C date -d "2026-01-01 +$offset days" +"%d %b" | tr '[:upper:]' '[:lower:]')
 
-    # Extraction du label principal et des labels secondaires
-    labels=$(kal-read --kald ./artifacts/romanus_universale.kald \
-                      --lits ./artifacts/romanus_universale_la.lits \
-                      --year 2026 --doy $doy |
+    labels=$(cargo run -q -p liturgical-calendar-forge --bin kal-read -- \
+                  --kald ./artifacts/romanus_universale.kald \
+                  --lits ./artifacts/romanus_universale_la.lits \
+                  --year 2026 --doy $doy 2>/dev/null |
              awk '
-                 # Ligne du label principal
                  /^[[:space:]]*label[[:space:]]*:/ {
                      sub(/^[^:]*:[[:space:]]*/, "")
                      main = $0
                  }
-                 # Jour sans célébration : ligne [Padding Entry …]
                  /^\[Padding/ {
                      main = $0
                  }
-                 # Célébrations secondaires : [N] Texte
                  /^[[:space:]]+\[[0-9]+\][[:space:]]/ && !/feast_id/ {
                      sub(/^[[:space:]]+\[[0-9]+\][[:space:]]*/, "")
                      if ($0 != "") secondary[++s] = $0
@@ -117,10 +105,11 @@ Lister toutes les fêtes du 1 au 31 janvier 2026, avec toutes leur infos :
 ```
 for doy in $(seq 0 30); do
     echo -n "$(printf '%3d' $doy)  "
-    kal-read --kald ./artifacts/romanus_universale.kald \
-             --lits ./artifacts/romanus_universale_la.lits \
-             --year 2026 --doy $doy \
-    | grep -E "label|feast_id|precedence|nature|color|\["
+    cargo run -q -p liturgical-calendar-forge --bin kal-read -- \
+        --kald ./artifacts/romanus_universale.kald \
+        --lits ./artifacts/romanus_universale_la.lits \
+        --year 2026 --doy $doy \
+        | grep -E "label|annotation|feast_id|precedence|nature|color|\["
 done
 ```
 
@@ -130,14 +119,17 @@ Lister tous les dimanches de l'année 2026 (commence à doy 3), uniquement doy +
 doy=3
 while [ $doy -le 365 ]; do
     if [ $doy -ne 59 ]; then
-        label=$(kal-read --kald ./artifacts/romanus_universale.kald \
-                         --lits ./artifacts/romanus_universale_la.lits \
-                         --year 2026 --doy $doy |
-                grep -v '^\s*\[' | grep "label" | sed 's/^.*label\s*:\s*//')
+        label=$(cargo run -q -p liturgical-calendar-forge --bin kal-read -- \
+            --kald ./artifacts/romanus_universale.kald \
+            --lits ./artifacts/romanus_universale_la.lits \
+            --year 2026 --doy $doy 2>/dev/null \
+            | grep -v '^\s*\[' \
+            | grep "label" \
+            | sed 's/^.*label\s*:\s*//')
         printf '%3d  %s\n' $doy "$label"
     fi
     doy=$(( doy + 7 ))
-    [ $doy -eq 59 ] && doy=60
+    [ $doy -eq 59 ] && doy=60 # Padding Entry en années non-bissextiles
 done
 ```
 

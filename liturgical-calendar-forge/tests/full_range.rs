@@ -1,9 +1,29 @@
 use liturgical_calendar_core::{
-    entry::CalendarEntry,
+    entry::TimelineEntry,
     ffi::{kal_read_entry, kal_validate_header, KAL_ENGINE_OK},
 };
 use liturgical_calendar_forge::forge_full_range;
-use std::ptr::null_mut;
+use std::{ptr::null_mut, sync::OnceLock};
+
+// ---------------------------------------------------------------------------
+// Fixture mutualisée — parsing du corpus une seule fois pour tous les tests
+// ---------------------------------------------------------------------------
+
+/// Retourne deux builds identiques du `.kald` complet (1969–2399).
+/// - `.0` : utilisé par tous les tests sauf `full_range_deterministic`.
+/// - `.1` : second build indépendant pour le test de déterminisme SHA-256.
+///
+/// L'initialisation est atomique via `OnceLock` : les 326 fêtes ne sont
+/// parsées qu'une seule fois quelle que soit l'ordre d'exécution des tests.
+static FULL_RANGE: OnceLock<(Vec<u8>, Vec<u8>)> = OnceLock::new();
+
+fn kalds() -> &'static (Vec<u8>, Vec<u8>) {
+    FULL_RANGE.get_or_init(|| {
+        let kald1 = forge_full_range(1969..=2399).expect("forge plage complète (build 1)");
+        let kald2 = forge_full_range(1969..=2399).expect("forge plage complète (build 2)");
+        (kald1, kald2)
+    })
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -13,18 +33,21 @@ fn is_leap_year(year: i32) -> bool {
     (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)
 }
 
+/// Lit la `TimelineEntry` pour `(year, doy)` — panique si le code de retour ≠ OK.
+unsafe fn read_entry(kald: &[u8], year: u16, doy: u16) -> TimelineEntry {
+    let mut e = TimelineEntry::zeroed();
+    let rc = unsafe { kal_read_entry(kald.as_ptr(), kald.len(), year, doy, &mut e) };
+    assert_eq!(rc, KAL_ENGINE_OK, "kal_read_entry({year}, {doy}) KO : code={rc}");
+    e
+}
+
 // ---------------------------------------------------------------------------
 // 1. Validité du header sur la plage complète
 // ---------------------------------------------------------------------------
 
-/// Vérifie que le header produit par `forge_full_range(1969..=2399)` est
-/// accepté par `kal_validate_header` sans erreur.
-///
-/// Invariant structurel : magic, version, checksum SHA-256 (octets 24–55)
-/// doivent satisfaire les contrôles du reader Engine.
 #[test]
 fn full_range_header_valid() {
-    let kald = forge_full_range(1969..=2399).expect("forge plage complète");
+    let kald = &kalds().0;
     let rc = unsafe { kal_validate_header(kald.as_ptr(), kald.len(), null_mut()) };
     assert_eq!(rc, KAL_ENGINE_OK);
 }
@@ -33,29 +56,24 @@ fn full_range_header_valid() {
 // 2. Padding entries — doy=59 sur 431 années
 // ---------------------------------------------------------------------------
 
-/// doy=59 = 28 février en année non-bissextile → Padding Entry (primary_id == 0).
-/// doy=59 = 29 février en année bissextile      → entrée réelle  (primary_id != 0).
-///
-/// Couvre les deux branches de l'invariant Padding sur 1969–2399 (431 années).
+/// doy=59 = 28 février non-bissextile → Padding Entry (primary_index == 0).
+/// doy=59 = 29 février bissextile      → entrée réelle  (primary_index != 0).
 #[test]
 fn full_range_padding_entries_correct() {
-    let kald = forge_full_range(1969..=2399).expect("forge plage complète");
+    let kald = &kalds().0;
 
     for year in 1969u16..=2399 {
         let is_leap = is_leap_year(year as i32);
-        let mut e = CalendarEntry::zeroed();
-        let rc = unsafe { kal_read_entry(kald.as_ptr(), kald.len(), year, 59, &mut e) };
-
-        assert_eq!(rc, KAL_ENGINE_OK, "kal_read_entry KO — year {year}");
+        let e = unsafe { read_entry(kald, year, 59) };
 
         if is_leap {
             assert_ne!(
-                e.primary_id, 0,
+                e.primary_index, 0,
                 "year {year} (bissextile) : doy=59 doit être une entrée réelle"
             );
         } else {
             assert_eq!(
-                e.primary_id, 0,
+                e.primary_index, 0,
                 "year {year} (non-bissextile) : doy=59 doit être un Padding Entry"
             );
         }
@@ -66,18 +84,14 @@ fn full_range_padding_entries_correct() {
 // 3. Déterminisme SHA-256 — deux builds doivent produire un hash identique
 // ---------------------------------------------------------------------------
 
-/// Les octets 24–55 du header contiennent le SHA-256 du corpus de données.
-/// Deux appels successifs à `forge_full_range` doivent produire un hash
-/// octet-à-octet identique (pas d'horodatage ni d'aléa dans le pipeline).
+/// En v5, le checksum SHA-256 est aux octets [36..68] du header.
 #[test]
 fn full_range_deterministic() {
-    let kald1 = forge_full_range(1969..=2399).unwrap();
-    let kald2 = forge_full_range(1969..=2399).unwrap();
-
+    let (kald1, kald2) = kalds();
     assert_eq!(
-        &kald1[24..56],
-        &kald2[24..56],
-        "SHA-256 (octets 24–55) doit être identique entre deux builds successifs"
+        &kald1[36..68],
+        &kald2[36..68],
+        "SHA-256 (octets 36–67) doit être identique entre deux builds successifs"
     );
 }
 
@@ -87,16 +101,10 @@ fn full_range_deterministic() {
 
 /// Le 1er juin 2025 (doy=152), le 7e Dimanche de Pâques est prioritaire.
 /// Saint Justin doit apparaître dans la liste secondary (secondary_count ≥ 1).
-///
-/// Vérifie que le mécanisme de résolution de préséance produit la bonne
-/// structure : primary occupé par la fête pascale, secondary non-vide.
 #[test]
 fn full_range_iustini_june1_2025() {
-    let kald = forge_full_range(1969..=2399).unwrap(); 
-    let mut e = CalendarEntry::zeroed();
-    let rc = unsafe { kal_read_entry(kald.as_ptr(), kald.len(), 2025, 152, &mut e) };
-
-    assert_eq!(rc, KAL_ENGINE_OK);
+    let kald = &kalds().0;
+    let e = unsafe { read_entry(kald, 2025, 152) };
     assert!(
         e.secondary_count >= 1,
         "Saint Justin doit être en secondary le 1er juin 2025 (doy=152)"
@@ -107,38 +115,29 @@ fn full_range_iustini_june1_2025() {
 // 5. Triduum pascal 2025 — exactement 3 entrées Precedence 0
 // ---------------------------------------------------------------------------
 
-/// Le Triduum pascal est encodé avec Precedence = 0 (bits [3:0] du flags word).
-/// `kal_scan_flags` doit retourner exactement 3 indices pour 2025.
-///
-/// Masque : 0x000F (isoler les 4 bits de précédence), valeur attendue : 0.
+/// `kal_scan_flags` scanne la Timeline : pour chaque slot, résout le FeastEntry
+/// et vérifie `FeastEntry.flags & flag_mask == flag_value`.
+/// Masque : 0x000F (bits [3:0] = Precedence), valeur attendue : 0 (Triduum).
 #[test]
 fn full_range_triduum_2025_exactly_3_entries() {
     use liturgical_calendar_core::ffi::{kal_scan_flags, KAL_ERR_BUF_TOO_SMALL};
 
-    let kald = forge_full_range(2025..=2025).unwrap();
+    let kald = &kalds().0;
     let mut indices = [0u32; 10];
     let mut count = 0u32;
 
     let rc = unsafe {
-kal_scan_flags(
-            kald.as_ptr(),
-            kald.len(),
-            2025,                // year_from : 2025
-            2025,                // year_to   : 2025
-            0x000F,              // flag_mask : bits [3:0]
-            0,                   // flag_value : Precedence 0 (Triduum)
-            indices.as_mut_ptr(),
-            10,                  // out_capacity : aligné sur la taille de indices
+        kal_scan_flags(
+            kald.as_ptr(), kald.len(),
+            2025, 2025,   // year_from, year_to
+            0x000F,       // flag_mask  : bits [3:0] = Precedence
+            0,            // flag_value : Precedence 0 (Triduum)
+            indices.as_mut_ptr(), 10,
             &mut count,
         )
     };
-    eprintln!("count = {}", count);
 
-    // KAL_ERR_BUF_TOO_SMALL ne peut pas survenir ici (buffer de 10, Triduum = 3)
-    assert_ne!(
-        rc, KAL_ERR_BUF_TOO_SMALL,
-        "buffer trop petit — augmenter la capacité du tableau indices"
-    );
+    assert_ne!(rc, KAL_ERR_BUF_TOO_SMALL, "buffer trop petit — augmenter la capacité");
     assert_eq!(rc, KAL_ENGINE_OK);
     assert_eq!(count, 3, "Triduum pascal 2025 = exactement 3 jours Precedence-0");
 }
@@ -147,44 +146,31 @@ kal_scan_flags(
 // 6. Transfer de Ss. Petri et Pauli
 // ---------------------------------------------------------------------------
 
-/// En 1973 et 1984, Pâques tombe le 22 avril. Le Sacré-Cœur (mobile, pascha+68)
-/// atterrit le 29 juin — date fixe de Ss. Petri et Pauli.
-/// La résolution de préséance transfère Ss. Petri et Pauli au 30 juin.
+/// En 1973 et 1984, Pâques = 22 avril. Le Sacré-Cœur (pascha+68) atterrit
+/// le 29 juin (doy=180). La résolution de préséance transfère Ss. Petri et Pauli
+/// au 30 juin (doy=181).
 ///
-/// Ce phénomène se reproduit chaque fois que Pâques = 22 avril :
-/// 1973, 1984, 2057, 2068, 2114…
-///
-/// Invariants vérifiés :
-/// - doy=180 (29 juin) : Sacré-Cœur en primary — Ss. Petri et Pauli absent.
-/// - doy=181 (30 juin) : Ss. Petri et Pauli (0x10b3) en primary.
+/// En v5, l'identité d'une fête est son `registry_index` (stable et opaque).
 #[test]
 fn full_range_petri_et_pauli_transfer_easter_april22() {
-    let kald = forge_full_range(1969..=2399).expect("forge plage complète");
+    let kald = &kalds().0;
 
-    // Résolution dynamique de l'ID — 1970 : Sacré-Cœur = 5 juin, pas de conflit sur doy=180.
-    let mut e_ref = CalendarEntry::zeroed();
-    let rc = unsafe { kal_read_entry(kald.as_ptr(), kald.len(), 1970, 180, &mut e_ref) };
-    assert_eq!(rc, KAL_ENGINE_OK, "kal_read_entry KO — référence 1970 doy=180");
-    let petri_et_pauli_id = e_ref.primary_id;
-    assert_ne!(petri_et_pauli_id, 0, "ID de référence nul — vérifier doy=180 en 1970");
+    // Référence : 1970, Pâques ≠ 22 avril → Ss. Petri et Pauli en doy=180 sans conflit.
+    let e_ref = unsafe { read_entry(kald, 1970, 180) };
+    assert_ne!(e_ref.primary_index, 0, "Référence 1970 doy=180 : Padding Entry inattendu");
+    let petri_et_pauli_ridx = e_ref.primary_index;
 
-    // Années où Pâques = 22 avril → Sacré-Cœur (pascha+68) = 29 juin (doy=180).
-    // Ss. Petri et Pauli est transféré au 30 juin (doy=181).
     for year in [1973u16, 1984] {
-        let mut e_june29 = CalendarEntry::zeroed();
-        let rc = unsafe { kal_read_entry(kald.as_ptr(), kald.len(), year, 180, &mut e_june29) };
-        assert_eq!(rc, KAL_ENGINE_OK, "kal_read_entry KO — {year} doy=180");
+        let e_june29 = unsafe { read_entry(kald, year, 180) };
         assert_ne!(
-            e_june29.primary_id, petri_et_pauli_id,
+            e_june29.primary_index, petri_et_pauli_ridx,
             "doy=180 (29 juin {year}) : Ss. Petri et Pauli ne doit pas être en primary"
         );
 
-        let mut e_june30 = CalendarEntry::zeroed();
-        let rc = unsafe { kal_read_entry(kald.as_ptr(), kald.len(), year, 181, &mut e_june30) };
-        assert_eq!(rc, KAL_ENGINE_OK, "kal_read_entry KO — {year} doy=181");
+        let e_june30 = unsafe { read_entry(kald, year, 181) };
         assert_eq!(
-            e_june30.primary_id, petri_et_pauli_id,
-            "doy=181 (30 juin {year}) : Ss. Petri et Pauli doit être en primary (transfert depuis doy=180)"
+            e_june30.primary_index, petri_et_pauli_ridx,
+            "doy=181 (30 juin {year}) : Ss. Petri et Pauli doit être en primary (transfert)"
         );
     }
 }
@@ -192,89 +178,71 @@ fn full_range_petri_et_pauli_transfer_easter_april22() {
 // ---------------------------------------------------------------------------
 // 7. Fabiani et Sebastiani — même DOY, primary + secondary
 // ---------------------------------------------------------------------------
- 
-/// S. Fabianus (pape et martyr) et S. Sebastianus (martyr) tombent tous deux
-/// le 20 janvier (doy=19). Même précédence (Mémoire facultative).
-///
-/// Invariants vérifiés :
-/// - doy=19 : primary_id != 0 (l'une des deux fêtes occupe le slot).
-/// - secondary_count >= 1 (l'autre fête est en secondary).
-/// - Le FeastID de la fête secondaire est distinct du primaire.
-///
-/// Garantit que deux mémoires concomitantes ne s'évincent pas mutuellement
-/// et que le Secondary Pool est correctement alimenté.
+
+/// S. Fabianus et S. Sebastianus tombent tous deux le 20 janvier (doy=19).
+/// Invariants : primary_index ≠ 0, secondary_count ≥ 1,
+/// aucun registry_index secondaire identique au primaire.
 #[test]
 fn full_range_fabiani_et_sebastiani_same_doy() {
-    let kald = forge_full_range(1969..=2399).expect("forge plage complète");
- 
-    // Choisir une année ordinaire sans conflit pascal sur doy=19.
+    use liturgical_calendar_core::ffi::kal_read_secondary;
+
+    let kald = &kalds().0;
+
     for year in [2025u16, 2026, 2030] {
-        let mut e = CalendarEntry::zeroed();
-        let rc = unsafe { kal_read_entry(kald.as_ptr(), kald.len(), year, 19, &mut e) };
-        assert_eq!(rc, KAL_ENGINE_OK, "kal_read_entry KO — {year} doy=19");
- 
-        assert_ne!(e.primary_id, 0,
-            "{year} doy=19 : primary_id nul — l'une des deux mémoires doit occuper le slot");
- 
+        let e = unsafe { read_entry(kald, year, 19) };
+
+        assert_ne!(
+            e.primary_index, 0,
+            "{year} doy=19 : Padding Entry — l'une des deux mémoires doit occuper le slot"
+        );
         assert!(
             e.secondary_count >= 1,
             "{year} doy=19 : secondary_count={} — Fabiani ou Sebastiani doit être en secondary",
             e.secondary_count
         );
- 
-        // Les deux FeastIDs doivent être distincts.
-        // Lecture du premier secondaire via kal_read_secondary.
-        use liturgical_calendar_core::ffi::kal_read_secondary;
-        let mut sec_ids = vec![0u16; e.secondary_count as usize];
+
+        let mut sec_indices = vec![0u16; e.secondary_count as usize];
         let rc = unsafe {
             kal_read_secondary(
                 kald.as_ptr(), kald.len(),
-                e.secondary_index,
+                e.secondary_offset,
                 e.secondary_count,
-                sec_ids.as_mut_ptr(),
+                sec_indices.as_mut_ptr(),
                 e.secondary_count,
             )
         };
         assert_eq!(rc, KAL_ENGINE_OK, "kal_read_secondary KO — {year} doy=19");
+
         assert!(
-            sec_ids.iter().all(|&id| id != e.primary_id),
-            "{year} doy=19 : un FeastID secondaire est identique au primaire"
+            sec_indices.iter().all(|&ridx| ridx != e.primary_index),
+            "{year} doy=19 : un registry_index secondaire est identique au primaire"
         );
     }
 }
 
 // ---------------------------------------------------------------------------
-// 7. Dominica II per annum 2026 (DOY 17) doit être présent en primary
+// 8. Dominica II per annum 2026 (DOY 17)
 // ---------------------------------------------------------------------------
 
 #[test]
 fn full_range_dominica_ii_2026_segment_i() {
-    let kald = forge_full_range(2026..=2026).unwrap();
-    let mut e = CalendarEntry::zeroed();
-    // DOY 17 = Dominica II per annum 2026 (Segment I)
-    let rc = unsafe { kal_read_entry(kald.as_ptr(), kald.len(), 2026, 17, &mut e) };
-    assert_eq!(rc, KAL_ENGINE_OK);
-    assert_ne!(e.primary_id, 0, "Dominica II 2026 absente du .kald");
+    let kald = &kalds().0;
+    let e = unsafe { read_entry(kald, 2026, 17) };
+    assert_ne!(e.primary_index, 0, "Dominica II 2026 absente du .kald (doy=17)");
 }
 
-
 // ---------------------------------------------------------------------------
-// 8. Test de non-régression
+// 9. Non-régression — Mercredi des Cendres 2026
 // ---------------------------------------------------------------------------
 
-/// Mercredi des Cendres 2026 (DOY 48) doit être présent, DOY 49 doit être vide
+/// Mercredi des Cendres 2026 (DOY=48) doit être présent ; DOY=49 doit être vide.
 #[test]
 fn full_range_ash_wednesday_early_easter_2026() {
-    // Pâques 2026 = 5 avril (DOY 95 padded). Mercredi des Cendres = DOY 48 (18 fév).
-    // Régression : offset négatif franchissant le slot 59 retournait DOY 49.
-    let kald = forge_full_range(2026..=2026).unwrap();
-    let mut e = CalendarEntry::zeroed();
-    let rc = unsafe { kal_read_entry(kald.as_ptr(), kald.len(), 2026, 48, &mut e) };
-    assert_eq!(rc, KAL_ENGINE_OK);
-    assert_ne!(e.primary_id, 0, "Feria IV Cinerum absente du DOY 48 en 2026");
-    // DOY 49 doit être vide (Padding ou feria sans célébration).
-    let mut e49 = CalendarEntry::zeroed();
-    let rc = unsafe { kal_read_entry(kald.as_ptr(), kald.len(), 2026, 49, &mut e49) };
-    assert_eq!(rc, KAL_ENGINE_OK);
-    assert_eq!(e49.primary_id, 0, "DOY 49 doit être vide en 2026");
+    let kald = &kalds().0;
+
+    let e48 = unsafe { read_entry(kald, 2026, 48) };
+    assert_ne!(e48.primary_index, 0, "Feria IV Cinerum absente du DOY 48 en 2026");
+
+    let e49 = unsafe { read_entry(kald, 2026, 49) };
+    assert_eq!(e49.primary_index, 0, "DOY 49 doit être vide en 2026");
 }

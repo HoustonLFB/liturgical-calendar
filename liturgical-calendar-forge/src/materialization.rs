@@ -1,10 +1,22 @@
-//! Étape 5 — Day Materialization : 366 slots + vespers lookahead.
+//! Étape 5 — Day Materialization : Timeline v5 + vespers lookahead.
+//!
+//! Changements v4 → v5 :
+//!   - `CalendarEntry`    → `TimelineEntry` (stride 8 conservé)
+//!   - `flags[13:0]`      → migrent dans `FeastEntry.flags` (Feast Registry)
+//!   - `flags[14:15]`     → migrent dans `TimelineEntry.occurrence_flags` bits [0:1]
+//!   - `primary_id`       → `primary_index` (registry_index 1-based, 0 = Padding)
+//!   - `secondary_index`  → `secondary_offset`
+//!   - `PoolBuilder`      : stocke des `registry_index` (1-based), pas des `feast_id`
+//!   - `vespers_lookahead_pass` : lit la préséance depuis le Feast Registry
 
 #![allow(missing_docs)]
 
 use std::collections::BTreeMap;
 
-use liturgical_calendar_core::{CalendarEntry, Color, LiturgicalPeriod, Nature};
+use liturgical_calendar_core::{
+    entry::{FeastEntry, TimelineEntry},
+    types::{Color, LiturgicalPeriod, Nature},
+};
 
 use crate::{
     canonicalization::{is_leap_year, SeasonBoundaries},
@@ -12,144 +24,221 @@ use crate::{
     resolution::ResolvedCalendar,
 };
 
+// ─── FeastRegistryBuilder ─────────────────────────────────────────────────────
+
+/// Constructeur du Feast Registry AOT.
+///
+/// Maintient `feast_id → registry_index` (1-based).
+/// Index `0` = sentinel Padding, jamais assigné.
+/// Déterministe : le premier `get_or_insert` pour un `feast_id` donné fixe son index.
+pub(crate) struct FeastRegistryBuilder {
+    index:       BTreeMap<u16, u16>,
+    pub entries: Vec<FeastEntry>,
+}
+
+impl FeastRegistryBuilder {
+    pub fn new() -> Self {
+        Self { index: BTreeMap::new(), entries: Vec::new() }
+    }
+
+    /// Retourne le `registry_index` existant ou insère et assigne le suivant (1-based).
+    pub fn get_or_insert(&mut self, feast_id: u16, flags: u16) -> Result<u16, ForgeError> {
+        if let Some(&idx) = self.index.get(&feast_id) {
+            return Ok(idx);
+        }
+        if self.entries.len() >= u16::MAX as usize {
+            return Err(ForgeError::RegistryOverflow);
+        }
+        let idx = self.entries.len() as u16 + 1;
+        self.index.insert(feast_id, idx);
+        self.entries.push(FeastEntry { feast_id, flags });
+        Ok(idx)
+    }
+
+    pub fn index_of(&self, feast_id: u16) -> Option<u16> {
+        self.index.get(&feast_id).copied()
+    }
+
+    pub fn registry_count(&self) -> u32 {
+        self.entries.len() as u32
+    }
+
+    /// Slice pour `vespers_lookahead_pass` et la sérialisation.
+    /// `entries[registry_index − 1]` = FeastEntry pour `registry_index` donné.
+    pub fn as_slice(&self) -> &[FeastEntry] {
+        &self.entries
+    }
+}
+
 // ─── PoolBuilder ─────────────────────────────────────────────────────────────
 
-/// Constructeur du Secondary Pool avec déduplication par séquence triée de FeastIDs.
-///
-/// La déduplication est une contrainte d'implémentation, pas une optimisation :
-/// sans elle, le pool worst-case (~78 000 entrées sur 431 ans) dépasse u16::MAX.
+/// Secondary Pool — stocke des `registry_index` (1-based) dédupliqués.
 pub(crate) struct PoolBuilder {
-    /// Clé : séquence triée de FeastIDs — garantit {A,B} ≡ {B,A}.
     index: BTreeMap<Vec<u16>, u16>,
-    /// Données sérialisées — concaténation de toutes les séquences.
     pub data: Vec<u16>,
 }
 
 impl PoolBuilder {
     pub fn new() -> Self {
-        Self {
-            index: BTreeMap::new(),
-            data:  Vec::new(),
-        }
+        Self { index: BTreeMap::new(), data: Vec::new() }
     }
 
-    /// Insère une séquence de FeastIDs et retourne son index dans le pool.
-    /// Déduplique silencieusement si la séquence (triée) existe déjà.
-    pub fn insert(&mut self, mut ids: Vec<u16>) -> Result<u16, ForgeError> {
-        ids.sort_unstable(); // tri canonique avant déduplication — INV-FORGE-4
+    /// Insère une séquence de `registry_index` et retourne son offset (en u16).
+    pub fn insert(&mut self, mut indices: Vec<u16>) -> Result<u16, ForgeError> {
+        indices.sort_unstable();
 
-        if let Some(&existing) = self.index.get(&ids) {
-            return Ok(existing); // zéro duplication
+        if let Some(&existing) = self.index.get(&indices) {
+            return Ok(existing);
         }
-
-        // V11 : secondary_index est u16 — capacité maximale 65 535 entrées.
-        if self.data.len() + ids.len() > u16::MAX as usize {
+        if self.data.len() + indices.len() > u16::MAX as usize {
             return Err(ForgeError::SecondaryPoolOverflow {
                 pool_len:     self.data.len() as u32,
                 max_capacity: u16::MAX as u32,
             });
         }
-
-        let idx = self.data.len() as u16;
-        self.index.insert(ids.clone(), idx);
-        self.data.extend_from_slice(&ids);
-        Ok(idx)
+        let offset = self.data.len() as u16;
+        self.index.insert(indices.clone(), offset);
+        self.data.extend_from_slice(&indices);
+        Ok(offset)
     }
 }
 
-// ─── encode_flags ─────────────────────────────────────────────────────────────
+// ─── encode_feast_flags ───────────────────────────────────────────────────────
 
-/// Encode les 4 champs de domaine dans les bits [0:13] de `flags`.
+/// Encode les invariants d'une fête dans `FeastEntry.flags`.
 ///
-/// Les bits [14:15] (HAS_VESPERAE_I, HAS_VIGILIA) sont laissés à 0 :
-/// ils sont positionnés exclusivement par `vespers_lookahead_pass`.
-/// Exception : le bit 15 (HAS_VIGILIA) est aussi levé sur l'entrée propre
-/// de la fête qui déclare `has_vigil_mass: true` (premier signal, avant lookahead).
-pub(crate) fn encode_flags(
+/// - bits [3:0]   → `precedence`
+/// - bits [7:4]   → `color`
+/// - bits [10:8]  → `liturgical_period`
+/// - bits [13:11] → `nature`
+/// - bit  [14]    → `has_vigil_mass`
+/// - bit  [15]    → réservé, nul
+pub(crate) fn encode_feast_flags(
     precedence:        u8,
     color:             Color,
     liturgical_period: LiturgicalPeriod,
     nature:            Nature,
-    feast_has_vigil:   bool, // has_vigil_mass déclaré dans le YAML
+    has_vigil_mass:    bool,
 ) -> u16 {
     (precedence as u16)
-        | ((color as u16) << 4)
+        | ((color as u16)             << 4)
         | ((liturgical_period as u16) << 8)
-        | ((nature as u16) << 11)
-        // bit 14 (HAS_VESPERAE_I) : jamais set ici — vespers_lookahead_pass uniquement.
-        | ((feast_has_vigil as u16) << 15)
+        | ((nature as u16)            << 11)
+        | ((has_vigil_mass as u16)    << 14)
 }
 
-// ─── generate_year ────────────────────────────────────────────────────────────
+// ─── build_feast_registry (Pass 1) ────────────────────────────────────────────
 
-/// Génère les 366 slots `CalendarEntry` pour une année résolue.
+/// Pass 1 — collecte tous les `feast_id` du corpus et construit le Feast Registry.
 ///
-/// - Slot doy=59 : Padding Entry (`zeroed()`) pour années non-bissextiles.
-/// - Slots vides (fêtes absorbées) : `zeroed()`.
-/// - Les bits [14:15] de `flags` sont laissés à 0 — `vespers_lookahead_pass` les calcule ensuite.
+/// Prend des références — `ResolvedCalendar` n'a pas besoin d'implémenter `Clone`.
 ///
-/// `pool` est partagé entre toutes les années pour la déduplication inter-années.
+/// Hypothèse : `ResolvedDay.secondary_feasts` expose les mêmes champs que `day.primary`
+/// (`feast_id`, `precedence`, `color`, `nature`, `has_vigil_mass`).
+pub(crate) fn build_feast_registry<'a>(
+    all_inputs: &[(&'a ResolvedCalendar, &'a SeasonBoundaries)],
+) -> Result<FeastRegistryBuilder, ForgeError> {
+    let mut builder = FeastRegistryBuilder::new();
+
+    for &(resolved, season_boundaries) in all_inputs {
+        let is_leap = is_leap_year(resolved.year);
+
+        for (&doy, day) in &resolved.days {
+            if !is_leap && doy == 59 {
+                continue;
+            }
+
+            let period = season_boundaries.period_of(doy);
+
+            let primary_flags = encode_feast_flags(
+                day.primary.precedence,
+                day.primary.color,
+                period,
+                day.primary.nature,
+                day.primary.has_vigil_mass,
+            );
+            builder.get_or_insert(day.primary.feast_id, primary_flags)?;
+
+            for secondary in &day.secondary_feasts {
+                let sec_flags = encode_feast_flags(
+                    secondary.precedence,
+                    secondary.color,
+                    period,
+                    secondary.nature,
+                    secondary.has_vigil_mass,
+                );
+                builder.get_or_insert(secondary.feast_id, sec_flags)?;
+            }
+        }
+    }
+
+    Ok(builder)
+}
+
+// ─── generate_year (Pass 2) ───────────────────────────────────────────────────
+
+/// Pass 2 — génère les 366 `TimelineEntry` pour une année résolue.
+///
+/// Requiert que `feast_registry` soit complet (Pass 1 terminée) :
+/// tout `feast_id` rencontré doit y être présent.
+/// `occurrence_flags` laissés à `0` — `vespers_lookahead_pass` les calcule ensuite.
 pub(crate) fn generate_year(
-    resolved:          ResolvedCalendar,
-    pool:              &mut PoolBuilder,
-    season_boundaries: &SeasonBoundaries,
-) -> Result<[CalendarEntry; 366], ForgeError> {
+    resolved:             &ResolvedCalendar,
+    pool:                 &mut PoolBuilder,
+    _season_boundaries:   &SeasonBoundaries,
+    feast_registry:       &FeastRegistryBuilder,
+) -> Result<[TimelineEntry; 366], ForgeError> {
     let year    = resolved.year;
     let is_leap = is_leap_year(year);
 
-    let mut entries = [CalendarEntry::zeroed(); 366];
+    let mut entries = [TimelineEntry::zeroed(); 366];
 
     for doy in 0u16..=365u16 {
-        // doy=59 non-bissextile : Padding Entry — entries[59] reste zeroed().
         if !is_leap && doy == 59 {
             continue;
         }
 
         let day = match resolved.days.get(&doy) {
             Some(d) => d,
-            None    => continue, // Slot vide — zeroed() correct.
+            None    => continue,
         };
 
-        // LiturgicalPeriod : cache AOT depuis SeasonBoundaries.
-        let period = season_boundaries.period_of(doy);
-
-        // V12 : secondary_count est u8 — max 255 commémorations par slot.
         let secondary_count = day.secondary_feasts.len();
         if secondary_count > u8::MAX as usize {
             return Err(ForgeError::SecondaryCountOverflow { doy, year, count: secondary_count });
         }
 
-        let (secondary_index, sc) = if secondary_count > 0 {
-            // INV-FORGE-4 : ids déjà triés par feast_id dans ResolvedDay.secondary_feasts.
-            let ids: Vec<u16> = day.secondary_feasts.iter().map(|f| f.feast_id).collect();
-            let idx = pool.insert(ids)?;
-            (idx, secondary_count as u8)
+        let primary_index = feast_registry
+            .index_of(day.primary.feast_id)
+            .ok_or(ForgeError::FeastNotInRegistry { feast_id: day.primary.feast_id, year, doy })?;
+
+        let (secondary_offset, sc) = if secondary_count > 0 {
+            let indices: Vec<u16> = day.secondary_feasts
+                .iter()
+                .map(|f| {
+                    feast_registry
+                        .index_of(f.feast_id)
+                        .ok_or(ForgeError::FeastNotInRegistry { feast_id: f.feast_id, year, doy })
+                })
+                .collect::<Result<_, _>>()?;
+            let offset = pool.insert(indices)?;
+            (offset, secondary_count as u8)
         } else {
-            // secondary_index = 0 quand secondary_count = 0 — valeur canonique.
             (0u16, 0u8)
         };
 
-        let flags = encode_flags(
-            day.primary.precedence,
-            day.primary.color,
-            period,
-            day.primary.nature,
-            day.primary.has_vigil_mass,
-        );
-
-        entries[doy as usize] = CalendarEntry {
-            primary_id:      day.primary.feast_id,
-            secondary_index,
-            flags,
-            secondary_count: sc,
-            _reserved:       0,
+        entries[doy as usize] = TimelineEntry {
+            primary_index,
+            secondary_offset,
+            occurrence_flags: 0,
+            secondary_count:  sc,
+            _reserved:        0,
         };
     }
 
-    // V10 : Padding Entry obligatoire à doy=59 pour années non-bissextiles.
     if !is_leap {
         let e = &entries[59];
-        if e.primary_id != 0 || e.flags != 0 || e.secondary_count != 0 {
+        if e.primary_index != 0 || e.secondary_count != 0 {
             return Err(ForgeError::PaddingEntryMissing { year, doy: 59 });
         }
     }
@@ -159,40 +248,56 @@ pub(crate) fn generate_year(
 
 // ─── vespers_lookahead_pass ────────────────────────────────────────────────────
 
-/// Passe vespérale — calcule les bits [14:15] de chaque entrée.
+/// Passe vespérale — calcule `occurrence_flags` bits [0:1] de chaque `TimelineEntry`.
 ///
-/// Opère sur le tableau APRÈS `generate_year`. Deux passes possibles sur le même entrée :
-/// - bit 15 sur la fête propre : posé par `encode_flags` (has_vigil_mass).
-/// - bit 14 + report du bit 15 : posés ici sur le DOY précédant la fête.
+/// Opère APRÈS `generate_year`. Lit la préséance et `has_vigil_mass` depuis `feast_registry`.
 ///
-/// `next_year_jan1` : premier slot de l'année suivante, pour DOY=365 → DOY+1.
-/// Absent pour la dernière année du corpus (2399) — bits [14:15] laissés à 0.
+/// Règles (inchangées depuis v4) :
+///   - bit 0 (HAS_VESPERAE_I) : si `tomorrow_prec ≤ 3 || tomorrow_prec == 5`
+///     ET `today_prec ≥ tomorrow_prec || today_prec == 0`.
+///   - bit 1 (HAS_VIGILIA)    : reporté depuis `FeastEntry.has_vigil_mass()` de demain.
+///
+/// `next_year_jan1` : premier slot de l'année suivante.
+/// `None` pour 2399 — bits conservés à 0.
 pub(crate) fn vespers_lookahead_pass(
-    entries:        &mut [CalendarEntry; 366],
-    next_year_jan1: Option<&CalendarEntry>,
+    entries:        &mut [TimelineEntry; 366],
+    feast_registry: &[FeastEntry],
+    next_year_jan1: Option<&TimelineEntry>,
 ) {
+    #[inline]
+    fn prec_of(e: &TimelineEntry, r: &[FeastEntry]) -> u8 {
+        if e.primary_index == 0 { return 0; }
+        r.get(e.primary_index as usize - 1)
+            .map_or(0, |fe| (fe.flags & 0x0F) as u8)
+    }
+
+    #[inline]
+    fn vigil_of(e: &TimelineEntry, r: &[FeastEntry]) -> bool {
+        if e.primary_index == 0 { return false; }
+        r.get(e.primary_index as usize - 1)
+            .is_some_and(|fe| fe.flags & (1 << 14) != 0)
+    }
+
     for doy in 0u16..=365u16 {
-        // Extraire les valeurs scalaires de `tomorrow` — libère le borrow immuable
-        // avant la mutation de `entries[doy]`.
-        let (tomorrow_prec, tomorrow_has_vigil): (u8, bool) = if doy < 365 {
+        let (tomorrow_prec, tomorrow_has_vigil) = if doy < 365 {
             let t = &entries[doy as usize + 1];
-            ((t.flags & 0x0F) as u8, t.flags & (1 << 15) != 0)
+            (prec_of(t, feast_registry), vigil_of(t, feast_registry))
         } else {
             match next_year_jan1 {
-                Some(e) => ((e.flags & 0x0F) as u8, e.flags & (1 << 15) != 0),
-                None    => continue, // 31 déc 2399 — bits conservés à 0.
+                Some(e) => (prec_of(e, feast_registry), vigil_of(e, feast_registry)),
+                None    => continue,
             }
         };
 
         let has_first_vespers = tomorrow_prec <= 3 || tomorrow_prec == 5;
         if !has_first_vespers { continue; }
 
-        let today_prec = (entries[doy as usize].flags & 0x0F) as u8;
-        if today_prec < tomorrow_prec && today_prec != 0 { continue; }
+        let today_prec = prec_of(&entries[doy as usize], feast_registry);
+        if today_prec != 0 && today_prec < tomorrow_prec { continue; }
 
-        entries[doy as usize].flags |= 1 << 14; // HAS_VESPERAE_I
-        if tomorrow_has_vigil {
-            entries[doy as usize].flags |= 1 << 15; // HAS_VIGILIA reporté
-        }
+        let mut occ = entries[doy as usize].occurrence_flags;
+        occ |= 1 << 0;
+        if tomorrow_has_vigil { occ |= 1 << 1; }
+        entries[doy as usize].occurrence_flags = occ;
     }
 }

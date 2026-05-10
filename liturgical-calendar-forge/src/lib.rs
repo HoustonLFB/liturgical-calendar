@@ -33,55 +33,47 @@ pub use canonicalization::{
 // ── Imports internes ──────────────────────────────────────────────────────────
 
 use std::path::Path;
-use materialization::{generate_year, vespers_lookahead_pass, PoolBuilder};
+use liturgical_calendar_core::entry::TimelineEntry;
+use materialization::{
+    build_feast_registry, generate_year, vespers_lookahead_pass, PoolBuilder,
+};
 use packing::write_kald;
 use resolution::resolve_year;
 
 // ── Types publics ─────────────────────────────────────────────────────────────
 
 /// Paramètres i18n pour la production des fichiers `.lits` compagnons.
-///
-/// Si `None` est passé à `compile`, aucun `.lits` n'est produit (comportement
-/// Session B inchangé — `.kald` seul).
 pub struct I18nConfig<'a> {
-    /// Chemin vers `corpus/{rite}/` — racine du rite.
-    /// `discover_and_load_i18n` traverse la chaîne de scopes selon `scope_path`.
-    pub i18n_root: &'a Path,
-    /// Scope cible — `None` = tout le rite, `Some("universale")` = universale seul.
-    /// Doit correspondre au scope utilisé pour `ingest_corpus_scoped`.
+    pub i18n_root:  &'a Path,
     pub scope_path: Option<&'a str>,
-    /// Répertoire de sortie pour les fichiers `.lits` produits.
-    pub lits_dir: &'a Path,
+    pub lits_dir:   &'a Path,
 }
 
 // ── Pipeline de compilation ───────────────────────────────────────────────────
 
-/// Compile un corpus YAML en fichier `.kald` pour la plage 1969–2399.
+/// Compile un corpus YAML en fichier `.kald` v5 pour la plage 1969–2399.
 /// Si `i18n` est fourni, produit également un `.lits` par langue compilée.
 ///
-/// # Pipeline
+/// # Pipeline v5
 ///
-/// - Étape 1    — Allocation des FeastIDs stables (lock)
-/// - Étape 1bis — i18n Resolution (si `i18n` fourni)
-/// - Étapes 3–5 — Canonicalization → Conflict Resolution → Materialization
-/// - Étape 6    — Binary Packing `.kald` puis `.lits` (si `i18n` fourni)
-///
-/// # Retour
-///
-/// SHA-256 `[u8; 32]` du `.kald` produit (`checksum[..8]` = Build ID).
-/// Le même Build ID est inscrit dans le header de chaque `.lits`.
+/// - Étape 1     — Allocation des FeastIDs stables (lock)
+/// - Étape 1bis  — i18n Resolution (si `i18n` fourni)
+/// - Étapes 3–5a — Canonicalization → Resolution (toutes les années)
+/// - Étape 5b    — Pass 1 : construction du Feast Registry (AOT)
+/// - Étape 5c    — Pass 2 : génération Timeline + Pool + vespers lookahead
+/// - Étape 6     — Binary Packing `.kald` puis `.lits`
 pub fn compile(
-    registry:    FeastRegistry,
-    output:      &Path,
-    variant_id:  u16,
-    i18n:        Option<I18nConfig<'_>>,
-    lock_path:   &Path,
+    registry:   FeastRegistry,
+    output:     &Path,
+    variant_id: u16,
+    i18n:       Option<I18nConfig<'_>>,
+    lock_path:  &Path,
 ) -> Result<[u8; 32], ForgeError> {
     // ── Étape 1 — Allocation d'IDs stables ───────────────────────────────────
     let mut lock  = crate::lock::FeastRegistryLock::load(lock_path)?;
     let feast_ids = allocate_feast_ids(&registry, &mut lock, lock_path)?;
 
-    // ── Validation post-merge : class obligatoire sur toute fête active ──────
+    // ── Validation post-merge : class obligatoire ─────────────────────────────
     for feast in registry.iter() {
         if feast.class.is_none() {
             return Err(ForgeError::Parse(
@@ -105,16 +97,35 @@ pub fn compile(
         None => None,
     };
 
-    // ── Étapes 3–5 — Canonicalization → Resolution → Materialization ─────────
-    let mut pool = PoolBuilder::new();
-    let mut all_entries: Vec<[liturgical_calendar_core::CalendarEntry; 366]> =
+    // ── Étapes 3–5a — Canonicalization → Resolution (toutes les années) ──────
+    //
+    // Les `ResolvedCalendar` sont accumulés en mémoire : la Pass 1 (build_feast_registry)
+    // requiert la vue complète du corpus avant de pouvoir générer les TimelineEntry.
+
+    let mut all_resolved: Vec<(resolution::ResolvedCalendar, canonicalization::SeasonBoundaries)> =
         Vec::with_capacity(431);
 
     for year in 1969u16..=2399 {
         let canon    = canonicalize_year(year, &registry)?;
         let sb       = canon.season_boundaries.clone();
         let resolved = resolve_year(canon, &registry, &feast_ids)?;
-        let entries  = generate_year(resolved, &mut pool, &sb)?;
+        all_resolved.push((resolved, sb));
+    }
+
+    // ── Étape 5b — Pass 1 : Feast Registry ───────────────────────────────────
+
+    let refs: Vec<(&resolution::ResolvedCalendar, &canonicalization::SeasonBoundaries)> =
+        all_resolved.iter().map(|(r, s)| (r, s)).collect();
+
+    let feast_registry = build_feast_registry(&refs)?;
+
+    // ── Étape 5c — Pass 2 : Timeline + Pool + vespers lookahead ──────────────
+
+    let mut pool = PoolBuilder::new();
+    let mut all_entries: Vec<[TimelineEntry; 366]> = Vec::with_capacity(431);
+
+    for (resolved, sb) in &all_resolved {
+        let entries = generate_year(resolved, &mut pool, sb, &feast_registry)?;
         all_entries.push(entries);
     }
 
@@ -122,11 +133,11 @@ pub fn compile(
     for i in 0..all_entries.len() {
         let (left, right) = all_entries.split_at_mut(i + 1);
         let next_jan1     = right.first().map(|e| &e[0]);
-        vespers_lookahead_pass(&mut left[i], next_jan1);
+        vespers_lookahead_pass(&mut left[i], feast_registry.as_slice(), next_jan1);
     }
 
     // ── Étape 6 — Binary Packing `.kald` ─────────────────────────────────────
-    let kald_checksum = write_kald(output, all_entries, pool, variant_id)?;
+    let kald_checksum = write_kald(output, all_entries, &feast_registry, pool, variant_id)?;
 
     // ── Étape 6 — Binary Packing `.lits` (une par langue) ────────────────────
     if let (Some(cfg), Some((store, langs))) = (&i18n, i18n_artifacts) {
@@ -138,9 +149,6 @@ pub fn compile(
         }
 
         // ── Vérification de cohérence build ID ───────────────────────────────
-        // Relit les 20 premiers octets de chaque `.lits` produit et compare
-        // kald_build_id (octets 12–19) avec kald_checksum[..8].
-        // Détecte une désynchro si un artefact périmé subsiste sur disque.
         let expected_build_id = &kald_checksum[..8];
         for lang in &lang_refs {
             let lits_path = cfg.lits_dir.join(format!("{}.lits", lang));
@@ -174,7 +182,6 @@ pub fn compile(
 // ── Helper de test ────────────────────────────────────────────────────────────
 
 /// Compile le corpus complet en buffer binaire `.kald` sans I/O disque (hors lock).
-/// Toujours 431 années (1969–2399) — layout AOT invariant.
 pub fn forge_full_range(_range: std::ops::RangeInclusive<u16>) -> Result<Vec<u8>, ForgeError> {
     static LOCK_MUTEX: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
@@ -190,29 +197,44 @@ pub fn forge_full_range(_range: std::ops::RangeInclusive<u16>) -> Result<Vec<u8>
     eprintln!("[DEBUG] {} fêtes chargées", registry.len());
 
     let feast_ids = {
-        let _guard   = LOCK_MUTEX.lock().unwrap();
+        let _guard    = LOCK_MUTEX.lock().unwrap();
         let lock_path = std::env::temp_dir().join("liturgical_forge_test.lock");
         let mut lock  = crate::lock::FeastRegistryLock::load(&lock_path)?;
         allocate_feast_ids(&registry, &mut lock, &lock_path)?
-    }; // _guard dropped ici — section critique minimale
+    };
 
-    let mut pool = PoolBuilder::new();
-    let mut all_entries = Vec::with_capacity(431);
+    // Pass 1a : résolution de toutes les années
+    let mut all_resolved: Vec<(resolution::ResolvedCalendar, canonicalization::SeasonBoundaries)> =
+        Vec::with_capacity(431);
 
     for year in 1969u16..=2399 {
         let canon    = canonicalize_year(year, &registry)?;
         let sb       = canon.season_boundaries.clone();
         let resolved = resolve_year(canon, &registry, &feast_ids)?;
-        let entries  = generate_year(resolved, &mut pool, &sb)?;
+        all_resolved.push((resolved, sb));
+    }
+
+    // Pass 1b : Feast Registry
+    let refs: Vec<(&resolution::ResolvedCalendar, &canonicalization::SeasonBoundaries)> =
+        all_resolved.iter().map(|(r, s)| (r, s)).collect();
+    let feast_registry = build_feast_registry(&refs)?;
+
+    // Pass 2 : Timeline + Pool
+    let mut pool = PoolBuilder::new();
+    let mut all_entries: Vec<[TimelineEntry; 366]> = Vec::with_capacity(431);
+
+    for (resolved, sb) in &all_resolved {
+        let entries = generate_year(resolved, &mut pool, sb, &feast_registry)?;
         all_entries.push(entries);
     }
 
+    // Vespers lookahead
     for i in 0..all_entries.len() {
         let (left, right) = all_entries.split_at_mut(i + 1);
         let next_jan1     = right.first().map(|e| &e[0]);
-        vespers_lookahead_pass(&mut left[i], next_jan1);
+        vespers_lookahead_pass(&mut left[i], feast_registry.as_slice(), next_jan1);
     }
 
-    let (_checksum, bytes) = build_kald(all_entries, pool, 0)?;
+    let (_checksum, bytes) = build_kald(all_entries, &feast_registry, pool, 0)?;
     Ok(bytes)
 }

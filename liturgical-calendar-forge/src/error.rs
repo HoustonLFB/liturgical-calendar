@@ -47,12 +47,9 @@ pub enum ParseError {
     /// V-I1 — i18n/la/{slug}.yaml absent ou clé {from}.{field} manquante.
     /// Fatale : chaque entrée history[] doit avoir un titre latin.
     I18nMissingLatinKey { slug: String, from: u16, field: String },
-    /// V-I2 — Clé orpheline dans un dictionnaire i18n : la valeur `from`
-    /// ne correspond à aucun `from` déclaré dans history[] pour ce slug.
+    /// V-I2 — Clé orpheline dans un dictionnaire i18n.
     I18nOrphanKey { slug: String, lang: String, from: u16, field: String },
-    /// V-I3 — Label i18n présent mais invalide : vide, trop court (< 3 caractères
-    /// après trim), uniquement whitespace, contient un caractère de contrôle,
-    /// ou contient du leading/trailing whitespace non intentionnel.
+    /// V-I3 — Label i18n présent mais invalide.
     I18nInvalidLabel { slug: String, lang: String, from: u16, reason: &'static str },
 }
 
@@ -84,7 +81,7 @@ pub enum RegistryError {
 
 #[derive(Debug)]
 pub enum ForgeError {
-    // ── Variants Session A (inchangés) ────────────────────────────────────
+    // ── Variants Session A ─────────────────────────────────────────────────
     Parse(ParseError),
     Registry(RegistryError),
     /// Ancre non résolue lors du calcul de PreResolvedTransfers.
@@ -123,23 +120,23 @@ pub enum ForgeError {
     SecondaryCountOverflow { doy: u16, year: u16, count: usize },
     /// Passe 5 — Table finale incohérente après clôture transitive.
     ResolutionIncomplete { doy: u16, year: u16, detail: String },
-    /// Validation post-écriture kal_validate_header échouée.
-    
-    /// Le `.lits` existant a été produit depuis un `.kald` différent.
-    /// `kald_build_id` (octets 12–19 du header `.lits`) ne correspond pas au
-    /// `kald_checksum[..8]` du `.kald` courant.
-    ///
-    /// Cause typique : un seul des deux artefacts a été recompilé.
-    /// Fix : supprimer les deux artefacts et relancer un build complet.
-    ArtifactBuildIdMismatch {
-        lits_path:        std::path::PathBuf,
-        lits_build_id:    [u8; 8],
-        kald_build_id:    [u8; 8],
-    },
 
+    // ── Variants Session C (v5) ────────────────────────────────────────────
+    /// Feast Registry saturé — plus de 65 535 fêtes distinctes dans le corpus.
+    RegistryOverflow,
+    /// `feast_id` présent dans une année résolue mais absent du Feast Registry.
+    /// Indique un bug dans la Pass 1 (`build_feast_registry`) : invariant normalement
+    /// inviolable en production.
+    FeastNotInRegistry { feast_id: u16, year: u16, doy: u16 },
+
+    // ── Variants artefacts ─────────────────────────────────────────────────
+    /// Le `.lits` existant a été produit depuis un `.kald` différent.
+    ArtifactBuildIdMismatch {
+        lits_path:     std::path::PathBuf,
+        lits_build_id: [u8; 8],
+        kald_build_id: [u8; 8],
+    },
     /// Le `.kald` sur disque n'a pas pu être relu pour vérification du build ID.
-    /// Cause typique : le fichier a été supprimé ou déplacé entre l'écriture et
-    /// la vérification (race condition ou erreur de script).
     ArtifactVerificationFailed {
         kald_path: std::path::PathBuf,
         reason:    String,
@@ -151,18 +148,15 @@ pub enum ForgeError {
     VariantIDExhausted,
     /// Fichier .lock illisible ou corrompu.
     LockFileMalformed(String),
-
     /// Post-merge : champ obligatoire absent après fusion universale + override.
-    /// Indique un corpus incomplet, pas un override invalide.
     MissingResolvedField {
         feast_id: u16,
         year:     u16,
         doy:      u16,
         field:    &'static str,
     },
-
+    /// Validation post-écriture `kal_validate_header` échouée.
     KaldValidationFailed { code: i32 },
-
 }
 
 impl From<ParseError> for ForgeError {

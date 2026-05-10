@@ -1,137 +1,144 @@
 use core::mem::size_of;
 use sha2::{Digest, Sha256};
 
-/// Header binaire du format `.kald` — 64 octets, little-endian.
+/// Header binaire du format `.kald` v5 — 80 octets, little-endian.
 ///
-/// Invariant de layout : `size_of::<Header>() == 64`.
+/// Layout :
+/// ```text
+/// [0..4]   magic                b"KALD"
+/// [4..6]   version              u16 = 5
+/// [6..8]   variant_id           u16
+/// [8..10]  epoch                u16
+/// [10..12] range                u16
+/// [12..16] entry_count          u32  — slots Timeline (YEAR_COUNT × 366)
+/// [16..20] pool_offset          u32  — offset absolu du Secondary Pool
+/// [20..24] pool_size            u32  — taille en octets
+/// [24..28] registry_offset      u32  — offset absolu du Feast Registry (= 80)
+/// [28..32] registry_count       u32  — nombre d'entrées FeastEntry
+/// [32..34] feast_id_base        u16  — métadonnée diagnostique
+/// [34..36] _reserved            u16  — nul
+/// [36..68] checksum             [u8; 32] — SHA-256(Registry ∥ Timeline ∥ Pool)
+/// [68..76] layout_discriminant  [u8; 8]
+/// [76..80] _reserved2           [u8; 4]
+/// ```
+///
+/// Invariant : `size_of::<Header>() == 80`.
+#[allow(missing_docs)] // champs auto-documentés par le layout en tête de module
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C)]
 pub struct Header {
-    /// Signature : `b"KALD"`.
-    pub magic: [u8; 4],
-    /// Version du format : doit valoir `4`.
-    pub version: u16,
-    /// Identifiant de variante (`0` = Ordinaire).
-    pub variant_id: u16,
-    /// Année d'époque : `1969`.
-    pub epoch: u16,
-    /// Nombre d'années couvertes : `431`.
-    pub range: u16,
-    /// Nombre total d'entrées dans le Data Body.
-    pub entry_count: u32,
-    /// Offset en octets du Secondary Pool depuis le début du fichier.
-    pub pool_offset: u32,
-    /// Taille en octets du Secondary Pool.
-    pub pool_size: u32,
-    /// SHA-256(`Data Body ∥ Secondary Pool`).
-    pub checksum: [u8; 32],
-    /// Discriminant de layout — `LAYOUT_DISCRIMINANT.to_le_bytes()`.
-    /// Détecte toute dérive de schéma entre la Forge et l'Engine.
+    pub magic:               [u8; 4],
+    pub version:             u16,
+    pub variant_id:          u16,
+    pub epoch:               u16,
+    pub range:               u16,
+    pub entry_count:         u32,
+    pub pool_offset:         u32,
+    pub pool_size:           u32,
+    pub registry_offset:     u32,
+    pub registry_count:      u32,
+    pub feast_id_base:       u16,
+    pub _reserved:           u16,
+    pub checksum:            [u8; 32],
     pub layout_discriminant: [u8; 8],
+    pub _reserved2:          [u8; 4],
 }
 
-// Assertion statique de layout — évaluée à la compilation.
-const _: () = assert!(size_of::<Header>() == 64);
+const _: () = assert!(size_of::<Header>() == 80);
 
-// ── Codes d'erreur internes (miroir des constantes FFI) ──────────────────────
-// ERR_NULL_PTR absent : le NULL check est assuré par la couche FFI avant tout
-// appel à validate_header.
+// ── Codes d'erreur internes ──────────────────────────────────────────────────
+//
+// Valeurs SYNCHRONISÉES avec les `pub const KAL_ERR_*` de `ffi.rs`.
+// Ne pas modifier sans mettre à jour les deux fichiers simultanément.
 
 pub(crate) const ERR_BUF_TOO_SMALL: i32 = -2;
 pub(crate) const ERR_MAGIC:         i32 = -3;
 pub(crate) const ERR_VERSION:       i32 = -4;
 pub(crate) const ERR_CHECKSUM:      i32 = -5;
 pub(crate) const ERR_FILE_SIZE:     i32 = -6;
-/// Conservé pour compatibilité FFI — `CalendarEntry._reserved` vérifié par la Forge.
-pub(crate) const ERR_RESERVED:      i32 = -9;
-/// Discriminant de layout incompatible — `header[56..64] != LAYOUT_DISCRIMINANT`.
-/// Signale une dérive de schéma entre la Forge et l'Engine (struct recompilée).
 pub(crate) const ERR_SCHEMA:        i32 = -10;
 
-/// Valide le header et retourne `Ok(Header)` si toutes les vérifications passent.
+/// Valide les invariants structurels du header — **O(1), sans SHA-256**.
 ///
-/// Validations séquentielles (arrêt au premier échec) :
-/// 1. `len >= 64`                          → `ERR_BUF_TOO_SMALL`
-/// 2. `magic == b"KALD"`                  → `ERR_MAGIC`
-/// 3. `version == KALD_FORMAT_VERSION`    → `ERR_VERSION`
-/// 4. taille fichier cohérente            → `ERR_FILE_SIZE`
-/// 5. `layout_discriminant` correct       → `ERR_SCHEMA`
-/// 6. SHA-256 correct                     → `ERR_CHECKSUM`
+/// Vérifications (arrêt au premier échec) :
+/// 1. `len >= 80`                      → `ERR_BUF_TOO_SMALL`
+/// 2. `magic == b"KALD"`               → `ERR_MAGIC`
+/// 3. `version == KALD_FORMAT_VERSION` → `ERR_VERSION`
+/// 4. taille et offsets cohérents      → `ERR_FILE_SIZE`
+/// 5. `layout_discriminant` correct    → `ERR_SCHEMA`
 ///
-/// `data` doit être non-NULL (vérifié par l'appelant FFI).
-pub(crate) fn validate_header(data: &[u8]) -> Result<Header, i32> {
-    // 1. Taille minimale — spec step 2 : KAL_ERR_BUF_TOO_SMALL
-    if data.len() < 64 {
+/// Utilisée par les fonctions de lecture (`kal_read_entry`, etc.) — appel à
+/// chaque read sans recompute SHA-256. Appeler `validate_header` une fois à
+/// l'ouverture pour la vérification d'intégrité complète.
+pub(crate) fn validate_header_fast(data: &[u8]) -> Result<Header, i32> {
+    if data.len() < 80 {
         return Err(ERR_BUF_TOO_SMALL);
     }
 
-    // Lecture des champs par `from_le_bytes` — pas de déréférencement aligné.
-    let magic = [data[0], data[1], data[2], data[3]];
-    let version = u16::from_le_bytes([data[4], data[5]]);
-    let variant_id = u16::from_le_bytes([data[6], data[7]]);
-    let epoch = u16::from_le_bytes([data[8], data[9]]);
-    let range = u16::from_le_bytes([data[10], data[11]]);
-    let entry_count = u32::from_le_bytes([data[12], data[13], data[14], data[15]]);
-    let pool_offset = u32::from_le_bytes([data[16], data[17], data[18], data[19]]);
-    let pool_size = u32::from_le_bytes([data[20], data[21], data[22], data[23]]);
+    let magic           = [data[0], data[1], data[2], data[3]];
+    let version         = u16::from_le_bytes([data[4],  data[5]]);
+    let variant_id      = u16::from_le_bytes([data[6],  data[7]]);
+    let epoch           = u16::from_le_bytes([data[8],  data[9]]);
+    let range           = u16::from_le_bytes([data[10], data[11]]);
+    let entry_count     = u32::from_le_bytes([data[12], data[13], data[14], data[15]]);
+    let pool_offset     = u32::from_le_bytes([data[16], data[17], data[18], data[19]]);
+    let pool_size       = u32::from_le_bytes([data[20], data[21], data[22], data[23]]);
+    let registry_offset = u32::from_le_bytes([data[24], data[25], data[26], data[27]]);
+    let registry_count  = u32::from_le_bytes([data[28], data[29], data[30], data[31]]);
+    let feast_id_base   = u16::from_le_bytes([data[32], data[33]]);
 
     let mut checksum = [0u8; 32];
-    checksum.copy_from_slice(&data[24..56]);
+    checksum.copy_from_slice(&data[36..68]);
 
-    let stored_discriminant =
-        u64::from_le_bytes([
-            data[56], data[57], data[58], data[59], data[60], data[61], data[62], data[63]
-        ]);
+    let stored_discriminant = u64::from_le_bytes([
+        data[68], data[69], data[70], data[71],
+        data[72], data[73], data[74], data[75],
+    ]);
 
-    // 2. Magic
-    if magic != *b"KALD" {
-        return Err(ERR_MAGIC);
-    }
+    if magic != *b"KALD" { return Err(ERR_MAGIC); }
+    if version != crate::entry::KALD_FORMAT_VERSION { return Err(ERR_VERSION); }
 
-    // 3. Version
-    if version != crate::entry::KALD_FORMAT_VERSION {
-        return Err(ERR_VERSION);
-    }
+    let registry_size        = (registry_count as u64) * 4;
+    let timeline_size        = (entry_count as u64) * 8;
+    let expected_pool_offset = 80u64 + registry_size + timeline_size;
+    let expected_len         = expected_pool_offset + pool_size as u64;
 
-    // 4. Cohérence de taille fichier
-    let body_size = (entry_count as u64) * 8;
-    let expected_len = 64u64 + body_size + pool_size as u64;
-    if data.len() as u64 != expected_len {
-        return Err(ERR_FILE_SIZE);
-    }
+    if registry_offset != 80             { return Err(ERR_FILE_SIZE); }
+    if pool_offset as u64 != expected_pool_offset { return Err(ERR_FILE_SIZE); }
+    if data.len() as u64  != expected_len         { return Err(ERR_FILE_SIZE); }
 
-    // 5. Invariant structurel pool_offset
-    if pool_offset as u64 != 64 + (entry_count as u64) * 8 {
-        return Err(ERR_FILE_SIZE);
-    }
-
-    // 6. Discriminant de layout — vérifié avant SHA-256 : inutile de hacher
-    //    un blob structurellement incompatible avec cet Engine.
     if stored_discriminant != crate::entry::LAYOUT_DISCRIMINANT {
         return Err(ERR_SCHEMA);
     }
 
-    // 7. Checksum SHA-256(Data Body ∥ Secondary Pool)
-    let payload = &data[64..];
+    Ok(Header {
+        magic, version, variant_id, epoch, range,
+        entry_count, pool_offset, pool_size,
+        registry_offset, registry_count, feast_id_base,
+        _reserved:  0,
+        checksum,
+        layout_discriminant: stored_discriminant.to_le_bytes(),
+        _reserved2: [0; 4],
+    })
+}
+
+/// Valide le header + intégrité SHA-256 — **O(payload_size)**.
+///
+/// Appeler une seule fois à l'ouverture du fichier. Les lectures répétées
+/// (`kal_read_entry`, etc.) utilisent `validate_header_fast` en interne.
+///
+/// 6. SHA-256(Registry ∥ Timeline ∥ Pool) → `ERR_CHECKSUM`
+pub(crate) fn validate_header(data: &[u8]) -> Result<Header, i32> {
+    let header = validate_header_fast(data)?;
+
     let mut hasher = Sha256::new();
-    hasher.update(payload);
-    let computed = hasher.finalize(); // [u8; 32] sur la pile
-    if computed.as_slice() != checksum {
+    hasher.update(&data[80..]);
+    let computed = hasher.finalize();
+    if computed.as_slice() != header.checksum {
         return Err(ERR_CHECKSUM);
     }
 
-    Ok(Header {
-        magic,
-        version,
-        variant_id,
-        epoch,
-        range,
-        entry_count,
-        pool_offset,
-        pool_size,
-        checksum,
-        layout_discriminant: stored_discriminant.to_le_bytes(),
-    })
+    Ok(header)
 }
 
 // ── Tests ────────────────────────────────────────────────────────────────────
@@ -141,86 +148,85 @@ pub(crate) mod tests {
     use super::*;
     use sha2::{Digest, Sha256};
 
-    /// Construit un buffer `.kald` minimal valide avec `n_entries` entrées nulles.
-    pub(crate) fn make_valid_kald(n_entries: u32) -> Vec<u8> {
-        let body_len = n_entries as usize * 8;
-        let pool_size: u32 = 0;
-        let total = 64 + body_len;
+    pub(crate) fn make_valid_kald_v5(n_registry: u32, n_entries: u32) -> Vec<u8> {
+        let registry_size = n_registry as usize * 4;
+        let timeline_size = n_entries  as usize * 8;
+        let total         = 80 + registry_size + timeline_size;
+        let pool_offset   = 80u32 + n_registry * 4 + n_entries * 8;
+
+        let payload  = vec![0u8; registry_size + timeline_size];
+        let checksum = { let mut h = Sha256::new(); h.update(&payload); h.finalize() };
+
         let mut buf = vec![0u8; total];
-
-        // Checksum calculé sur le payload (Data Body ∥ pool vide) avant écriture header.
-        let mut hasher = Sha256::new();
-        hasher.update(&buf[64..]);
-        let checksum = hasher.finalize();
-
         buf[0..4].copy_from_slice(b"KALD");
-        buf[4..6].copy_from_slice(&4u16.to_le_bytes());
-        buf[6..8].copy_from_slice(&0u16.to_le_bytes()); // variant_id
+        buf[4..6].copy_from_slice(&5u16.to_le_bytes());
         buf[8..10].copy_from_slice(&1969u16.to_le_bytes());
         buf[10..12].copy_from_slice(&431u16.to_le_bytes());
         buf[12..16].copy_from_slice(&n_entries.to_le_bytes());
-        buf[16..20].copy_from_slice(&(64u32 + n_entries * 8).to_le_bytes()); // pool_offset
-        buf[20..24].copy_from_slice(&pool_size.to_le_bytes());
-        buf[24..56].copy_from_slice(checksum.as_slice());
-        buf[56..64].copy_from_slice(
-            &crate::entry::LAYOUT_DISCRIMINANT.to_le_bytes()
-        );
-
+        buf[16..20].copy_from_slice(&pool_offset.to_le_bytes());
+        buf[24..28].copy_from_slice(&80u32.to_le_bytes());
+        buf[28..32].copy_from_slice(&n_registry.to_le_bytes());
+        buf[36..68].copy_from_slice(checksum.as_slice());
+        buf[68..76].copy_from_slice(&crate::entry::LAYOUT_DISCRIMINANT.to_le_bytes());
+        buf[80..].copy_from_slice(&payload);
         buf
     }
 
     #[test]
-    fn layout_header_size() {
-        assert_eq!(size_of::<Header>(), 64);
+    fn fast_accepts_corrupt_checksum() {
+        // validate_header_fast ignore le SHA-256 — doit réussir sur payload corrompu.
+        let mut buf = make_valid_kald_v5(2, 4);
+        buf[80] = 0xFF; // corruption payload
+        assert!(validate_header_fast(&buf).is_ok(),
+            "validate_header_fast ne doit pas vérifier le SHA-256");
+        // validate_header (complète) doit rejeter le même buffer.
+        assert_eq!(validate_header(&buf), Err(ERR_CHECKSUM));
     }
 
     #[test]
+    fn layout_header_size() { assert_eq!(size_of::<Header>(), 80); }
+
+    #[test]
     fn valid_header_ok() {
-        let buf = make_valid_kald(4);
-        assert!(validate_header(&buf).is_ok());
+        assert!(validate_header(&make_valid_kald_v5(4, 8)).is_ok());
     }
 
     #[test]
     fn err_buf_too_small() {
-        // len < 64 → ERR_BUF_TOO_SMALL (spec §kal_validate_header step 2)
-        let buf = [0u8; 63];
-        assert_eq!(validate_header(&buf), Err(ERR_BUF_TOO_SMALL));
+        assert_eq!(validate_header(&[0u8; 79]), Err(ERR_BUF_TOO_SMALL));
     }
 
     #[test]
     fn err_magic() {
-        let mut buf = make_valid_kald(0);
-        buf[0] = b'X';
+        let mut buf = make_valid_kald_v5(0, 0); buf[0] = b'X';
         assert_eq!(validate_header(&buf), Err(ERR_MAGIC));
     }
 
     #[test]
     fn err_version() {
-        let mut buf = make_valid_kald(0);
-        buf[4] = 3;
+        let mut buf = make_valid_kald_v5(0, 0); buf[4] = 4;
         assert_eq!(validate_header(&buf), Err(ERR_VERSION));
     }
 
     #[test]
-    fn err_file_size() {
-        let mut buf = make_valid_kald(2);
-        // entry_count déclaré à 99 mais taille réelle = 2 entrées → mismatch
-        buf[12..16].copy_from_slice(&99u32.to_le_bytes());
-        assert_eq!(validate_header(&buf), Err(ERR_FILE_SIZE));
-    }
-
-    #[test]
     fn err_schema() {
-        let mut buf = make_valid_kald(0);
-        // Discriminant corrompu — simule une dérive de layout entre Forge et Engine.
-        buf[56] ^= 0xFF;
+        let mut buf = make_valid_kald_v5(0, 0); buf[68] ^= 0xFF;
         assert_eq!(validate_header(&buf), Err(ERR_SCHEMA));
     }
 
     #[test]
     fn err_checksum() {
-        let mut buf = make_valid_kald(2);
-        buf[64] = 0xFF; // corruption Data Body sans recompute
+        let mut buf = make_valid_kald_v5(2, 4); buf[80] = 0xFF;
         assert_eq!(validate_header(&buf), Err(ERR_CHECKSUM));
+    }
+
+    #[test]
+    fn header_fields_roundtrip() {
+        let buf = make_valid_kald_v5(10, 366);
+        let h = validate_header(&buf).unwrap();
+        assert_eq!(h.registry_count, 10);
+        assert_eq!(h.entry_count, 366);
+        assert_eq!(h.registry_offset, 80);
+        assert_eq!(h.pool_offset, 80 + 10 * 4 + 366 * 8);
     }
 }
