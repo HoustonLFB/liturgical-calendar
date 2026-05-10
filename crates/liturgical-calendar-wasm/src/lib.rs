@@ -3,7 +3,10 @@
 use core::ptr::{addr_of, addr_of_mut};
 
 use liturgical_calendar_core::{
-    ffi::{kal_read_entry, kal_read_secondary, kal_validate_header, KAL_ENGINE_OK},
+    ffi::{
+        kal_read_entry, kal_read_feast, kal_read_secondary,
+        kal_validate_header, KAL_ENGINE_OK,
+    },
     lits_provider::LitsProvider,
 };
 
@@ -14,21 +17,25 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
 }
 
 // ── Capacités ─────────────────────────────────────────────────────────────────
+// .kald v5 : 80 octets header + Registry + Timeline + Pool.
+// 431 ans × 366 slots × 8 octets ≈ 1.26 MB Timeline.
+// Registry : ~4000 fêtes × 4 octets ≈ 16 KB.
 
 const KALD_CAP:      usize = 2 * 1024 * 1024;
 const LITS_CAP:      usize = 512 * 1024;
-const SECONDARY_CAP: usize = 32; // slots secondaires max par jour
+const SECONDARY_CAP: usize = 32;
 
 // ── Buffers BSS ───────────────────────────────────────────────────────────────
 
 static mut KALD_BUF:      [u8;  KALD_CAP]      = [0u8; KALD_CAP];
 static mut LITS_BUF:      [u8;  LITS_CAP]      = [0u8; LITS_CAP];
-static mut ENTRY_BUF:     [u8;  8]             = [0u8; 8];
+static mut ENTRY_BUF:     [u8;  8]             = [0u8; 8]; // TimelineEntry
+static mut FEAST_BUF:     [u8;  4]             = [0u8; 4]; // FeastEntry
 static mut SECONDARY_BUF: [u16; SECONDARY_CAP] = [0u16; SECONDARY_CAP];
 
-static mut KALD_LEN:    u32 = 0;
-static mut LITS_LEN:    u32 = 0;
-static mut BRIDGE_STATE: u8 = 0; // 0=Uninit 1=KaldLoaded 2=Ready
+static mut KALD_LEN:     u32 = 0;
+static mut LITS_LEN:     u32 = 0;
+static mut BRIDGE_STATE: u8  = 0; // 0=Uninit 1=KaldLoaded 2=Ready
 
 // ── Out-statics label + annotation ────────────────────────────────────────────
 
@@ -39,18 +46,18 @@ static mut ANNOTATION_LEN: u32 = 0;
 
 // ── Codes d'erreur bridge ─────────────────────────────────────────────────────
 
-pub const KAL_ERR_NOT_READY:          i32 = -20;
-pub const KAL_ERR_BUF_OVERFLOW:       i32 = -21;
-pub const KAL_ERR_BUILD_ID_MISMATCH:  i32 = -22;
-pub const KAL_ERR_LITS_INVALID:       i32 = -23;
+pub const KAL_ERR_NOT_READY:         i32 = -20;
+pub const KAL_ERR_BUF_OVERFLOW:      i32 = -21;
+pub const KAL_ERR_BUILD_ID_MISMATCH: i32 = -22;
+pub const KAL_ERR_LITS_INVALID:      i32 = -23;
 
-// ── Helpers internes ──────────────────────────────────────────────────────────
+// ── Helper interne ────────────────────────────────────────────────────────────
 
-/// Résout feast_id dans le LitsProvider et remplit les out-statics
-/// LABEL_PTR/LEN + ANNOTATION_PTR/LEN. Retourne 1 si trouvé, 0 si absent.
+/// Résout `feast_id` dans le LitsProvider et remplit les out-statics
+/// LABEL_* + ANNOTATION_*. Retourne 1 si trouvé, 0 si absent.
 ///
 /// # Safety
-/// Doit être appelé depuis un bloc unsafe avec BRIDGE_STATE == 2.
+/// Doit être appelé depuis un bloc `unsafe` avec `BRIDGE_STATE == 2`.
 unsafe fn resolve_by_id(feast_id: u16, year: u16) -> i32 {
     let lits_slice: &'static [u8] = unsafe {
         core::slice::from_raw_parts(
@@ -116,6 +123,8 @@ pub extern "C" fn kal_wasm_alloc_lits(len: u32) -> u32 {
 // Phase 2 — commit
 // ═════════════════════════════════════════════════════════════════════════════
 
+/// Valide le header `.kald` v5 (magic, version, taille, discriminant, SHA-256).
+/// Passe l'état à `KaldLoaded` si OK.
 #[unsafe(no_mangle)]
 pub extern "C" fn kal_wasm_commit_kald() -> i32 {
     unsafe {
@@ -129,13 +138,20 @@ pub extern "C" fn kal_wasm_commit_kald() -> i32 {
     }
 }
 
+/// Vérifie le `build_id` et valide le header `.lits`.
+/// Passe l'état à `Ready` si OK.
+///
+/// Header v5 : checksum à l'offset 36 (vs offset 24 en v4).
+/// `build_id` = `kald_header[36..44]` == `lits_header[12..20]`.
 #[unsafe(no_mangle)]
 pub extern "C" fn kal_wasm_commit_lits() -> i32 {
     unsafe {
         if *addr_of!(BRIDGE_STATE) < 1 { return KAL_ERR_NOT_READY; }
-        if *addr_of!(LITS_LEN) < 20    { return KAL_ERR_LITS_INVALID; }
+        if *addr_of!(LITS_LEN) < 20   { return KAL_ERR_LITS_INVALID; }
 
-        let kald_cs_ptr = (addr_of!(KALD_BUF) as *const u8).add(24);
+        // build_id : kald_checksum[..8] == lits_header[12..20].
+        // v5 : checksum commence à l'offset 36 du header (vs 24 en v4).
+        let kald_cs_ptr = (addr_of!(KALD_BUF) as *const u8).add(36);
         let lits_bi_ptr = (addr_of!(LITS_BUF) as *const u8).add(12);
         if core::slice::from_raw_parts(kald_cs_ptr, 8)
             != core::slice::from_raw_parts(lits_bi_ptr, 8)
@@ -155,11 +171,12 @@ pub extern "C" fn kal_wasm_commit_lits() -> i32 {
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
-// Lecture entrée — pattern out-static (ENTRY_BUF)
+// Lecture Timeline — pattern out-static (ENTRY_BUF)
 // ═════════════════════════════════════════════════════════════════════════════
 
-/// Lit l'entrée `(year, doy)` dans `ENTRY_BUF`. Lire les champs via
-/// `kal_wasm_entry_ptr()`. Retourne 0 (OK) ou code d'erreur négatif.
+/// Lit la `TimelineEntry` pour `(year, doy)` dans `ENTRY_BUF`.
+/// Lire les champs via `kal_wasm_entry_ptr()`.
+/// Retourne 0 (OK) ou code d'erreur négatif.
 #[unsafe(no_mangle)]
 pub extern "C" fn kal_wasm_read_day(year: u16, doy: u16) -> i32 {
     unsafe {
@@ -174,26 +191,59 @@ pub extern "C" fn kal_wasm_read_day(year: u16, doy: u16) -> i32 {
     }
 }
 
-/// Pointeur vers `ENTRY_BUF` (8 octets). Valide après `kal_wasm_read_day`.
+/// Pointeur vers `ENTRY_BUF` (8 octets, `TimelineEntry`).
+/// Valide après `kal_wasm_read_day`.
 #[unsafe(no_mangle)]
 pub extern "C" fn kal_wasm_entry_ptr() -> u32 {
     addr_of!(ENTRY_BUF) as u32
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
+// Lecture Feast Registry — pattern out-static (FEAST_BUF)
+// ═════════════════════════════════════════════════════════════════════════════
+
+/// Lit le `FeastEntry` pour `registry_index` (1-based) dans `FEAST_BUF`.
+///
+/// Accès O(1) : `registry_offset + (registry_index − 1) × 4`.
+/// `registry_index == 0` (Padding) retourne `KAL_ERR_INDEX_OOB`.
+/// Lire les champs via `kal_wasm_feast_ptr()`.
+#[unsafe(no_mangle)]
+pub extern "C" fn kal_wasm_read_feast(registry_index: u16) -> i32 {
+    unsafe {
+        if *addr_of!(BRIDGE_STATE) != 2 { return KAL_ERR_NOT_READY; }
+        kal_read_feast(
+            addr_of!(KALD_BUF) as *const u8,
+            *addr_of!(KALD_LEN) as usize,
+            registry_index,
+            addr_of_mut!(FEAST_BUF) as *mut _,
+        )
+    }
+}
+
+/// Pointeur vers `FEAST_BUF` (4 octets, `FeastEntry`).
+/// Valide après `kal_wasm_read_feast`.
+#[unsafe(no_mangle)]
+pub extern "C" fn kal_wasm_feast_ptr() -> u32 {
+    addr_of!(FEAST_BUF) as u32
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
 // Fêtes secondaires — pattern out-static (SECONDARY_BUF)
 // ═════════════════════════════════════════════════════════════════════════════
 
-/// Remplit `SECONDARY_BUF` avec `count` IDs secondaires à partir de `index`.
-/// Retourne le nombre d'IDs écrits (≥ 0) ou code d'erreur négatif.
+/// Remplit `SECONDARY_BUF` avec `count` registry_indices depuis le Secondary Pool.
+///
+/// Les valeurs retournées sont des `registry_index` 1-based.
+/// Appeler `kal_wasm_read_feast` pour résoudre chacun en `FeastEntry`.
+/// Retourne 0 (OK) ou code d'erreur négatif.
 #[unsafe(no_mangle)]
-pub extern "C" fn kal_wasm_read_secondary(index: u16, count: u8) -> i32 {
+pub extern "C" fn kal_wasm_read_secondary(secondary_offset: u16, count: u8) -> i32 {
     unsafe {
         if *addr_of!(BRIDGE_STATE) != 2 { return KAL_ERR_NOT_READY; }
         kal_read_secondary(
             addr_of!(KALD_BUF) as *const u8,
             *addr_of!(KALD_LEN) as usize,
-            index,
+            secondary_offset,
             count,
             addr_of_mut!(SECONDARY_BUF) as *mut u16,
             SECONDARY_CAP as u8,
@@ -201,25 +251,30 @@ pub extern "C" fn kal_wasm_read_secondary(index: u16, count: u8) -> i32 {
     }
 }
 
-/// Pointeur vers `SECONDARY_BUF` (u16 LE). Valide après `kal_wasm_read_secondary`.
+/// Pointeur vers `SECONDARY_BUF` (tableau de u16 LE, registry_indices).
+/// Valide après `kal_wasm_read_secondary`.
 #[unsafe(no_mangle)]
 pub extern "C" fn kal_wasm_secondary_ptr() -> u32 {
     addr_of!(SECONDARY_BUF) as u32
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
-// Résolution de label + annotation
+// Résolution label + annotation
 // ═════════════════════════════════════════════════════════════════════════════
 
-/// Résout label + annotation pour `(year, doy)` — lit d'abord l'entrée,
-/// puis projette dans le LitsProvider.
+/// Résout label + annotation pour `(year, doy)`.
 ///
-/// Retourne 1 (trouvé), 0 (absent/Padding), < 0 (erreur).
+/// Pattern v5 (2 appels) :
+///   1. `kal_read_entry`  → `primary_index` (registry_index)
+///   2. `kal_read_feast`  → `feast_id` (clé de lookup `.lits`)
+///
+/// Retourne 1 (trouvé), 0 (Padding Entry ou absent), < 0 (erreur).
 #[unsafe(no_mangle)]
 pub extern "C" fn kal_wasm_get_label(year: u16, doy: u16) -> i32 {
     unsafe {
         if *addr_of!(BRIDGE_STATE) != 2 { return KAL_ERR_NOT_READY; }
 
+        // 1. Lire TimelineEntry → primary_index
         let rc = kal_read_entry(
             addr_of!(KALD_BUF) as *const u8,
             *addr_of!(KALD_LEN) as usize,
@@ -229,16 +284,32 @@ pub extern "C" fn kal_wasm_get_label(year: u16, doy: u16) -> i32 {
         );
         if rc != KAL_ENGINE_OK { return rc; }
 
-        let primary_id = u16::from_le_bytes([ENTRY_BUF[0], ENTRY_BUF[1]]);
-        if primary_id == 0 { return 0; }
+        let primary_index = u16::from_le_bytes([
+            *addr_of!(ENTRY_BUF[0]),
+            *addr_of!(ENTRY_BUF[1]),
+        ]);
+        if primary_index == 0 { return 0; } // Padding Entry
 
-        resolve_by_id(primary_id, year)
+        // 2. Résoudre registry_index → feast_id via Feast Registry O(1)
+        let rc2 = kal_read_feast(
+            addr_of!(KALD_BUF) as *const u8,
+            *addr_of!(KALD_LEN) as usize,
+            primary_index,
+            addr_of_mut!(FEAST_BUF) as *mut _,
+        );
+        if rc2 != KAL_ENGINE_OK { return rc2; }
+
+        let feast_id = u16::from_le_bytes([
+            *addr_of!(FEAST_BUF[0]),
+            *addr_of!(FEAST_BUF[1]),
+        ]);
+
+        resolve_by_id(feast_id, year)
     }
 }
 
-/// Résout label + annotation directement par `feast_id` — sans passer par
-/// `kal_read_entry`. Utilisé pour les fêtes secondaires.
-///
+/// Résout label + annotation directement par `feast_id`.
+/// Utilisé pour les fêtes secondaires après résolution via `kal_wasm_read_feast`.
 /// Retourne 1 (trouvé), 0 (absent), < 0 (erreur).
 #[unsafe(no_mangle)]
 pub extern "C" fn kal_wasm_get_label_by_id(feast_id: u16, year: u16) -> i32 {
@@ -259,25 +330,3 @@ pub extern "C" fn kal_wasm_label_len() -> u32      { unsafe { *addr_of!(LABEL_LE
 pub extern "C" fn kal_wasm_annotation_ptr() -> u32 { unsafe { *addr_of!(ANNOTATION_PTR) } }
 #[unsafe(no_mangle)]
 pub extern "C" fn kal_wasm_annotation_len() -> u32 { unsafe { *addr_of!(ANNOTATION_LEN) } }
-
-// ── Ancienne signature conservée pour compatibilité ──────────────────────────
-
-/// # Safety
-/// `out_entry` doit être non-NULL et valide en écriture pour 8 octets.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn kal_wasm_read_entry(
-    year:      u16,
-    doy:       u16,
-    out_entry: *mut u8,
-) -> i32 {
-    unsafe {
-        if *addr_of!(BRIDGE_STATE) != 2 { return KAL_ERR_NOT_READY; }
-        kal_read_entry(
-            addr_of!(KALD_BUF) as *const u8,
-            *addr_of!(KALD_LEN) as usize,
-            year,
-            doy,
-            out_entry as *mut _,
-        )
-    }
-}

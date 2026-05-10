@@ -1,12 +1,18 @@
 /**
- * app.js — Bridge JS pour liturgical-calendar-wasm.
+ * app.js — Bridge JS pour liturgical-calendar-wasm v5.
+ *
+ * Pattern de lecture v5 (2 appels au lieu de 1) :
+ *   kal_wasm_read_day(year, doy)         → TimelineEntry dans ENTRY_BUF
+ *   kal_wasm_read_feast(primaryIndex)    → FeastEntry dans FEAST_BUF (O(1))
+ *
+ * Les flags (couleur, nature, précédence) viennent de FeastEntry.flags.
+ * Les bits d'occurrence (vesperae_i, vigilia) viennent de TimelineEntry.occurrence_flags.
  *
  * Routes :
  *   /YYYY         → vue annuelle (tableau 366 jours)
  *   /YYYY/MM/DD   → vue journalière (détail complet)
  *   /             → vue journalière, date du jour
- *
- * Mêmes routes supportées avec le hash : /#YYYY, /#YYYY/MM/DD
+ * Mêmes routes avec hash : /#YYYY, /#YYYY/MM/DD
  */
 
 const WASM_URL = "liturgical_calendar_wasm.wasm";
@@ -19,25 +25,16 @@ const KAL_ERR_BUILD_ID_MISMATCH = -22;
 // ── Lookup tables (miroir de types.rs) ───────────────────────────────────────
 
 const PRECEDENCE = [
-    "Triduum Sacrum",
-    "Sollemnitates Maiores",
-    "Sollemnitates Generales",
-    "Sollemnitates Propria",
-    "Festa Domini",
-    "Dominicae per Annum",
-    "Festa BMV et Sanctorum Generales",
-    "Festa Propria",
-    "Feriae Privilegiatae",
-    "Memoriae Obligatoriae Generales",
-    "Memoriae Obligatoriae Propria",
-    "Memoriae ad Libitum",
-    "Feriae per Annum",
+    "Triduum Sacrum", "Sollemnitates Maiores", "Sollemnitates Generales",
+    "Sollemnitates Propria", "Festa Domini", "Dominicae per Annum",
+    "Festa BMV et Sanctorum Generales", "Festa Propria",
+    "Feriae Privilegiatae", "Memoriae Obligatoriae Generales",
+    "Memoriae Obligatoriae Propria", "Memoriae ad Libitum", "Feriae per Annum",
 ];
-
-const COLOR = ["Albus", "Rubeus", "Viridis", "Violaceus", "Rosaceus", "Niger"];
+const COLOR     = ["Albus", "Rubeus", "Viridis", "Violaceus", "Rosaceus", "Niger"];
 const COLOR_CSS = ["albus", "rubeus", "viridis", "violaceus", "rosaceus", "niger"];
-const NATURE = ["Sollemnitas", "Festum", "Dominica", "Memoria", "Commemoratio", "Feria"];
-const PERIOD = [
+const NATURE    = ["Sollemnitas", "Festum", "Dominica", "Memoria", "Commemoratio", "Feria"];
+const PERIOD    = [
     "Tempus Ordinarium", "Tempus Adventus", "Tempus Nativitatis",
     "Tempus Quadragesimae", "Triduum Paschale", "Tempus Paschale", "Dies Sancti",
 ];
@@ -45,26 +42,17 @@ const PERIOD = [
 // ── Layout 366 slots/an (Forge) ───────────────────────────────────────────────
 
 const MONTH_OFFSETS = [0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335];
-const MONTH_NAMES   = [
-    "janvier","février","mars","avril","mai","juin",
-    "juillet","août","septembre","octobre","novembre","décembre"
-];
 
 function dateToDoy(_year, month, day) {
     return MONTH_OFFSETS[month - 1] + (day - 1);
 }
-
 function doyToMonthDay(doy) {
     for (let m = 11; m >= 0; m--) {
-        if (doy >= MONTH_OFFSETS[m]) {
-            return { month: m + 1, day: doy - MONTH_OFFSETS[m] + 1 };
-        }
+        if (doy >= MONTH_OFFSETS[m]) return { month: m + 1, day: doy - MONTH_OFFSETS[m] + 1 };
     }
     return { month: 1, day: 1 };
 }
-
 function zeroPad(n) { return String(n).padStart(2, "0"); }
-
 function formatDateLong(year, month, day) {
     return new Date(year, month - 1, day)
         .toLocaleDateString("fr-FR", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
@@ -97,21 +85,40 @@ function detectRoute() {
 function copyToWasm(memory, ptr, buffer) {
     new Uint8Array(memory.buffer, ptr, buffer.byteLength).set(new Uint8Array(buffer));
 }
-
 const decoder = new TextDecoder("utf-8");
 function wasmStr(memory, ptr, len) {
     return decoder.decode(new Uint8Array(memory.buffer, ptr, len));
 }
 
-/** Décode les flags u16 d'une CalendarEntry. */
-function decodeFlags(flags) {
+/**
+ * Décode FeastEntry.flags (u16 LE à l'offset 2 de FEAST_BUF).
+ *
+ * Bits [3:0]   → Precedence
+ * Bits [7:4]   → Color
+ * Bits [10:8]  → LiturgicalPeriod
+ * Bits [13:11] → Nature
+ * Bit  [14]    → has_vigil_mass (invariant corpus)
+ */
+function decodeFeastFlags(flags) {
     return {
-        precedence:    flags & 0x000F,
-        color:         (flags >> 4) & 0x000F,
-        period:        (flags >> 8) & 0x0007,
-        nature:        (flags >> 11) & 0x0007,
-        hasVesperaeI:  !!(flags & (1 << 14)),
-        hasVigilia:    !!(flags & (1 << 15)),
+        precedence:   flags & 0x000F,
+        color:        (flags >> 4) & 0x000F,
+        period:       (flags >> 8) & 0x0007,
+        nature:       (flags >> 11) & 0x0007,
+        hasVigil:     !!(flags & (1 << 14)),
+    };
+}
+
+/**
+ * Décode TimelineEntry.occurrence_flags (u8 à l'offset 4 de ENTRY_BUF).
+ *
+ * Bit 0 → has_vesperae_i (Premières Vêpres ce soir)
+ * Bit 1 → has_vigilia    (Messe de Vigile ce soir)
+ */
+function decodeOccurrenceFlags(occFlags) {
+    return {
+        hasVesperaeI: !!(occFlags & 0b01),
+        hasVigilia:   !!(occFlags & 0b10),
     };
 }
 
@@ -120,16 +127,39 @@ function renderMarkdown(text) {
     return text.replace(/\*([^*]+)\*/g, "<em>$1</em>");
 }
 
-/** Lit label + annotation pour un feast_id. Retourne { label, annotation } ou null. */
+/**
+ * Résout label + annotation pour un feast_id.
+ * Retourne { label, annotation } ou null.
+ */
 function resolveById(exports, memory, feastId, year) {
-    const rc = exports.kal_wasm_get_label_by_id(feastId, year);
-    if (rc !== 1) return null;
+    if (exports.kal_wasm_get_label_by_id(feastId, year) !== 1) return null;
     const label = wasmStr(memory, exports.kal_wasm_label_ptr(), exports.kal_wasm_label_len());
     const annLen = exports.kal_wasm_annotation_len();
     const annotation = annLen > 0
         ? wasmStr(memory, exports.kal_wasm_annotation_ptr(), annLen)
         : null;
     return { label, annotation };
+}
+
+/**
+ * Résout label, annotation ET flags d'un feast secondaire via son registry_index.
+ *
+ * Pattern v5 O(1) : registry_index → kal_wasm_read_feast → FeastEntry.feast_id
+ * → kal_wasm_get_label_by_id. Remplace le scan linéaire O(366) de la v4.
+ *
+ * Retourne { label, annotation, feastFlags } ou null.
+ */
+function resolveSecondary(exports, memory, registryIndex, year) {
+    if (exports.kal_wasm_read_feast(registryIndex) !== KAL_ENGINE_OK) return null;
+
+    const fv = new DataView(memory.buffer, exports.kal_wasm_feast_ptr(), 4);
+    const feastId    = fv.getUint16(0, true);
+    const feastFlags = fv.getUint16(2, true);
+
+    const res = resolveById(exports, memory, feastId, year);
+    if (!res) return null;
+
+    return { ...res, feastFlags };
 }
 
 // ── Vue annuelle ──────────────────────────────────────────────────────────────
@@ -140,54 +170,50 @@ function renderYear(year, exports, memory) {
     document.getElementById("h2").textContent =
         `Calendarium Romanum Generale pro ${year}`;
 
-    const tbody = document.getElementById("cal-body");
+    const tbody    = document.getElementById("cal-body");
     const entryPtr = exports.kal_wasm_entry_ptr();
+    const feastPtr = exports.kal_wasm_feast_ptr();
 
     for (let doy = 0; doy < 366; doy++) {
-        // Lecture entrée
-        const rc = exports.kal_wasm_read_day(year, doy);
-        if (rc !== KAL_ENGINE_OK) continue;
+        if (exports.kal_wasm_read_day(year, doy) !== KAL_ENGINE_OK) continue;
 
-        const view = new DataView(memory.buffer, entryPtr, 8);
-        const primaryId      = view.getUint16(0, true);
-        const secondaryIndex = view.getUint16(2, true);
-        const flags          = view.getUint16(4, true);
-        const secondaryCount = view.getUint8(6);
+        // TimelineEntry layout : [0..2] primary_index, [2..4] secondary_offset,
+        //                        [4] occurrence_flags, [5] secondary_count
+        const ev           = new DataView(memory.buffer, entryPtr, 8);
+        const primaryIndex = ev.getUint16(0, true);
+        const secOffset    = ev.getUint16(2, true);
+        const secCount     = ev.getUint8(5);
 
-        // Padding Entry (pas de fête ce jour)
-        if (primaryId === 0) continue;
+        if (primaryIndex === 0) continue; // Padding Entry
+
+        // Couleur depuis FeastEntry (O(1))
+        let colorCss = "";
+        if (exports.kal_wasm_read_feast(primaryIndex) === KAL_ENGINE_OK) {
+            const fv    = new DataView(memory.buffer, feastPtr, 4);
+            const color = (fv.getUint16(2, true) >> 4) & 0x000F;
+            colorCss    = COLOR_CSS[color] ?? "";
+        }
 
         const { month, day } = doyToMonthDay(doy);
-        const { color }      = decodeFlags(flags);
-        const href           = `/${year}/${zeroPad(month)}/${zeroPad(day)}`;
-
-        // Cellule fêtes
+        const href = `/${year}/${zeroPad(month)}/${zeroPad(day)}`;
         let featsHtml = "";
 
-        // Fête principale
-        const rcLabel = exports.kal_wasm_get_label(year, doy);
-        if (rcLabel === 1) {
+        // Fête principale — label
+        if (exports.kal_wasm_get_label(year, doy) === 1) {
             const label = wasmStr(memory, exports.kal_wasm_label_ptr(), exports.kal_wasm_label_len());
-            featsHtml += `<p class="color-${COLOR_CSS[color] ?? ""}"><a href="${href}">${label}</a></p>`;
+            featsHtml += `<p class="color-${colorCss}"><a href="${href}">${label}</a></p>`;
         }
 
         // Fêtes secondaires
-        // kal_read_secondary retourne KAL_ENGINE_OK (0) en cas de succès —
-        // pas le compte. On utilise secondaryCount comme borne de boucle.
-        if (secondaryCount > 0) {
-            const rc = exports.kal_wasm_read_secondary(secondaryIndex, secondaryCount);
-            if (rc === KAL_ENGINE_OK) {
-                const secView = new DataView(
-                    memory.buffer, exports.kal_wasm_secondary_ptr(), secondaryCount * 2
-                );
-                for (let i = 0; i < secondaryCount; i++) {
-                    const secId = secView.getUint16(i * 2, true);
-                    if (secId === 0) continue;
-                    const res = resolveById(exports, memory, secId, year);
-                    if (res) {
-                        featsHtml += `<p class="secondary"><a href="${href}">${res.label}</a></p>`;
-                    }
-                }
+        if (secCount > 0 && exports.kal_wasm_read_secondary(secOffset, secCount) === KAL_ENGINE_OK) {
+            const sv = new DataView(memory.buffer, exports.kal_wasm_secondary_ptr(), secCount * 2);
+            for (let i = 0; i < secCount; i++) {
+                const ridx = sv.getUint16(i * 2, true);
+                if (ridx === 0) continue;
+                const res = resolveSecondary(exports, memory, ridx, year);
+                if (!res) continue;
+                const secColor = COLOR_CSS[decodeFeastFlags(res.feastFlags).color] ?? "";
+                featsHtml += `<p class="secondary color-${secColor}"><a href="${href}">${res.label}</a></p>`;
             }
         }
 
@@ -206,79 +232,91 @@ function renderYear(year, exports, memory) {
 
 function renderDay(year, month, day, exports, memory) {
     const doy = dateToDoy(year, month, day);
-
     document.title = `${zeroPad(day)}/${zeroPad(month)}/${year}`;
     document.getElementById("h1").textContent = "Calendarium Liturgicum";
     document.getElementById("h2").textContent = formatDateLong(year, month, day);
 
     const entryPtr = exports.kal_wasm_entry_ptr();
-    const rc = exports.kal_wasm_read_day(year, doy);
-    if (rc !== KAL_ENGINE_OK) {
-        document.getElementById("day-content").textContent = `Erreur lecture entrée : ${rc}`;
-        document.getElementById("day-content").hidden = false;
+    const feastPtr = exports.kal_wasm_feast_ptr();
+    const container = document.getElementById("day-content");
+
+    if (exports.kal_wasm_read_day(year, doy) !== KAL_ENGINE_OK) {
+        container.textContent = "Erreur lecture entrée";
+        container.hidden = false;
         return;
     }
 
-    const view = new DataView(memory.buffer, entryPtr, 8);
-    const primaryId      = view.getUint16(0, true);
-    const secondaryIndex = view.getUint16(2, true);
-    const flags          = view.getUint16(4, true);
-    const secondaryCount = view.getUint8(6);
-    const { precedence, color, period, nature, hasVesperaeI, hasVigilia } = decodeFlags(flags);
+    // TimelineEntry
+    const ev           = new DataView(memory.buffer, entryPtr, 8);
+    const primaryIndex = ev.getUint16(0, true);
+    const secOffset    = ev.getUint16(2, true);
+    const occFlags     = ev.getUint8(4);
+    const secCount     = ev.getUint8(5);
 
-    if (primaryId === 0) {
-        document.getElementById("day-content").textContent = "(aucune fête)";
-        document.getElementById("day-content").hidden = false;
+    if (primaryIndex === 0) {
+        container.textContent = "(aucune fête)";
+        container.hidden = false;
         return;
     }
+
+    // FeastEntry — flags invariants
+    let feastFlags = 0, feastId = 0;
+    if (exports.kal_wasm_read_feast(primaryIndex) === KAL_ENGINE_OK) {
+        const fv  = new DataView(memory.buffer, feastPtr, 4);
+        feastId   = fv.getUint16(0, true);
+        feastFlags = fv.getUint16(2, true);
+    }
+
+    const { precedence, color, period, nature, hasVigil } = decodeFeastFlags(feastFlags);
+    const { hasVesperaeI, hasVigilia } = decodeOccurrenceFlags(occFlags);
 
     // Label + annotation fête principale
     exports.kal_wasm_get_label(year, doy);
-    const label      = wasmStr(memory, exports.kal_wasm_label_ptr(), exports.kal_wasm_label_len());
-    const annLen     = exports.kal_wasm_annotation_len();
+    const label  = wasmStr(memory, exports.kal_wasm_label_ptr(), exports.kal_wasm_label_len());
+    const annLen = exports.kal_wasm_annotation_len();
     const annotation = annLen > 0
         ? wasmStr(memory, exports.kal_wasm_annotation_ptr(), annLen)
         : null;
 
-    // Construction du détail principal
+    // Rendu fête principale
     let html = `<section class="feast primary color-${COLOR_CSS[color] ?? ""}">
         <h3>${label}</h3>`;
-    if (annotation) {
-        html += `<p class="annotation">${renderMarkdown(annotation)}</p>`;
-    }
+    if (annotation) html += `<p class="annotation">${renderMarkdown(annotation)}</p>`;
     html += `<dl>
-        <dt>Feast ID</dt>   <dd>0x${primaryId.toString(16).toUpperCase().padStart(4,"0")}</dd>
+        <dt>Feast ID</dt>   <dd>0x${feastId.toString(16).toUpperCase().padStart(4,"0")}</dd>
         <dt>Précédence</dt> <dd>${PRECEDENCE[precedence] ?? precedence} (${precedence})</dd>
-        <dt>Couleur</dt>    <dd>${COLOR[color] ?? color} (${color})</dd>
+        <dt>Couleur</dt>    <dd>${COLOR[color] ?? color}</dd>
         <dt>Période</dt>    <dd>${PERIOD[period] ?? period}</dd>
         <dt>Nature</dt>     <dd>${NATURE[nature] ?? nature}</dd>`;
     if (annotation)   html += `<dt>Annotation</dt><dd>${renderMarkdown(annotation)}</dd>`;
-    if (hasVesperaeI) html += `<dt>Vêpres I</dt><dd>oui</dd>`;
-    if (hasVigilia)   html += `<dt>Vigile</dt>  <dd>oui</dd>`;
+    if (hasVigil)     html += `<dt>Vigile propre</dt><dd>oui (invariant)</dd>`;
+    if (hasVesperaeI) html += `<dt>Vêpres I</dt><dd>ce soir</dd>`;
+    if (hasVigilia)   html += `<dt>Vigile</dt><dd>ce soir</dd>`;
     html += `</dl></section>`;
 
     // Fêtes secondaires
-    if (secondaryCount > 0) {
-        const rcSec = exports.kal_wasm_read_secondary(secondaryIndex, secondaryCount);
-        if (rcSec === KAL_ENGINE_OK) {
-            const secView = new DataView(
-                memory.buffer, exports.kal_wasm_secondary_ptr(), secondaryCount * 2
-            );
-            html += `<section class="secondaries"><h4>Commémorations</h4>`;
-            for (let i = 0; i < secondaryCount; i++) {
-                const secId = secView.getUint16(i * 2, true);
-                if (secId === 0) continue;
-                const res = resolveById(exports, memory, secId, year);
-                if (res) {
-                    html += `<div class="feast secondary"><strong>${res.label}</strong>`;
-                    if (res.annotation) {
-                        html += `<p class="annotation">${renderMarkdown(res.annotation)}</p>`;
-                    }
-                    html += `</div>`;
-                }
-            }
-            html += `</section>`;
+    if (secCount > 0 && exports.kal_wasm_read_secondary(secOffset, secCount) === KAL_ENGINE_OK) {
+        const sv = new DataView(memory.buffer, exports.kal_wasm_secondary_ptr(), secCount * 2);
+        html += `<section class="secondaries"><h4>Commémorations</h4>`;
+        for (let i = 0; i < secCount; i++) {
+            const ridx = sv.getUint16(i * 2, true);
+            if (ridx === 0) continue;
+            const res = resolveSecondary(exports, memory, ridx, year);
+            if (!res) continue;
+            const sf = decodeFeastFlags(res.feastFlags);
+            const fv2 = new DataView(memory.buffer, feastPtr, 4); // FEAST_BUF still set from resolveSecondary
+            const secFeastId = fv2.getUint16(0, true);
+            html += `<div class="feast secondary color-${COLOR_CSS[sf.color] ?? ""}">
+                <strong>${res.label}</strong>`;
+            if (res.annotation) html += `<p class="annotation">${renderMarkdown(res.annotation)}</p>`;
+            html += `<dl>
+                <dt>Feast ID</dt>   <dd>0x${secFeastId.toString(16).toUpperCase().padStart(4,"0")}</dd>
+                <dt>Précédence</dt> <dd>${PRECEDENCE[sf.precedence] ?? sf.precedence} (${sf.precedence})</dd>
+                <dt>Couleur</dt>    <dd>${COLOR[sf.color] ?? sf.color}</dd>
+                <dt>Nature</dt>     <dd>${NATURE[sf.nature] ?? sf.nature}</dd>
+            </dl></div>`;
         }
+        html += `</section>`;
     }
 
     // Navigation
@@ -290,7 +328,6 @@ function renderDay(year, month, day, exports, memory) {
         <a href="/${year}/${zeroPad(next.month)}/${zeroPad(next.day)}">Jour suivant →</a>
     </nav>`;
 
-    const container = document.getElementById("day-content");
     container.innerHTML = html;
     container.hidden = false;
 }
@@ -299,7 +336,6 @@ function renderDay(year, month, day, exports, memory) {
 
 async function init() {
     const status = document.getElementById("status");
-
     try {
         const [wasmResp, kaldBuf, litsBuf] = await Promise.all([
             fetch(WASM_URL),
@@ -327,14 +363,12 @@ async function init() {
             throw new Error(`kal_wasm_commit_lits → ${rcLits}`);
 
         status.hidden = true;
-
         const route = detectRoute();
         if (route.type === "year") {
             renderYear(route.year, exports, memory);
         } else {
             renderDay(route.year, route.month, route.day, exports, memory);
         }
-
     } catch (err) {
         status.textContent = `Erreur : ${err.message}`;
         status.hidden = false;
