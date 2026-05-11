@@ -20,11 +20,12 @@
 //! [`kal_read_secondary`]: liturgical_calendar_core::ffi::kal_read_secondary
 //! [`kal_scan_flags`]: liturgical_calendar_core::ffi::kal_scan_flags
 
-#![cfg_attr(not(test), no_std)]
+#![no_std]
 
-// Panic handler pour les builds non-test (no_std + cdylib ciblant une plateforme réelle).
-// Délègue à abort() de libc — comportement correct à une frontière FFI.
-#[cfg(not(test))]
+// Pour les tests uniquement
+#[cfg(test)]
+extern crate std;
+
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
     unsafe extern "C" {
