@@ -1,5 +1,3 @@
-#![no_std]
-
 use core::ptr::{addr_of, addr_of_mut};
 
 use liturgical_calendar_core::{
