@@ -1,10 +1,10 @@
 version: 1
-category: 3 # Type mobile : calcul anchor + offset
+category: 0
 class: lord
 mobile:
   anchor: pascha
-  offset: -42 # Invariant : 6 semaines avant Pâques
+  offset: -42
 history:
-  - precedence: 2 # Rang 2 : Dimanche de temps fort (Carême)
+  - precedence: 2
     nature: dominica
     color: violaceus
