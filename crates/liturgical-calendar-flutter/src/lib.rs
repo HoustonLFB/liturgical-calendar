@@ -20,23 +20,6 @@
 //! [`kal_read_secondary`]: liturgical_calendar_core::ffi::kal_read_secondary
 //! [`kal_scan_flags`]: liturgical_calendar_core::ffi::kal_scan_flags
 
-#![no_std]
-
-// Pour les tests uniquement
-#[cfg(test)]
-extern crate std;
-
-#[panic_handler]
-fn panic(_info: &core::panic::PanicInfo) -> ! {
-    unsafe extern "C" {
-        fn abort() -> !;
-    }
-    // SAFETY : abort() est fourni par le C runtime de toute plateforme cible
-    // (Android bionic, glibc, MSVCRT, libSystem). Pas d'UB — le processus
-    // est terminé proprement sans dérouler la pile Rust.
-    unsafe { abort() }
-}
-
 use liturgical_calendar_core::{
     ffi::{
         KAL_ENGINE_OK,

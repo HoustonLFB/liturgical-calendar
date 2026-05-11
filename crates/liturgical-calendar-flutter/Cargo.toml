@@ -8,7 +8,7 @@ license = "MIT"
 repository = "https://github.com/scriptura/liturgical-calendar"
 readme = "README.md"
 keywords = ["liturgical", "calendar", "dart", "ffi", "bindings"]
-categories = ["api-bindings", "no-std::no-alloc"]
+categories = ["api-bindings"]
 
 [lib]
 crate-type = ["cdylib"]
