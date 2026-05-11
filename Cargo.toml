@@ -4,6 +4,7 @@ members = [
     "liturgical-calendar-core",
     "liturgical-calendar-forge",
     "crates/liturgical-calendar-wasm",
+    "crates/liturgical-calendar-flutter",
 ]
 default-members = [
     "liturgical-calendar",

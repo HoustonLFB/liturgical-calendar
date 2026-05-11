@@ -1,0 +1,31 @@
+name: liturgical_calendar_flutter
+description: >
+  Flutter plugin pour l'engine de calendrier liturgique.
+  Expose les buffers .kald (Timeline + Feast Registry) et .lits (labels)
+  via dart:ffi, sans allocation Rust, sans flutter_rust_bridge.
+version: 0.1.0
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.10.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  ffi: ^2.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  crypto: ^3.0.0
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        ffiPlugin: true
+      linux:
+        ffiPlugin: true
+      windows:
+        ffiPlugin: true
+      macos:
+        ffiPlugin: true

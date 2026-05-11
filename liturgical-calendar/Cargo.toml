@@ -8,12 +8,7 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/scriptura/liturgical-calendar"
 readme = "README.md"
 keywords = ["liturgical", "calendar", "catholic", "engine", "compiler"]
-categories = [
-    "data-structures",
-    "embedded",
-    "compilers",
-    "command-line-utilities",
-]
+categories = ["data-structures", "compilers", "command-line-utilities"]
 
 [dependencies]
 liturgical-calendar-core = { version = "0.2.0", path = "../liturgical-calendar-core" }

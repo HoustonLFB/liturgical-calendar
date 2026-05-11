@@ -1,0 +1,17 @@
+[package]
+name = "liturgical-calendar-flutter"
+version = "0.2.0"
+edition = "2024"
+rust-version = "1.97.0"
+description = "Flutter bindings for the Liturgical Calendar library, providing liturgical computations for mobile and desktop applications."
+license = "MIT"
+repository = "https://github.com/scriptura/liturgical-calendar"
+readme = "README.md"
+keywords = ["liturgical", "calendar", "dart", "ffi", "bindings"]
+categories = ["api-bindings", "no-std::no-alloc"]
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+liturgical-calendar-core = { version = "0.2.0", path = "../../liturgical-calendar-core" }

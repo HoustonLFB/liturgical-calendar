@@ -4,12 +4,11 @@ version = "0.2.0"
 edition = "2024"
 rust-version = "1.97.0"
 description = "WASM bindings for the liturgical-calendar engine. Provides a zero-copy, no_std interface to query the Roman Catholic liturgical calendar (1969–2399) from .kald and .lits binary files, compiled to WebAssembly."
-license = "MIT"                                                                                                                                                                                                                  # ou "Apache-2.0" ou "MIT OR Apache-2.0"
+license = "MIT"
 repository = "https://github.com/scriptura/liturgical-calendar"
 readme = "README.md"
-keywords = ["liturgical", "calendar", "wasm", "no_std", "catholic"]
-categories = ["wasm", "parsing", "no-std"]
-
+keywords = ["liturgical", "calendar", "web", "ffi", "bindings"]
+categories = ["wasm", "no-std::no-alloc"]
 
 [lib]
 crate-type = ["cdylib"]

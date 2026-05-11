@@ -1,10 +1,11 @@
-# Prompt de reprise — Session : `liturgical-calendar-wasm`
+# Session : `liturgical-calendar-wasm`
 
 ## Contexte projet
 
 `liturgical-calendar` — pipeline AOT ECS/DOD. Rust toolchain 1.93.1.
 
 Architecture en trois couches :
+
 - **Core** (`liturgical-calendar-core`) : `no_std`, `no_alloc`, API C native. Lit les buffers `.kald` (topologie) et `.lits` (labels i18n) en O(1) via offsets.
 - **Forge** (`liturgical-calendar-forge`) : compilateur AOT, produit les artefacts binaires.
 - **Bridge** (`liturgical-calendar-wasm`) : crate de liaison à créer — expose l'API Core au JS via WASM.
@@ -100,6 +101,7 @@ i32 kal_read_secondary(const uint8_t *buf, uintptr_t len, uint32_t index, uint8_
 ## Fichiers à fournir en contexte
 
 **Indispensables :**
+
 - `liturgical-calendar-core/src/ffi.rs`
 - `liturgical-calendar-core/src/lits_provider.rs`
 - `liturgical-calendar-core/src/entry.rs`
@@ -108,6 +110,7 @@ i32 kal_read_secondary(const uint8_t *buf, uintptr_t len, uint32_t index, uint8_
 - `Cargo.toml` (racine workspace — pour ajouter le membre `crates/liturgical-calendar-wasm`)
 
 **Utiles :**
+
 - `liturgical-calendar-core/src/header.rs` (layout header `.kald` — constantes magic, offsets)
 - `liturgical-calendar-core/cbindgen.toml` (conventions de nommage C existantes)
 
