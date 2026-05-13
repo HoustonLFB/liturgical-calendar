@@ -47,8 +47,8 @@ if __name__ == "__main__":
     print(f"http://0.0.0.0:{port}/")
     print(f"Exemples :")
     print(f"  http://0.0.0.0:{port}/             → date du jour")
-    print(f"  http://0.0.0.0:{port}/#2026/12/25  → hash (compatible tout hébergeur)")
     print(f"  http://0.0.0.0:{port}/2026/12/25   → chemin (réécriture SPA active)")
+    print(f"  http://0.0.0.0:{port}/2026         → année en cours")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
