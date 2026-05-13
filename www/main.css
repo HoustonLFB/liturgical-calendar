@@ -3198,6 +3198,10 @@ a[aria-disabled='true']:active {
 
 /* liturgical-calendar */
 [class^='table'] {
+  & > * > :first-child,
+  & > * > :nth-child(2) {
+    width: 3em;
+  }
   th {
     text-align: start;
   }

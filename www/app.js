@@ -180,8 +180,7 @@ function resolveSecondary(exports, memory, registryIndex, year) {
 
 function renderYear(year, exports, memory) {
   document.title = `Calendarium ${year}`
-  document.getElementById('h1').textContent = 'Calendarium Liturgicum'
-  document.getElementById('h2').textContent = `Calendarium Romanum Generale pro ${year}`
+  document.getElementById('h1').innerHTML = `Calendarium Romanum Generale <span>. pro ${year}</span>`
 
   const tbody = document.getElementById('cal-body')
   const entryPtr = exports.kal_wasm_entry_ptr()
@@ -246,8 +245,7 @@ function renderYear(year, exports, memory) {
 function renderDay(year, month, day, exports, memory) {
   const doy = dateToDoy(year, month, day)
   document.title = `${zeroPad(day)}/${zeroPad(month)}/${year}`
-  document.getElementById('h1').textContent = 'Calendarium Liturgicum'
-  document.getElementById('h2').textContent = formatDateLong(year, month, day)
+  document.getElementById('h1').innerHTML = `Calendarium Romanum Generale <span>. ${formatDateLong(year, month, day)}</span>`
 
   const entryPtr = exports.kal_wasm_entry_ptr()
   const feastPtr = exports.kal_wasm_feast_ptr()
