@@ -6,7 +6,6 @@
     <meta name="description" content="Un framework front-end permettant de créer des applications web." />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <base href="/" />
-    <!-- for SPA -->
     <meta name="theme-color" content="#333" />
     <link rel="manifest" href="/app.webmanifest" crossorigin="use-credentials" />
     <link rel="shortcut icon" href="/favicons/favicon.ico" />
@@ -18,6 +17,22 @@
     <link rel="stylesheet" href="/styles/print.css" media="print" />
     <link rel="preload" href="/fonts/notoSans-Regular.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/notoSerif-Regular.woff2" as="font" type="font/woff2" crossorigin />
+    <script>
+      // 1. Corrige <base href> sur GitHub Pages projet (/repo-name/).
+      // 2. Restaure le path sauvegardé par 404.html (redirect SPA).
+      // Synchrone : doit précéder tout module JS.
+      (function () {
+        if (/\.github\.io$/.test(location.hostname)) {
+          var m = location.pathname.match(/^(\/[^/]+\/)/);
+          if (m) document.querySelector('base').href = m[1];
+        }
+        var redirect = sessionStorage.getItem('spa_redirect');
+        if (redirect) {
+          sessionStorage.removeItem('spa_redirect');
+          if (redirect !== location.pathname) history.replaceState(null, '', redirect);
+        }
+      })();
+    </script>
   </head>
   <body class="type-index">
     <a class="sr-only" href="#main">Aller au contenu</a>
@@ -40,7 +55,6 @@
         </table>
         <!-- Vue journalière -->
         <div id="day-content" hidden></div>
-        <script type="module" src="app.js"></script>
       </article>
     </main>
     <footer class="footer" role="contentinfo">
@@ -68,6 +82,6 @@
       </noscript>
     </div>
     <script src="main.js" async></script>
-    <script src="app.js" async></script>
+    <script type="module" src="app.js"></script>
   </body>
 </html>

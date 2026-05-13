@@ -12,7 +12,9 @@
  *   /YYYY         → vue annuelle (tableau 366 jours)
  *   /YYYY/MM/DD   → vue journalière (détail complet)
  *   /             → vue journalière, date du jour
- * Mêmes routes avec hash : /#YYYY, /#YYYY/MM/DD
+ *
+ * Compatibilité GitHub Pages : le path est restauré par index.html
+ * (sessionStorage redirect depuis 404.html) avant l'exécution de ce module.
  */
 
 const WASM_URL = 'liturgical_calendar_wasm.wasm'
@@ -21,6 +23,10 @@ const LITS_URL = 'calendar.lits'
 
 const KAL_ENGINE_OK = 0
 const KAL_ERR_BUILD_ID_MISMATCH = -22
+
+// Base path résolu depuis <base href> — patché par index.html sur GitHub Pages projet.
+// Vaut '/' dans tous les autres environnements.
+const BASE_PATH = new URL(document.baseURI).pathname
 
 // ── Lookup tables (miroir de types.rs) ───────────────────────────────────────
 
@@ -75,10 +81,9 @@ function formatDateLong(year, month, day) {
 // ── Routage ───────────────────────────────────────────────────────────────────
 
 function detectRoute() {
-  const raw = (window.location.hash ? window.location.hash.replace(/^#\/?/, '') : window.location.pathname.replace(/^\//, '')).replace(
-    /\/$/,
-    '',
-  )
+  let raw = window.location.pathname
+  if (raw.startsWith(BASE_PATH)) raw = raw.slice(BASE_PATH.length)
+  raw = raw.replace(/\/$/, '')
 
   const mYear = raw.match(/^(\d{4})$/)
   if (mYear) return { type: 'year', year: parseInt(mYear[1]) }
@@ -207,7 +212,7 @@ function renderYear(year, exports, memory) {
     }
 
     const { month, day } = doyToMonthDay(doy)
-    const href = `/${year}/${zeroPad(month)}/${zeroPad(day)}`
+    const href = `${year}/${zeroPad(month)}/${zeroPad(day)}`
     let featsHtml = ''
 
     // Fête principale — label
@@ -333,9 +338,9 @@ function renderDay(year, month, day, exports, memory) {
   const prev = doyToMonthDay(Math.max(0, doy - 1))
   const next = doyToMonthDay(Math.min(365, doy + 1))
   html += `<nav class="day-nav">
-        <a href="/${year}/${zeroPad(prev.month)}/${zeroPad(prev.day)}">← Jour précédent</a>
-        <a href="/${year}">Année ${year}</a>
-        <a href="/${year}/${zeroPad(next.month)}/${zeroPad(next.day)}">Jour suivant →</a>
+        <a href="${year}/${zeroPad(prev.month)}/${zeroPad(prev.day)}">← Jour précédent</a>
+        <a href="${year}">Année ${year}</a>
+        <a href="${year}/${zeroPad(next.month)}/${zeroPad(next.day)}">Jour suivant →</a>
     </nav>`
 
   container.innerHTML = html
