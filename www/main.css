@@ -63,24 +63,6 @@
   --r2: 0.3em;
   --r3: 0.2em;
 }
-@font-face {
-  font-family: 'Noto Sans';
-  src:
-    url('../fonts/notoSans-Regular.woff2') format('woff2'),
-    url('../fonts/notoSans-Regular.woff') format('woff');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Noto Serif';
-  src:
-    url('../fonts/notoSerif-Regular.woff2') format('woff2'),
-    url('../fonts/notoSerif-Regular.woff') format('woff');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
 :root {
   color-scheme: var(--color-scheme);
 }
@@ -93,7 +75,7 @@ html {
   -webkit-text-size-adjust: 100%;
   color: var(--colorT);
   background-color: var(--color1);
-  font-family: var(--font-list1);
+  font-family: system-ui;
   line-height: 1.5;
 }
 @media (prefers-reduced-motion: no-preference) {
@@ -142,7 +124,7 @@ h6,
 .h4,
 .h5,
 .h6 {
-  font-family: var(--font-list2);
+  font-family: system-ui;
   text-align: start;
   text-wrap: balance;
 }
@@ -327,7 +309,7 @@ hr[data-hr],
   line-height: 0.5;
   font-size: 3rem;
   color: var(--color2);
-  font-family: var(--font-list2);
+  font-family: system-ui;
 }
 :is(.blockquote blockquote)::before {
   content: '\00AB';
@@ -2468,7 +2450,7 @@ input[type='radio']:not([role='switch']):checked::before {
   line-height: 0.85;
   font-size: 3.5em;
   font-weight: bold;
-  font-family: var(--font-list2);
+  font-family: system-ui;
   color: var(--color2);
   transform: translateY(0.5em);
 }
