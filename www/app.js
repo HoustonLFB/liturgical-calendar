@@ -249,7 +249,7 @@ function renderYear(year, exports, memory) {
 
     const tr = document.createElement('tr')
     tr.innerHTML = `
-            <td class="doy">${doy}</td>
+            <td class="doy"><a id="doy-${doy}" href="#doy-${doy}">${doy}</a></td>
             <td class="date"><a href="${href}">${zeroPad(day)}/${zeroPad(month)}</a></td>
             <td class="feasts">${featsHtml}</td>`
     tbody.appendChild(tr)

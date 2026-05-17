@@ -1,9 +1,9 @@
 version: 1
 history:
   - from: 1969
-    label: "Dominica II Paschæ"
+    label: "2ème Dimanche de Pâque"
     annotation: "*In albis*"
     to: 2001
   - from: 2002 # Jean-Paul II, Lettre apostolique, Misericordia Dei, 2002
-    label: "Dominica II Paschæ"
-    annotation: "Dominica in octava paschæ seu de sacra misericordia, *In albis*"
+    label: "2ème Dimanche de Pâques"
+    annotation: "Dimanche dans l'octave de Pâques ou de la Divine Miséricorde, *In albis*"

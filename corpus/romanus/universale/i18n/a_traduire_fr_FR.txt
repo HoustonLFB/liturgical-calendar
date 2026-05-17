@@ -1,0 +1,2092 @@
+# FICHIER DE TRADUCTION - Calendrier liturgique
+# Traduisez chaque 'label_fr' en conservant exactement la structure
+# Total : 298 labels à traduire
+# Format : FICHIER | INDEX | ANNÉE | LABEL_LATIN | LABEL_FRANÇAIS
+====================================================================================================
+
+FICHIER: adalberti.yaml
+INDEX: 0
+ANNÉE: 2003
+LABEL_LA: S. Adalberti, episcopi et martyris
+LABEL_FR: S. Adalbert, évêque et martyr
+------------------------------------------------------------
+
+FICHIER: agathae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Agathæ, virginis et martyris
+LABEL_FR: Ste Agathe, vierge et martyre
+------------------------------------------------------------
+
+FICHIER: agnetis.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Agnetis, virginis et martyris
+LABEL_FR: Ste Agnès, Vierge et martyre
+------------------------------------------------------------
+
+FICHIER: alberti_magni.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Alberti Magni, episcopi et Ecclesiæ doctoris
+LABEL_FR: S. Albert le Grand, évêque, docteur de l'Église
+------------------------------------------------------------
+
+FICHIER: alfonsi_mariae_de_liguori.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Alfonsi Mariæ de Liguori, episcopi et Ecclesiæ doctoris
+LABEL_FR: S. Alphonse de Liguori, évêque et docteur de l'Église
+------------------------------------------------------------
+
+FICHIER: aloisii_gonzaga.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Aloisii Gonzaga, religiosi
+LABEL_FR: S. Louis de Gonzague
+------------------------------------------------------------
+
+FICHIER: ambrosii.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Ambrosii, episcopi et Ecclesiæ doctoris
+LABEL_FR: S. Ambroise, évêque et docteur de l'Église
+------------------------------------------------------------
+
+FICHIER: andreae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Andreæ, apostoli
+LABEL_FR: S. André, apôtre
+------------------------------------------------------------
+
+FICHIER: andreae_dung_lac_et_sociorum.yaml
+INDEX: 0
+ANNÉE: 2003
+LABEL_LA: Ss. Andreæ Dung Lac, presbyteri, et sociorum, martyrum
+LABEL_FR: S. André Dung-Lac, prêtre, et ses compagnons, martyrs
+------------------------------------------------------------
+
+FICHIER: andreae_kim_taegon_et_pauli_chong_et_sociorum.yaml
+INDEX: 0
+ANNÉE: 2003
+LABEL_LA: Ss. Andreæ Kim Tæ-gon presbyteri et Pauli Chong Ha-sang et sociorum, martyrum
+LABEL_FR: S. André Kim Tae-gon, prêtre, S. Paul Chong Ha-sang, et leurs compagnons, martyrs
+------------------------------------------------------------
+
+FICHIER: angelae_merici.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Angelæ Merici, virginis
+LABEL_FR: Ste Angèle Merici, vierge
+------------------------------------------------------------
+
+FICHIER: angelorum_custodum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Ss. Angelorum Custodum
+LABEL_FR: Ss Anges Gardiens
+------------------------------------------------------------
+
+FICHIER: anselmi.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Anselmi, episcopi et Ecclesiæ doctoris
+LABEL_FR: S. Anselme, évêque et docteur de l'Église
+------------------------------------------------------------
+
+FICHIER: ansgarii.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Ansgarii, episcopi
+LABEL_FR: Saint Anschaire, évêque
+------------------------------------------------------------
+
+FICHIER: antonii.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Antonii, abbatis
+LABEL_FR: S. Antoine, Abbé
+------------------------------------------------------------
+
+FICHIER: antonii_de_padova.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Antonii de Padova, presbyteri et Ecclesiæ doctoris
+LABEL_FR: S. Antoine de Padoue, prêtre et docteur de l'Église
+------------------------------------------------------------
+
+FICHIER: antonii_mariae_claret.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Antonii Mariæ Claret, episcopi
+LABEL_FR: S. Antoine-Marie Claret, évêque
+------------------------------------------------------------
+
+FICHIER: antonii_mariae_zaccaria.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Antonii Mariæ Zaccaria, presbyteri
+LABEL_FR: S. Antoine-Marie Zaccaria, prêtre
+------------------------------------------------------------
+
+FICHIER: apollinaris.yaml
+INDEX: 0
+ANNÉE: 2003
+LABEL_LA: S. Apollinaris, episcopi et martyris
+LABEL_FR: S. Apollinaire, évêque et martyr
+------------------------------------------------------------
+
+FICHIER: athanasii.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Athanasii, episcopi et Ecclesiæ doctoris
+LABEL_FR: S. Athanase, évêque et docteur de l'Église
+------------------------------------------------------------
+
+FICHIER: augustini.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Augustini, episcopi et Ecclesiæ doctoris
+LABEL_FR: S. Augustin, évêque et docteur de l'Église
+------------------------------------------------------------
+
+FICHIER: augustini_cantuariensis.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Augustini Cantuariensis, episcopi
+LABEL_FR: S. Augustin de Cantorbéry, prêtre
+------------------------------------------------------------
+
+FICHIER: augustini_zhao_rong_et_sociorum.yaml
+INDEX: 0
+ANNÉE: 2003
+LABEL_LA: Ss. Augustini Zhao Rong, presbyteri et sociorum, martyrum
+LABEL_FR: S. Augustin Zhao Rong, prêtre, et ses comagnons, martyrs
+------------------------------------------------------------
+
+FICHIER: barnabae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Barnabæ, apostoli
+LABEL_FR: St Barnabé, apôtre
+------------------------------------------------------------
+
+FICHIER: bartholomaei.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Bartholomæi, apostoli
+LABEL_FR: Saint Barthélémy, apôtre
+------------------------------------------------------------
+
+FICHIER: basilii_magni_et_gregorii_nazianzeni.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Ss. Basilii et Gregorii Nazianzeni, episcoporum et Ecclesiæ doctorum
+LABEL_FR: S. Basile le Grand et S. Grégoire de Nazianze, évêques et docteurs de l'Église
+------------------------------------------------------------
+
+FICHIER: beatae_mariae_virginis_a_rosario.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Beatæ Mariæ Virginis a Rosario
+LABEL_FR: Bienheureuse Vierge Marie du Rosaire
+------------------------------------------------------------
+
+FICHIER: beatae_mariae_virginis_de_fatima.yaml
+INDEX: 0
+ANNÉE: 2003
+LABEL_LA: Beatæ Mariæ Virginis de Fatima
+LABEL_FR: Bienheureuse Vierge Marie de Fatima
+------------------------------------------------------------
+
+FICHIER: beatae_mariae_virginis_de_guadalupe.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Beatæ Mariæ Virginis de Guadalupe
+LABEL_FR: Bienheureuse Vierge Marie de Guadaloupé
+------------------------------------------------------------
+
+FICHIER: beatae_mariae_virginis_de_loreto.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Beatæ Mariæ Virginis de Loreto
+LABEL_FR: Bienheureuse Vierge Marie de Lorette
+------------------------------------------------------------
+
+FICHIER: beatae_mariae_virginis_de_lourdes.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Beatæ Mariæ Virginis de Lourdes
+LABEL_FR: Bienheureuse Vierge Marie de Lourdes
+------------------------------------------------------------
+
+FICHIER: beatae_mariae_virginis_de_monte_carmelo.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Beatæ Mariæ Virginis de Monte Carmelo
+LABEL_FR: Notre-Dame du Mont Carmel
+------------------------------------------------------------
+
+FICHIER: beatae_mariae_virginis_ecclesiae_matris.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Beatæ Mariæ Virginis Ecclesiæ Matris
+LABEL_FR: Bienheureuse Vierge Marie, Mère de l'Église
+------------------------------------------------------------
+
+FICHIER: beatae_mariae_virginis_perdolentis.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Beatæ Mariæ Virginis Perdolentis
+LABEL_FR: Notre-Dame des Douleurs
+------------------------------------------------------------
+
+FICHIER: beatae_mariae_virginis_reginae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Beatæ Mariæ Virginis Reginæ
+LABEL_FR: La Vierge Marie, Reine
+------------------------------------------------------------
+
+FICHIER: bedae_venerabilis.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Bedæ Venerabilis, presbyteri et Ecclesiæ doctoris
+LABEL_FR: S. Bède le Vénérable, prêtre et docteur de l'Église
+------------------------------------------------------------
+
+FICHIER: benedicti.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Benedicti, abbatis
+LABEL_FR: S. Benoît, abbé
+------------------------------------------------------------
+
+FICHIER: bernardi.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Bernardi, abbatis et Ecclesiæ doctoris
+LABEL_FR: S. Bernard, abbé et docteur de l'Église
+------------------------------------------------------------
+
+FICHIER: bernardini_senensis.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Bernardini Senensis, presbyteri
+LABEL_FR: S. Bernardin de Sienne, prêtre
+------------------------------------------------------------
+
+FICHIER: birgittae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Birgittæ, religiosæ, patronæ Europæ
+LABEL_FR: Ste Brigitte, religieuse
+------------------------------------------------------------
+
+FICHIER: blasii.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Blasii, episcopi et martyris
+LABEL_FR: S. Blaise, évêque et martyr
+------------------------------------------------------------
+
+FICHIER: bonaventurae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Bonaventuræ, episcopi et Ecclesiæ doctoris
+LABEL_FR: S. Bonaventure, évêque et docteur de l'Église
+------------------------------------------------------------
+
+FICHIER: bonifatii.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Bonifatii, episcopi et martyris
+LABEL_FR: S. Boniface, évêque et martyr
+------------------------------------------------------------
+
+FICHIER: brunonis.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Brunonis, presbyteri
+LABEL_FR: S. Bruno, prêtre
+------------------------------------------------------------
+
+FICHIER: caeciliae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Cæciliæ, virginis et martyris
+LABEL_FR: Ste Cécile, vierge et martyre
+------------------------------------------------------------
+
+FICHIER: caietani.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Caietani, presbyteri
+LABEL_FR: S. Gaëtan, prêtre
+------------------------------------------------------------
+
+FICHIER: callisti_i.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Callisti I, papæ et martyris
+LABEL_FR: S. Callixte Ier, pape et martyr
+------------------------------------------------------------
+
+FICHIER: camilli_de_lellis.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Camilli de Lellis, presbyteri
+LABEL_FR: S. Camille de Lellis, prêtre
+------------------------------------------------------------
+
+FICHIER: caroli_borromeo.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Caroli Borromeo, episcopi
+LABEL_FR: S. Charles Borromée, évêque
+------------------------------------------------------------
+
+FICHIER: caroli_lwanga_et_sociorum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Ss. Caroli Lwanga et sociorum, martyrum
+LABEL_FR: S. Charles Lwanga et ses compagnons, martyrs
+------------------------------------------------------------
+
+FICHIER: casimiri.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Casimiri
+LABEL_FR: S. Casimir
+------------------------------------------------------------
+
+FICHIER: catharinae_alexandrinae.yaml
+INDEX: 0
+ANNÉE: 2003
+LABEL_LA: S. Catharinæ Alexandrinæ, virginis et martyris
+LABEL_FR: Ste Catherine d'Alexandrie, vierge et martyre
+------------------------------------------------------------
+
+FICHIER: catharinae_senensis.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Catharinæ Senensis, virginis et Ecclesiæ doctoris
+LABEL_FR: Ste Catherine de Sienne, vierge et docteur de l'Église
+------------------------------------------------------------
+
+FICHIER: cathedrae_petri_apostoli.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Cathedræ S. Petri, apostoli
+LABEL_FR: La Chaire de Saint Pierre
+------------------------------------------------------------
+
+FICHIER: christophori_magallanes_et_sociorum.yaml
+INDEX: 0
+ANNÉE: 2003
+LABEL_LA: Ss. Christophori Magallanes, presbyteri, et sociorum, martyrum
+LABEL_FR: S. Christophe Magallanès, prêtre, et ses compagnons, martyrs
+------------------------------------------------------------
+
+FICHIER: clarae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Claræ, virginis
+LABEL_FR: Ste Claire, vierge
+------------------------------------------------------------
+
+FICHIER: clementis_i.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Clementis I, papæ et martyris
+LABEL_FR: S. Clément Ier, pape et martyr
+------------------------------------------------------------
+
+FICHIER: columbani.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Columbani, abbatis
+LABEL_FR: S. Colomban, abbé
+------------------------------------------------------------
+
+FICHIER: cornelii_et_cypriani.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Ss. Cornelii, papæ, et Cypriani, episcopi, martyrum
+LABEL_FR: S. Corneille, pape, et S. Cyprien, évêque, martyrs
+------------------------------------------------------------
+
+FICHIER: cosmae_et_damiani.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Ss. Cosmæ et Damiani, martyrum
+LABEL_FR: S. Côme et S. Damien, martyrs
+------------------------------------------------------------
+
+FICHIER: cyrilli_alexandrini.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Cyrilli Alexandrini, episcopi et Ecclesiæ doctoris
+LABEL_FR: S. Cyrille d'Alexandrie, évêque et docteur de l'Église
+------------------------------------------------------------
+
+FICHIER: cyrilli_et_methodii.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Ss. Cyrilli, monachi, et Methodii, episcopi
+LABEL_FR: S. Cyrille, moine, et S. Méthode, évêque
+------------------------------------------------------------
+
+FICHIER: cyrilli_hierosolymitani.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Cyrilli Hierosolymitani, episcopi et Ecclesiæ doctoris
+LABEL_FR: S. Cyrille, évêque et docteur de l'Église
+------------------------------------------------------------
+
+FICHIER: damasi_i.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Damasi I, papæ
+LABEL_FR: S. Damase Ier, pape
+------------------------------------------------------------
+
+FICHIER: dionysii_et_sociorum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Ss. Dionysii, episcopi, et sociorum, martyrum
+LABEL_FR: S. Denis, évêque, et ses compagnons, martyrs
+------------------------------------------------------------
+
+FICHIER: domini_nostri_iesu_christi_universorum_regis.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Domini nostri Iesu Christi universorum Regis
+LABEL_FR: Notre Seigneur Jésus Christ Roi de l'Univers
+------------------------------------------------------------
+
+FICHIER: dominica_i_adventus.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica I Adventus
+LABEL_FR: 1er Dimanche de l'Avent
+------------------------------------------------------------
+
+FICHIER: dominica_i_quadragesimae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica I Quadragesimæ
+LABEL_FR: 1er Dimanche de Carême
+------------------------------------------------------------
+
+FICHIER: dominica_ii_adventus.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica II Adventus
+LABEL_FR: 2ème Dimanche de l'Avent
+------------------------------------------------------------
+
+FICHIER: dominica_ii_paschae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica II Paschæ
+LABEL_FR: 2ème Dimanche de Pâque
+------------------------------------------------------------
+
+FICHIER: dominica_ii_paschae.yaml
+INDEX: 1
+ANNÉE: 2002
+LABEL_LA: Dominica II Paschæ
+LABEL_FR: 2ème Dimanche de Pâques
+------------------------------------------------------------
+
+FICHIER: dominica_ii_per_annum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica II per annum
+LABEL_FR: 2ème Dimanche du Temps Ordinaire
+------------------------------------------------------------
+
+FICHIER: dominica_ii_post_nativitatem.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica II post Nativitatem
+LABEL_FR: 2ème Dimanche après la Nativité
+------------------------------------------------------------
+
+FICHIER: dominica_ii_quadragesimae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica II Quadragesimæ
+LABEL_FR: 2ème Dimanche de Carême
+------------------------------------------------------------
+
+FICHIER: dominica_iii_adventus.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica III Adventus
+LABEL_FR: 3ème Dimanche de l'Avent
+------------------------------------------------------------
+
+FICHIER: dominica_iii_paschae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica III Paschæ
+LABEL_FR: 3ème Dimanche de Pâque
+------------------------------------------------------------
+
+FICHIER: dominica_iii_per_annum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica III per annum
+LABEL_FR: 3ème Dimanche du Temps Ordinaire
+------------------------------------------------------------
+
+FICHIER: dominica_iii_quadragesimae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica III Quadragesimæ
+LABEL_FR: 3ème Dimanche de Carême
+------------------------------------------------------------
+
+FICHIER: dominica_in_palmis_de_passione_domini.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica in Palmis de Passione Domini
+LABEL_FR: Dimanche des Rameaux et de la Passion du Seigneur
+------------------------------------------------------------
+
+FICHIER: dominica_iv_adventus.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica IV Adventus
+LABEL_FR: 4ème Dimanche de l'Avent
+------------------------------------------------------------
+
+FICHIER: dominica_iv_paschae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica IV Paschæ
+LABEL_FR: 4ème Dimanche de Pâque
+------------------------------------------------------------
+
+FICHIER: dominica_iv_per_annum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica IV per annum
+LABEL_FR: 4ème Dimanche du Temps Ordinaire
+------------------------------------------------------------
+
+FICHIER: dominica_iv_quadragesimae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica IV Quadragesimæ
+LABEL_FR: 4ème Dimanche de Carême
+------------------------------------------------------------
+
+FICHIER: dominica_ix_per_annum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica IX per annum
+LABEL_FR: 9ème Dimanche du Temps Ordinaire
+------------------------------------------------------------
+
+FICHIER: dominica_pentecostes.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica Pentecostes
+LABEL_FR: Pentecôte
+------------------------------------------------------------
+
+FICHIER: dominica_resurrectionis.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica Resurrectionis
+LABEL_FR: Résurrection du Seigneur
+------------------------------------------------------------
+
+FICHIER: dominica_v_paschae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica V Paschæ
+LABEL_FR: 5ème Dimanche de Pâque
+------------------------------------------------------------
+
+FICHIER: dominica_v_per_annum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica V per annum
+LABEL_FR: 5ème Dimanche du Temps Ordinaire
+------------------------------------------------------------
+
+FICHIER: dominica_v_quadragesimae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica V Quadragesimæ
+LABEL_FR: 5ème Dimanche de Carême
+------------------------------------------------------------
+
+FICHIER: dominica_vi_paschae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica VI Paschæ
+LABEL_FR: 6ème Dimanche de Pâque
+------------------------------------------------------------
+
+FICHIER: dominica_vi_per_annum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica VI per annum
+LABEL_FR: 6ème Dimanche du Temps Ordinaire
+------------------------------------------------------------
+
+FICHIER: dominica_vii_paschae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica VII Paschæ
+LABEL_FR: 7ème Dimanche de Pâque
+------------------------------------------------------------
+
+FICHIER: dominica_vii_per_annum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica VII per annum
+LABEL_FR: 7ème Dimanche du Temps Ordinaire
+------------------------------------------------------------
+
+FICHIER: dominica_viii_per_annum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica VIII per annum
+LABEL_FR: 8ème Dimanche du Temps Ordinaire
+------------------------------------------------------------
+
+FICHIER: dominica_x_per_annum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica X per annum
+LABEL_FR: 10ème Dimanche du Temps Ordinaire
+------------------------------------------------------------
+
+FICHIER: dominica_xi_per_annum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica XI per annum
+LABEL_FR: 11ème Dimanche du Temps Ordinaire
+------------------------------------------------------------
+
+FICHIER: dominica_xii_per_annum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica XII per annum
+LABEL_FR: 12ème Dimanche du Temps Ordinaire
+------------------------------------------------------------
+
+FICHIER: dominica_xiii_per_annum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica XIII per annum
+LABEL_FR: 13ème Dimanche du Temps Ordinaire
+------------------------------------------------------------
+
+FICHIER: dominica_xiv_per_annum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica XIV per annum
+LABEL_FR: 14ème Dimanche du Temps Ordinaire
+------------------------------------------------------------
+
+FICHIER: dominica_xix_per_annum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica XIX per annum
+LABEL_FR: 19ème Dimanche du Temps Ordinaire
+------------------------------------------------------------
+
+FICHIER: dominica_xv_per_annum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica XV per annum
+LABEL_FR: 15ème Dimanche du Temps Ordinaire
+------------------------------------------------------------
+
+FICHIER: dominica_xvi_per_annum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica XVI per annum
+LABEL_FR: 16ème Dimanche du Temps Ordinaire
+------------------------------------------------------------
+
+FICHIER: dominica_xvii_per_annum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica XVII per annum
+LABEL_FR: 17ème Dimanche du Temps Ordinaire
+------------------------------------------------------------
+
+FICHIER: dominica_xviii_per_annum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica XVIII per annum
+LABEL_FR: 18ème Dimanche du Temps Ordinaire
+------------------------------------------------------------
+
+FICHIER: dominica_xx_per_annum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica XX per annum
+LABEL_FR: 20ème Dimanche du Temps Ordinaire
+------------------------------------------------------------
+
+FICHIER: dominica_xxi_per_annum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica XXI per annum
+LABEL_FR: 21ème Dimanche du Temps Ordinaire
+------------------------------------------------------------
+
+FICHIER: dominica_xxii_per_annum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica XXII per annum
+LABEL_FR: 22ème Dimanche du Temps Ordinaire
+------------------------------------------------------------
+
+FICHIER: dominica_xxiii_per_annum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica XIII per annum
+LABEL_FR: 23ème Dimanche du Temps Ordinaire
+------------------------------------------------------------
+
+FICHIER: dominica_xxiv_per_annum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica XXIV per annum
+LABEL_FR: 24ème Dimanche du Temps Ordinaire
+------------------------------------------------------------
+
+FICHIER: dominica_xxix_per_annum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica XXIX per annum
+LABEL_FR: 29ème Dimanche du Temps Ordinaire
+------------------------------------------------------------
+
+FICHIER: dominica_xxv_per_annum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica XXV per annum
+LABEL_FR: 25ème Dimanche du Temps Ordinaire
+------------------------------------------------------------
+
+FICHIER: dominica_xxvi_per_annum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica XXVI per annum
+LABEL_FR: 26ème Dimanche du Temps Ordinaire
+------------------------------------------------------------
+
+FICHIER: dominica_xxvii_per_annum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica XXVII per annum
+LABEL_FR: 27ème Dimanche du Temps Ordinaire
+------------------------------------------------------------
+
+FICHIER: dominica_xxviii_per_annum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica XXVIII per annum
+LABEL_FR: 28ème Dimanche du Temps Ordinaire
+------------------------------------------------------------
+
+FICHIER: dominica_xxx_per_annum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica XXX per annum
+LABEL_FR: 30ème Dimanche du Temps Ordinaire
+------------------------------------------------------------
+
+FICHIER: dominica_xxxi_per_annum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica XXXI per annum
+LABEL_FR: 31ème Dimanche du Temps Ordinaire
+------------------------------------------------------------
+
+FICHIER: dominica_xxxii_per_annum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica XXXII per annum
+LABEL_FR: 32ème Dimanche du Temps Ordinaire
+------------------------------------------------------------
+
+FICHIER: dominica_xxxiii_per_annum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica XXXIII per annum
+LABEL_FR: 33ème Dimanche du Temps Ordinaire
+------------------------------------------------------------
+
+FICHIER: dominica_xxxiv_per_annum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Dominica XXXIV per annum
+LABEL_FR: 34ème Dimanche du Temps Ordinaire
+------------------------------------------------------------
+
+FICHIER: dominici.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Dominici, presbyteri
+LABEL_FR: S. Dominique, prêtre
+------------------------------------------------------------
+
+FICHIER: elisabeth_hungariae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Elisabeth Hungariæ, religiosæ
+LABEL_FR: Ste Elisabeth de Hongrie
+------------------------------------------------------------
+
+FICHIER: elisabeth_lusitaniae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Elisabeth Lusitaniæ
+LABEL_FR: Ste Elisabeth du Portugal
+------------------------------------------------------------
+
+FICHIER: ephraem.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Ephræm, diaconi et Ecclesiæ doctoris
+LABEL_FR: S. Éphrem, diacre et docteur de l'Église
+------------------------------------------------------------
+
+FICHIER: eusebii_vercellensis.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Eusebii Vercellensis, episcopi
+LABEL_FR: S. Eusèbe, évêque
+------------------------------------------------------------
+
+FICHIER: fabiani.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Fabiani, papæ et martyris
+LABEL_FR: S. Fabien, pape et martyr
+------------------------------------------------------------
+
+FICHIER: faustinae_mariae_kowalska.yaml
+INDEX: 0
+ANNÉE: 2020
+LABEL_LA: S. Faustinæ Mariæ Kowalska, virginis
+LABEL_FR: Ste Faustine Kowalska, vierge
+------------------------------------------------------------
+
+FICHIER: feria_ii_hebdomadae_sanctae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Feria II Hebdomadæ Sanctæ
+LABEL_FR: Lundi Saint
+------------------------------------------------------------
+
+FICHIER: feria_ii_infra_octavam_paschae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Feria II Infra Octavam Paschæ
+LABEL_FR: Lundi dans l'Octave de Pâques
+------------------------------------------------------------
+
+FICHIER: feria_iii_hebdomadae_sanctae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Feria III Hebdomadæ Sanctæ
+LABEL_FR: Mardi Saint
+------------------------------------------------------------
+
+FICHIER: feria_iii_infra_octavam_paschae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Feria III Infra Octavam Paschæ
+LABEL_FR: Mardi dans l'Octave de Pâques
+------------------------------------------------------------
+
+FICHIER: feria_iv_cinerum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Feria IV Cinerum
+LABEL_FR: Mercredi des Cendres
+------------------------------------------------------------
+
+FICHIER: feria_iv_hebdomadae_sanctae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Feria IV Hebdomadæ Sanctæ
+LABEL_FR: Mercredi Saint
+------------------------------------------------------------
+
+FICHIER: feria_iv_infra_octavam_paschae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Feria IV Infra Octavam Paschæ
+LABEL_FR: Mercredi dans l'Octave de Pâques
+------------------------------------------------------------
+
+FICHIER: feria_v_hebdomadae_sanctae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Feria V Hebdomadæ Sanctæ
+LABEL_FR: Jeudi Saint
+------------------------------------------------------------
+
+FICHIER: feria_v_infra_octavam_paschae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Feria V Infra Octavam Paschæ
+LABEL_FR: Jeudi dans l'Octave de Pâques
+------------------------------------------------------------
+
+FICHIER: feria_vi_hebdomadae_sanctae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Feria VI Hebdomadæ Sanctæ
+LABEL_FR: Vendredi Saint
+------------------------------------------------------------
+
+FICHIER: feria_vi_infra_octavam_paschae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Feria VI Infra Octavam Paschæ
+LABEL_FR: Vendredi dans l'Octave de Pâques
+------------------------------------------------------------
+
+FICHIER: fidelis_de_sigmaringen.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Fidelis de Sigmaringen, presbyteri et martyris
+LABEL_FR: S. Fidèle de Sigmaringen, prêtre et martyr
+------------------------------------------------------------
+
+FICHIER: franciscae_romanae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Franciscæ Romanæ, religiosæ
+LABEL_FR: Ste Françoise Romaine, religieuse
+------------------------------------------------------------
+
+FICHIER: francisci_assisiensis.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Francisci Assisiensis
+LABEL_FR: S. François d'Assise
+------------------------------------------------------------
+
+FICHIER: francisci_de_paola.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Francisci de Paola, eremitæ
+LABEL_FR: S. François de Paule, ermite
+------------------------------------------------------------
+
+FICHIER: francisci_de_sales.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Francisci de Sales, episcopi et Ecclesiæ doctoris
+LABEL_FR: S. François de Sales, évêque et docteur de l'Église
+------------------------------------------------------------
+
+FICHIER: francisci_xavier.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Francisci Xavier, presbyteri
+LABEL_FR: S. François Xavier, prêtre
+------------------------------------------------------------
+
+FICHIER: georgii.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Georgii, martyris
+LABEL_FR: S. Georges, martyr
+------------------------------------------------------------
+
+FICHIER: gertrudis.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Gertrudis, virginis
+LABEL_FR: Ste Gertrude, vierge
+------------------------------------------------------------
+
+FICHIER: gregorii_magni.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Gregorii Magni, papæ et Ecclesiæ doctoris
+LABEL_FR: S. Grégoire le Grand, pape et docteur de l'Église
+------------------------------------------------------------
+
+FICHIER: gregorii_narecensis.yaml
+INDEX: 0
+ANNÉE: 2021
+LABEL_LA: S. Gregorii Narecensis, abbatis et Ecclesiæ doctoris
+LABEL_FR: S. Grégoire de Narek, abbé et docteur de l'Église
+------------------------------------------------------------
+
+FICHIER: gregorii_vii.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Gregorii VII, papæ
+LABEL_FR: S. Grégoire VII, pape
+------------------------------------------------------------
+
+FICHIER: hedvigis.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Hedvigis, religiosæ
+LABEL_FR: Ste Edwige, religieuse
+------------------------------------------------------------
+
+FICHIER: henrici.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Henrici
+LABEL_FR: S. Henri
+------------------------------------------------------------
+
+FICHIER: hieronymi.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Hieronymi, presbyteri et Ecclesiæ doctoris
+LABEL_FR: S. Jérôme, prêtre et docteur de l'Église
+------------------------------------------------------------
+
+FICHIER: hieronymi_emiliani.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Hieronymi Emiliani
+LABEL_FR: S. Jérôme Émilien, fondateur
+------------------------------------------------------------
+
+FICHIER: hilarii.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Hilarii, episcopi et Ecclesiæ doctoris
+LABEL_FR: S. Hilaire, évêque et docteur de l'Église
+------------------------------------------------------------
+
+FICHIER: hildegardis_bingensis.yaml
+INDEX: 0
+ANNÉE: 2021
+LABEL_LA: S. Hildegardis Bingensis, virginis et Ecclesiæ doctoris
+LABEL_FR: Ste Hildegarde de Bingen, vierge et docteur de l’Église
+------------------------------------------------------------
+
+FICHIER: iacobi.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Iacobi, apostoli
+LABEL_FR: Saint Jacques, apôtre
+------------------------------------------------------------
+
+FICHIER: ianuarii.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Ianuarii, episcopi et martyris
+LABEL_FR: S. Janvier, évêque et martyr
+------------------------------------------------------------
+
+FICHIER: ignatii_antiocheni.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Ignatii Antiocheni, episcopi et martyris
+LABEL_FR: S. Ignace d'Antioche, évêque et martyr
+------------------------------------------------------------
+
+FICHIER: ignatii_de_loyola.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Ignatii de Loyola, presbyteri
+LABEL_FR: S. Ignace de Loyola, prêtre
+------------------------------------------------------------
+
+FICHIER: immaculati_cordis_beatae_mariae_virginis.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Immaculati Cordis Beatæ Mariæ Virginis
+LABEL_FR: Cœur immaculé de la bienheureuse Vierge Marie
+------------------------------------------------------------
+
+FICHIER: in_annuntiatione_domini.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: In Annuntiatione Domini
+LABEL_FR: Annonciation du Seigneur
+------------------------------------------------------------
+
+FICHIER: in_ascensione_domini.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: In Ascensione Domini
+LABEL_FR: Ascension
+------------------------------------------------------------
+
+FICHIER: in_assumptione_beatae_mariae_virginis.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: In Assumptione Beatæ Mariæ Virginis
+LABEL_FR: Assomption de la Vierge Marie
+------------------------------------------------------------
+
+FICHIER: in_baptismate_domini.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: In Baptismate Domini
+LABEL_FR: Le Baptême du Seigneur
+------------------------------------------------------------
+
+FICHIER: in_commemoratione_omnium_fidelium_defunctorum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: In Commemoratione Omnium Fidelium Defunctorum
+LABEL_FR: Commémoration de tous les fidèles défunts
+------------------------------------------------------------
+
+FICHIER: in_conceptione_immaculata_beatae_mariae_virginis.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: In Conceptione Immaculata Beatæ Mariæ Virginis
+LABEL_FR: Immaculée Conception de la Vierge Marie
+------------------------------------------------------------
+
+FICHIER: in_conversione_pauli.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: In Conversione S. Pauli, apostoli
+LABEL_FR: Conversion de st Paul, apôtre
+------------------------------------------------------------
+
+FICHIER: in_dedicatione_basilicae_lateranensis.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: In Dedicatione Basilicæ Lateranensis
+LABEL_FR: Dédicace de la Basilique du Latran
+------------------------------------------------------------
+
+FICHIER: in_dedicatione_basilicae_sanctae_mariae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: In Dedicatione Basilicæ Sanctæ Mariæ
+LABEL_FR: Dédicace de la Basilique Sainte-Marie Majeure
+------------------------------------------------------------
+
+FICHIER: in_dedicatione_basilicarum_sanctorum_petri_et_pauli_apostolorum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: In Dedicatione Basilicarum Sanctorum Petri et Pauli Apostolorum
+LABEL_FR: Dédicace des basiliques de S. Pierre et de S. Paul, apôtres
+------------------------------------------------------------
+
+FICHIER: in_epiphania_domini.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: In Epiphania Domini
+LABEL_FR: L'Épiphanie du Seigneur
+------------------------------------------------------------
+
+FICHIER: in_exaltatione_sanctae_crucis.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: In Exaltatione Sanctæ Crucis
+LABEL_FR: La Croix Glorieuse
+------------------------------------------------------------
+
+FICHIER: in_nativitate_beatae_mariae_virginis.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: In Nativitate Beatæ Mariæ Virginis
+LABEL_FR: La Nativité de la Bienheureuse Vierge Marie
+------------------------------------------------------------
+
+FICHIER: in_nativitate_domini.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: In Nativitate Domini
+LABEL_FR: Nativité du Seigneur
+------------------------------------------------------------
+
+FICHIER: in_nativitate_ioannis_baptistae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: In Nativitate S. Ioannis Baptistæ
+LABEL_FR: Nativité de Saint Jean Baptiste
+------------------------------------------------------------
+
+FICHIER: in_passione_ioannis_baptistae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: In Passione S. Ioannis Baptistæ, martyris
+LABEL_FR: Martyre de S. Jean Baptiste
+------------------------------------------------------------
+
+FICHIER: in_praesentatione_beatae_mariae_virginis.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: In Præsentatione Beatæ Mariæ Virginis
+LABEL_FR: Présentation de la Vierge Marie
+------------------------------------------------------------
+
+FICHIER: in_praesentatione_domini.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: In Præsentatione Domini
+LABEL_FR: Présentation du Seigneur au Temple
+------------------------------------------------------------
+
+FICHIER: in_transfiguratione_domini.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: In Transfiguratione Domini
+LABEL_FR: Transfiguration du Seigneur
+------------------------------------------------------------
+
+FICHIER: in_visitatione_beatae_mariae_virginis.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: In Visitatione Beatæ Mariæ Virginis
+LABEL_FR: La Visitation de la Bienheureuse Vierge Marie
+------------------------------------------------------------
+
+FICHIER: innocentium.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Ss. Innocentium, Martyrum
+LABEL_FR: Les Saints Innocents, martyrs
+------------------------------------------------------------
+
+FICHIER: ioachim_et_annae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Ss. Ioachim et Annæ, parentum beatæ Mariæ Virginis
+LABEL_FR: Ste Anne et S. Joachim, parents de la Bienheureuse Vierge Marie
+------------------------------------------------------------
+
+FICHIER: ioannae_franciscae_de_chantal.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Ioannæ Franciscæ de Chantal, religiosæ
+LABEL_FR: Ste Jeanne-Françoise de Chantal, religieuse
+------------------------------------------------------------
+
+FICHIER: ioannis.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Ioannis, apostoli et evangelistæ
+LABEL_FR: Saint Jean, apôtre et évangéliste
+------------------------------------------------------------
+
+FICHIER: ioannis_a_cruce.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Ioannis a Cruce, presbyteri et Ecclesiæ doctoris
+LABEL_FR: S. Jean de la Croix, prêtre et docteur de l'Église
+------------------------------------------------------------
+
+FICHIER: ioannis_a_deo.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Ioannis a Deo, religiosi
+LABEL_FR: S. Jean de Dieu
+------------------------------------------------------------
+
+FICHIER: ioannis_baptistae_de_la_salle.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Ioannis Baptistæ de la Salle, presbyteri
+LABEL_FR: S. Jean-Baptiste de la Salle, prêtre
+------------------------------------------------------------
+
+FICHIER: ioannis_bosco.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Ioannis Bosco, presbyteri
+LABEL_FR: S. Jean Bosco, prêtre
+------------------------------------------------------------
+
+FICHIER: ioannis_chrysostomi.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Ioannis Chrysostomi, episcopi et Ecclesiæ doctoris
+LABEL_FR: S. Jean Chrysostome, évêque, docteur de l'Église
+------------------------------------------------------------
+
+FICHIER: ioannis_damasceni.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Ioannis Damasceni, presbyteri et Ecclesiæ doctoris
+LABEL_FR: S. Jean de Damas, prêtre et docteur de l'Église
+------------------------------------------------------------
+
+FICHIER: ioannis_de_avila.yaml
+INDEX: 0
+ANNÉE: 2021
+LABEL_LA: S. Ioannis de Avila, presbyteri et Ecclesiæ doctoris
+LABEL_FR: S. Jean de la Croix, prêtre et docteur de l'Église
+------------------------------------------------------------
+
+FICHIER: ioannis_de_brebeuf_et_isaac_jogues_et_sociorum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Ss. Ioannis de Brébeuf et Isaac Jogues, presbyterorum, et sociorum, martyrum
+LABEL_FR: S. Jean de Brébeuf et S. Isaac Jogues, prêtres, et leurs compagnons, martyr
+------------------------------------------------------------
+
+FICHIER: ioannis_de_capestrano.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Ioannis de Capestrano, presbyteri
+LABEL_FR: S. Jean de Capistran, prêtre
+------------------------------------------------------------
+
+FICHIER: ioannis_de_kety.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Ioannis de Kęty, presbyteri
+LABEL_FR: S. Jean de Kenty, prêtre
+------------------------------------------------------------
+
+FICHIER: ioannis_didaci_cuauhtlatoatzin.yaml
+INDEX: 0
+ANNÉE: 2002
+LABEL_LA: S. Ioannis Didaci Cuauhtlatoatzin
+LABEL_FR: S. Juan Diego Cuauhtlatoatzin
+------------------------------------------------------------
+
+FICHIER: ioannis_eudes.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Ioannis Eudes, presbyteri
+LABEL_FR: S. Jean Eudes, prêtre
+------------------------------------------------------------
+
+FICHIER: ioannis_fisher_et_thomae_mori.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Ss. Ioannis Fisher, episcopi, et Thomæ More, martyrum
+LABEL_FR: S. Jean Fisher, évêque et S. Thomas More, martyrs
+------------------------------------------------------------
+
+FICHIER: ioannis_i.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Ioannis I, papæ et martyris
+LABEL_FR: S. Jean Ier, pape et martyr
+------------------------------------------------------------
+
+FICHIER: ioannis_leonardi.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Ioannis Leonardi, presbyteri
+LABEL_FR: S. Jean Léonardi, prêtre
+------------------------------------------------------------
+
+FICHIER: ioannis_mariae_vianney.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Ioannis Mariæ Vianney, presbyteri
+LABEL_FR: S. Jean-Marie Vianney, prêtre
+------------------------------------------------------------
+
+FICHIER: ioannis_pauli_ii.yaml
+INDEX: 0
+ANNÉE: 2011
+LABEL_LA: B. Ioannis Pauli II, papæ
+LABEL_FR: B. Jean-Paul II, pape
+------------------------------------------------------------
+
+FICHIER: ioannis_pauli_ii.yaml
+INDEX: 1
+ANNÉE: 2014
+LABEL_LA: S. Ioannis Pauli II, papæ
+LABEL_FR: S. Jean-Paul II, pape
+------------------------------------------------------------
+
+FICHIER: ioannis_xxiii.yaml
+INDEX: 0
+ANNÉE: 2014
+LABEL_LA: S. Ioannis XXIII, papæ
+LABEL_FR: S. Jean XXIII, pape
+------------------------------------------------------------
+
+FICHIER: iosaphat.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Iosaphat, episcopi et martyris
+LABEL_FR: S. Josaphat, évêque et martyr
+------------------------------------------------------------
+
+FICHIER: ioseph_opificis.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Ioseph Opificis
+LABEL_FR: S. Joseph, travailleur
+------------------------------------------------------------
+
+FICHIER: ioseph_sponsi_beatae_mariae_virginis.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Ioseph Sponsi Beatæ Mariæ Virginis
+LABEL_FR: Saint Joseph, époux de la Bienheureuse Vierge Marie
+------------------------------------------------------------
+
+FICHIER: iosephi_de_calasanz.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Iosephi de Calasanz, presbyteri
+LABEL_FR: S. Joseph de Calasanz, prêtre
+------------------------------------------------------------
+
+FICHIER: iosephinae_bakhitae.yaml
+INDEX: 0
+ANNÉE: 2003
+LABEL_LA: S. Iosephinae Bakhita, virginis
+LABEL_FR: Ste Joséphine Bakhita, vierge
+------------------------------------------------------------
+
+FICHIER: irenaei.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Irenæi, episcopi et martyris
+LABEL_FR: S. Irénée, évêque et martyr
+------------------------------------------------------------
+
+FICHIER: isidori.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Isidori, episcopi et Ecclesiæ doctoris
+LABEL_FR: S. Isidore, évêque, docteur de l'Église
+------------------------------------------------------------
+
+FICHIER: iustini.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Iustini, martyris
+LABEL_FR: S. Justin, martyr
+------------------------------------------------------------
+
+FICHIER: laurentii.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Laurentii, diaconi et martyris
+LABEL_FR: Saint Laurent, diacre et martyr
+------------------------------------------------------------
+
+FICHIER: laurentii_de_brindisi.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Laurentii de Brindisi, presbyteri et Ecclesiæ doctoris
+LABEL_FR: S. Laurent de Brindisi, prêtre et docteur de l'Église
+------------------------------------------------------------
+
+FICHIER: laurentii_ruiz_et_sociorum.yaml
+INDEX: 0
+ANNÉE: 2003
+LABEL_LA: Ss. Laurentii Ruiz et sociorum, martyrum
+LABEL_FR: S. Laurent Ruiz et ses compagnons, martyrs
+------------------------------------------------------------
+
+FICHIER: leonis_magni.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Leonis Magni, papæ et Ecclesiæ doctoris
+LABEL_FR: S. Léon le Grand, pape et docteur de l'Église
+------------------------------------------------------------
+
+FICHIER: lucae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Lucæ, evangelistæ
+LABEL_FR: S. Luc, évangéliste
+------------------------------------------------------------
+
+FICHIER: luciae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Luciæ, virginis et martyris
+LABEL_FR: Ste. Lucie, vierge et martyre
+------------------------------------------------------------
+
+FICHIER: ludovici.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Ludovici
+LABEL_FR: S. Louis
+------------------------------------------------------------
+
+FICHIER: ludovici_mariae_grignion_de_montfort.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Ludovici Mariæ Grignion de Montfort, presbyteri
+LABEL_FR: S. Louis-Marie Grignon de Montfort, prêtre
+------------------------------------------------------------
+
+FICHIER: marcellini_et_petri.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Ss. Marcellini et Petri, martyrum
+LABEL_FR: S. Marcellin et S. Pierre, martyrs
+------------------------------------------------------------
+
+FICHIER: marci.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Marci, evangelistæ
+LABEL_FR: S. Marc, évangéliste
+------------------------------------------------------------
+
+FICHIER: margaritae_mariae_alacoque.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Margaritæ Mariæ Alacoque, virginis
+LABEL_FR: Ste Marguerite-Marie Alacoque, vierge
+------------------------------------------------------------
+
+FICHIER: margaritae_scotiae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Margaritæ Scotiæ
+LABEL_FR: Ste Marguerite d'Ecosse
+------------------------------------------------------------
+
+FICHIER: mariae_goretti.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Mariæ Goretti, virginis et martyris
+LABEL_FR: Ste Marie Goretti, vierge et martyre
+------------------------------------------------------------
+
+FICHIER: mariae_magdalenae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Mariæ Magdalenæ
+LABEL_FR: Ste Marie-Madeleine
+------------------------------------------------------------
+
+FICHIER: mariae_magdalenae_de_pazzi.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Mariæ Magdalenæ de’ Pazzi, virginis
+LABEL_FR: Ste Marie-Madeleine de Pazzi, vierge
+------------------------------------------------------------
+
+FICHIER: marthae_mariae_et_lazari.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Marthæ
+LABEL_FR: Ste Marthe
+------------------------------------------------------------
+
+FICHIER: marthae_mariae_et_lazari.yaml
+INDEX: 1
+ANNÉE: 2021
+LABEL_LA: Ss. Marthæ, Mariæ et Lazari
+LABEL_FR: Ste Marthe, Marie et S. Lazare
+------------------------------------------------------------
+
+FICHIER: martini_de_porres.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Martini de Porres, religiosi
+LABEL_FR: S. Martin de Porrès, religieux
+------------------------------------------------------------
+
+FICHIER: martini_i.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Martini I, papæ et martyris
+LABEL_FR: S. Martin Ier, pape, martyr
+------------------------------------------------------------
+
+FICHIER: martini_turonensis.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Martini Turonensis, episcopi
+LABEL_FR: S. Martin de Tours, évêque
+------------------------------------------------------------
+
+FICHIER: matthaei.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Matthæi, apostoli et evangelistæ
+LABEL_FR: Saint Matthieu, apôtre et évangéliste
+------------------------------------------------------------
+
+FICHIER: matthiae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Matthiæ, apostoli
+LABEL_FR: S. Matthias, apôtre
+------------------------------------------------------------
+
+FICHIER: maximiliani_mariae_kolbe.yaml
+INDEX: 0
+ANNÉE: 2003
+LABEL_LA: S. Maximiliani Mariæ Kolbe, presbyteri et martyris
+LABEL_FR: S. Maximilien Kolbe, prêtre et martyr
+------------------------------------------------------------
+
+FICHIER: michaelis_gabrielis_et_raphaelis.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Ss. Michaelis, Gabrielis et Raphaelis, archangelorum
+LABEL_FR: Saint Michel, Saint Gabriel et Saint Raphaël, Archanges
+------------------------------------------------------------
+
+FICHIER: monicae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Monicæ
+LABEL_FR: Ste Monique
+------------------------------------------------------------
+
+FICHIER: nerei_et_achillei.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Ss. Nerei et Achillei, martyrum
+LABEL_FR: S. Nérée et S. Achille, martyrs
+------------------------------------------------------------
+
+FICHIER: nicolai.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Nicolai, episcopi
+LABEL_FR: S. Nicolas, évêque
+------------------------------------------------------------
+
+FICHIER: norberti.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Norberti, episcopi
+LABEL_FR: S. Norbert, évêque
+------------------------------------------------------------
+
+FICHIER: omnium_sanctorum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Omnium Sanctorum
+LABEL_FR: Tous les Saints
+------------------------------------------------------------
+
+FICHIER: pancratii.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Pancratii, martyris
+LABEL_FR: S. Pancrace, martyr
+------------------------------------------------------------
+
+FICHIER: patricii.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Patricii, episcopi
+LABEL_FR: S. Patrice, évêque
+------------------------------------------------------------
+
+FICHIER: pauli_a_cruce.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Pauli a Cruce, presbyteri
+LABEL_FR: S. Paul de la Croix, prêtre
+------------------------------------------------------------
+
+FICHIER: pauli_miki_et_sociorum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Ss. Pauli Miki et sociorum, martyrum
+LABEL_FR: S. Paul Miki et ses compagnons, martyrs
+------------------------------------------------------------
+
+FICHIER: pauli_vi.yaml
+INDEX: 0
+ANNÉE: 2019
+LABEL_LA: S. Pauli VI, papæ
+LABEL_FR: S. Paul VI, pape
+------------------------------------------------------------
+
+FICHIER: paulini_nolani.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Paulini Nolani, episcopi
+LABEL_FR: S. Paulin de Nole, évêque
+------------------------------------------------------------
+
+FICHIER: perpetuae_et_felicitatis.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Ss. Perpetuæ et Felicitatis, martyrum
+LABEL_FR: Ste Perpétue et Ste Félicité, martyres
+------------------------------------------------------------
+
+FICHIER: petri_canisii.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Petri Canisii, presbyteri et Ecclesiæ doctoris
+LABEL_FR: S. Pierre Canisius, prêtre et docteur de l'Église
+------------------------------------------------------------
+
+FICHIER: petri_chanel.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Petri Chanel, presbyteri et martyris
+LABEL_FR: S. Pierre Chanel, prêtre et martyr
+------------------------------------------------------------
+
+FICHIER: petri_chrysologi.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Petri Chrysologi, episcopi et Ecclesiæ doctoris
+LABEL_FR: S. Pierre Chrysologue, évêque et docteur de l'Église
+------------------------------------------------------------
+
+FICHIER: petri_claver.yaml
+INDEX: 0
+ANNÉE: 2003
+LABEL_LA: S. Petri Claver, presbyteri
+LABEL_FR: S. Pierre Claver, prêtre
+------------------------------------------------------------
+
+FICHIER: petri_damiani.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Petri Damiani, episcopi et Ecclesiæ doctoris
+LABEL_FR: S. Pierre Damien, docteur de l'Église
+------------------------------------------------------------
+
+FICHIER: petri_et_pauli.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Ss. Petri et Pauli, apostolorum
+LABEL_FR: Saint Pierre et Saint Paul
+------------------------------------------------------------
+
+FICHIER: petri_iuliani_eymard.yaml
+INDEX: 0
+ANNÉE: 2003
+LABEL_LA: S. Petri Iuliani Eymard, presbyteri
+LABEL_FR: S. Pierre-Julien Eymard, prêtre
+------------------------------------------------------------
+
+FICHIER: philippi_et_iacobi.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Ss. Philippi et Iacobi, apostolorum
+LABEL_FR: S. Philippe et S. Jacques, apôtres
+------------------------------------------------------------
+
+FICHIER: philippi_neri.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Philippi Neri, presbyteri
+LABEL_FR: S. Philippe Néri, prêtre
+------------------------------------------------------------
+
+FICHIER: pii_de_petrelcina.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Pii de Petrelcina, presbyteri
+LABEL_FR: S. Pio de Pietrelcina, prêtre
+------------------------------------------------------------
+
+FICHIER: pii_v.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Pii V, papæ
+LABEL_FR: S. Pie V, pape
+------------------------------------------------------------
+
+FICHIER: pii_x.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Pii X, papæ
+LABEL_FR: S.Pie X, pape
+------------------------------------------------------------
+
+FICHIER: polycarpi.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Polycarpi, episcopi et martyris
+LABEL_FR: S. Polycarpe, évêque et martyr
+------------------------------------------------------------
+
+FICHIER: pontiani_et_hippolyti.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Ss. Pontiani, papæ, et Hippolyti, presbyteri, martyrum
+LABEL_FR: S. Pontien, pape, et S. Hippolyte, prêtre, martyrs
+------------------------------------------------------------
+
+FICHIER: protomartyrum_sanctae_romanae_ecclesiae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Ss. Protomartyrum sanctæ Romanæ Ecclesiæ
+LABEL_FR: Ss. Premiers martyrs de l'Église de Rome
+------------------------------------------------------------
+
+FICHIER: raimundi_de_penyafort.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Raimundi de Penyafort, presbyteri
+LABEL_FR: S. Raymond de Penyafort, prêtre
+------------------------------------------------------------
+
+FICHIER: ritae_de_cascia.yaml
+INDEX: 0
+ANNÉE: 2003
+LABEL_LA: S. Ritæ de Cascia, religiosæ
+LABEL_FR: Ste Rita de Cascia, religieuse
+------------------------------------------------------------
+
+FICHIER: roberti_bellarmino.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Roberti Bellarmino, episcopi et Ecclesiæ doctoris
+LABEL_FR: S. Robert Bellarmin, évêque et docteur de l'Église
+------------------------------------------------------------
+
+FICHIER: romualdi.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Romualdi, abbatis
+LABEL_FR: S. Romuald
+------------------------------------------------------------
+
+FICHIER: rosae_de_lima.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Rosæ de Lima, virginis
+LABEL_FR: Ste Rose de Lima, vierge
+------------------------------------------------------------
+
+FICHIER: sabbato_infra_octavam_paschae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Sabbato Infra Octavam Paschæ
+LABEL_FR: Samedi dans l'Octave de Pâques
+------------------------------------------------------------
+
+FICHIER: sabbato_sancto.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Sabbato Sancto
+LABEL_FR: Samedi Saint
+------------------------------------------------------------
+
+FICHIER: sacratissimi_cordis_iesu.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Sacratissimi Cordis Iesu
+LABEL_FR: Sacré-Cœur de Jésus
+------------------------------------------------------------
+
+FICHIER: sanctae_dei_genetricis_mariae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Sollemnitas Sanctæ Dei Genetricis Mariæ
+LABEL_FR: Sainte Marie, Mère de Dieu
+------------------------------------------------------------
+
+FICHIER: sanctae_familiae_iesu_mariae_et_ioseph.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Sanctæ Familiæ Iesu, Mariæ et Ioseph
+LABEL_FR: La Sainte Famille
+------------------------------------------------------------
+
+FICHIER: sanctissimae_trinitatis.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Sanctissimæ Trinitatis
+LABEL_FR: La Sainte Trinité
+------------------------------------------------------------
+
+FICHIER: sanctissimi_corporis_et_sanguinis_christi.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Sanctissimi Corporis et Sanguinis Christi
+LABEL_FR: Le Saint Sacrement du corps et du sang du Christ
+------------------------------------------------------------
+
+FICHIER: sanctissimi_nominis_iesu.yaml
+INDEX: 0
+ANNÉE: 2003
+LABEL_LA: Sanctissimi Nominis Iesu
+LABEL_FR: Le Saint Nom de Jésus
+------------------------------------------------------------
+
+FICHIER: sanctissimi_nominis_mariae.yaml
+INDEX: 0
+ANNÉE: 2003
+LABEL_LA: Sanctissimi Nominis Mariæ
+LABEL_FR: Le Saint Nom de Marie
+------------------------------------------------------------
+
+FICHIER: sarbelii_makhluf.yaml
+INDEX: 0
+ANNÉE: 2003
+LABEL_LA: S. Sarbelii Makhluf, presbyteri
+LABEL_FR: S. Charbel Maklouf, prêtre
+------------------------------------------------------------
+
+FICHIER: scholasticae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Scholasticæ, virginis
+LABEL_FR: Ste Scholastique, vierge
+------------------------------------------------------------
+
+FICHIER: sebastiani.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Sebastiani, martyris
+LABEL_FR: Saint Sébastien, martyr
+------------------------------------------------------------
+
+FICHIER: septem_fundatorum_ordinis_servorum_beatae_mariae_virginis.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Ss. septem Fundatorum Ordinis Servorum Beatæ Mariæ Virginis
+LABEL_FR: Les sept saints fondateurs des Servîtes de Marie
+------------------------------------------------------------
+
+FICHIER: silvestri_i.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Silvestri I, papæ
+LABEL_FR: S. Sylvestre Ier, pape
+------------------------------------------------------------
+
+FICHIER: simonis_et_iudae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Ss. Simonis et Iudæ, apostolorum
+LABEL_FR: Saint Simon et Saint Jude, apôtres
+------------------------------------------------------------
+
+FICHIER: stanislai.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Stanislai, episcopi et martyris
+LABEL_FR: S. Stanislas, évêque et martyr
+------------------------------------------------------------
+
+FICHIER: stephani.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Stephani, protomartyris
+LABEL_FR: Saint Etienne, premier martyr
+------------------------------------------------------------
+
+FICHIER: stephani_hungariae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Stephani Hungariæ
+LABEL_FR: S. Étienne de Hongrie
+------------------------------------------------------------
+
+FICHIER: teresiae_a_iesu.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Teresiæ a Iesu, virginis et Ecclesiæ doctoris
+LABEL_FR: Ste Thérèse d'Avila, vierge et docteur de l'Église
+------------------------------------------------------------
+
+FICHIER: teresiae_a_iesu_infante.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Teresiæ a Iesu Infante, virginis et Ecclesiæ doctoris
+LABEL_FR: Ste Thérèse de l'Enfant Jésus, vierge
+------------------------------------------------------------
+
+FICHIER: teresiae_benedictae_a_cruce.yaml
+INDEX: 0
+ANNÉE: 2003
+LABEL_LA: S. Teresiæ Benedictæ a Cruce, virginis et martyrise
+LABEL_FR: Ste Thérèse-Bénédicte de la Croix, vierge et martyre
+------------------------------------------------------------
+
+FICHIER: teresiae_de_calcutta.yaml
+INDEX: 0
+ANNÉE: 2025
+LABEL_LA: S. Teresiæ de Calcutta, virginis
+LABEL_FR: Sainte Teresa de Calcutta, vierge
+------------------------------------------------------------
+
+FICHIER: thomae.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Thomæ, apostoli
+LABEL_FR: Saint Thomas, apôtre
+------------------------------------------------------------
+
+FICHIER: thomae_becket.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Thomæ Becket, episcopi et martyris
+LABEL_FR: S. Thomas Becket, évêque et martyr
+------------------------------------------------------------
+
+FICHIER: thomae_de_aquino.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Thomæ de Aquino, presbyteri et Ecclesiæ doctoris
+LABEL_FR: S. Thomas d'Aquin, prêtre et docteur de l'Église
+------------------------------------------------------------
+
+FICHIER: timothei_et_titi.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Ss. Timothei et Titi, episcoporum
+LABEL_FR: S. Timothée et S. Tite, évêques
+------------------------------------------------------------
+
+FICHIER: turibii_de_mogrovejo.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Turibii de Mogrovejo, episcopi
+LABEL_FR: S. Turibio de Mogrovejo, évêque
+------------------------------------------------------------
+
+FICHIER: venceslai.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Venceslai, martyris
+LABEL_FR: S. Venceslas, martyr
+------------------------------------------------------------
+
+FICHIER: vincentii.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Vincentii, diaconi et martyris
+LABEL_FR: S. Vincent, diacre et martyr
+------------------------------------------------------------
+
+FICHIER: vincentii_de_paul.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Vincentii de Paul, presbyteri
+LABEL_FR: S. Vincent de Paul, prêtre
+------------------------------------------------------------
+
+FICHIER: vincentii_ferrer.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: S. Vincentii Ferrer, presbyteri
+LABEL_FR: S. Vincent Ferrier, prêtre
+------------------------------------------------------------
+
+FICHIER: xysti_ii_et_sociorum.yaml
+INDEX: 0
+ANNÉE: 1969
+LABEL_LA: Ss. Xysti II, papæ, et sociorum, martyrum
+LABEL_FR: S. Sixte II, pape, et ses compagnons, martyrs
+------------------------------------------------------------
+

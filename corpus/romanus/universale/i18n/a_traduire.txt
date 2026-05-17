@@ -1,6 +1,6 @@
 # FICHIER DE TRADUCTION - Calendrier liturgique
 # Traduisez chaque 'label_fr' en conservant exactement la structure
-# Total : 298 labels à traduire
+# Total : 299 labels à traduire
 # Format : FICHIER | INDEX | ANNÉE | LABEL_LATIN | LABEL_FRANÇAIS
 ====================================================================================================
 
@@ -112,7 +112,7 @@ LABEL_FR:
 FICHIER: antonii_de_padova.yaml
 INDEX: 0
 ANNÉE: 1969
-LABEL_LA: S. Antonii de Padova, presbyteri et Ecclesiæ doctoris,
+LABEL_LA: S. Antonii de Padova, presbyteri et Ecclesiæ doctoris
 LABEL_FR: 
 ------------------------------------------------------------
 
@@ -1373,6 +1373,13 @@ FICHIER: ioannis_fisher_et_thomae_mori.yaml
 INDEX: 0
 ANNÉE: 1969
 LABEL_LA: Ss. Ioannis Fisher, episcopi, et Thomæ More, martyrum
+LABEL_FR: 
+------------------------------------------------------------
+
+FICHIER: ioannis_henrici_newman.yaml
+INDEX: 0
+ANNÉE: 2026
+LABEL_LA: S. Ioannis Henrici Newman, presbyteri et Ecclesiæ doctoris
 LABEL_FR: 
 ------------------------------------------------------------
 
