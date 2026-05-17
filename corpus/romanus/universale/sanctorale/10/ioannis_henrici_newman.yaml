@@ -5,6 +5,7 @@ date:
   month: 10
   day: 9
 history:
-  - precedence: 12
+  - from: 2026
+    precedence: 12
     nature: memoria
     color: albus

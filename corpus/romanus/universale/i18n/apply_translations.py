@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """
-Script 2 corrigé - Parse correctement le fichier de traduction.
+Script pour parser le fichier de traduction des labels et appliquer les traductions dans les fichiers YAML du dossier xx_XX.
+Exemple d'utilisation :
+
+python3 apply_translations.py translate_labels_en_EN.txt en_EN/
 """
 import os
 import sys
@@ -36,19 +39,19 @@ def parse_translation_file(filepath):
                 except ValueError:
                     print(f"⚠️  INDEX invalide dans bloc: {line}")
                     continue
-            elif line.startswith('LABEL_FR:'):
-                # Prendre tout après LABEL_FR: (même vide)
-                label_fr = line[len('LABEL_FR:'):].strip()
-                current['label_fr'] = label_fr
+            elif line.startswith('LABEL_XX:'):
+                # Prendre tout après LABEL_XX: (même vide)
+                label_xx = line[len('LABEL_XX:'):].strip()
+                current['label_xx'] = label_xx
         
         if 'file' in current and 'index' in current:
-            # Toujours ajouter, même si label_fr est vide
-            translations[current['file']][current['index']] = current.get('label_fr', '')
+            # Toujours ajouter, même si label_xx est vide
+            translations[current['file']][current['index']] = current.get('label_xx', '')
             processed += 1
             
             # Afficher les 5 premiers pour vérification
             if processed <= 5:
-                label_preview = current.get('label_fr', '')[:50]
+                label_preview = current.get('label_xx', '')[:50]
                 print(f"✅ {current['file']}[{current['index']}] = '{label_preview}'")
     
     print(f"📊 Total labels parsés : {processed}")
