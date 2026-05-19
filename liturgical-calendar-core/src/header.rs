@@ -1,12 +1,12 @@
 use core::mem::size_of;
 use sha2::{Digest, Sha256};
 
-/// Header binaire du format `.kald` v5 — 80 octets, little-endian.
+/// Header binaire du format `.kald` v6 — 80 octets, little-endian.
 ///
 /// Layout :
 /// ```text
 /// [0..4]   magic                b"KALD"
-/// [4..6]   version              u16 = 5
+/// [4..6]   version              u16 = 6
 /// [6..8]   variant_id           u16
 /// [8..10]  epoch                u16
 /// [10..12] range                u16
@@ -21,9 +21,7 @@ use sha2::{Digest, Sha256};
 /// [68..76] layout_discriminant  [u8; 8]
 /// [76..80] _reserved2           [u8; 4]
 /// ```
-///
-/// Invariant : `size_of::<Header>() == 80`.
-#[allow(missing_docs)] // champs auto-documentés par le layout en tête de module
+#[allow(missing_docs)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C)]
 pub struct Header {
@@ -47,9 +45,6 @@ pub struct Header {
 const _: () = assert!(size_of::<Header>() == 80);
 
 // ── Codes d'erreur internes ──────────────────────────────────────────────────
-//
-// Valeurs SYNCHRONISÉES avec les `pub const KAL_ERR_*` de `ffi.rs`.
-// Ne pas modifier sans mettre à jour les deux fichiers simultanément.
 
 pub(crate) const ERR_BUF_TOO_SMALL: i32 = -2;
 pub(crate) const ERR_MAGIC:         i32 = -3;
@@ -59,17 +54,6 @@ pub(crate) const ERR_FILE_SIZE:     i32 = -6;
 pub(crate) const ERR_SCHEMA:        i32 = -10;
 
 /// Valide les invariants structurels du header — **O(1), sans SHA-256**.
-///
-/// Vérifications (arrêt au premier échec) :
-/// 1. `len >= 80`                      → `ERR_BUF_TOO_SMALL`
-/// 2. `magic == b"KALD"`               → `ERR_MAGIC`
-/// 3. `version == KALD_FORMAT_VERSION` → `ERR_VERSION`
-/// 4. taille et offsets cohérents      → `ERR_FILE_SIZE`
-/// 5. `layout_discriminant` correct    → `ERR_SCHEMA`
-///
-/// Utilisée par les fonctions de lecture (`kal_read_entry`, etc.) — appel à
-/// chaque read sans recompute SHA-256. Appeler `validate_header` une fois à
-/// l'ouverture pour la vérification d'intégrité complète.
 pub(crate) fn validate_header_fast(data: &[u8]) -> Result<Header, i32> {
     if data.len() < 80 {
         return Err(ERR_BUF_TOO_SMALL);
@@ -103,9 +87,9 @@ pub(crate) fn validate_header_fast(data: &[u8]) -> Result<Header, i32> {
     let expected_pool_offset = 80u64 + registry_size + timeline_size;
     let expected_len         = expected_pool_offset + pool_size as u64;
 
-    if registry_offset != 80             { return Err(ERR_FILE_SIZE); }
-    if pool_offset as u64 != expected_pool_offset { return Err(ERR_FILE_SIZE); }
-    if data.len() as u64  != expected_len         { return Err(ERR_FILE_SIZE); }
+    if registry_offset != 80                          { return Err(ERR_FILE_SIZE); }
+    if pool_offset as u64 != expected_pool_offset     { return Err(ERR_FILE_SIZE); }
+    if data.len() as u64  != expected_len             { return Err(ERR_FILE_SIZE); }
 
     if stored_discriminant != crate::entry::LAYOUT_DISCRIMINANT {
         return Err(ERR_SCHEMA);
@@ -123,11 +107,6 @@ pub(crate) fn validate_header_fast(data: &[u8]) -> Result<Header, i32> {
 }
 
 /// Valide le header + intégrité SHA-256 — **O(payload_size)**.
-///
-/// Appeler une seule fois à l'ouverture du fichier. Les lectures répétées
-/// (`kal_read_entry`, etc.) utilisent `validate_header_fast` en interne.
-///
-/// 6. SHA-256(Registry ∥ Timeline ∥ Pool) → `ERR_CHECKSUM`
 pub(crate) fn validate_header(data: &[u8]) -> Result<Header, i32> {
     let header = validate_header_fast(data)?;
 
@@ -148,7 +127,11 @@ pub(crate) mod tests {
     use super::*;
     use sha2::{Digest, Sha256};
 
-    pub(crate) fn make_valid_kald_v5(n_registry: u32, n_entries: u32) -> Vec<u8> {
+    /// Construit un buffer `.kald` valide pour la version courante (`KALD_FORMAT_VERSION`).
+    ///
+    /// Renommé de `make_valid_kald_v5` en v6 : la version est désormais dynamique
+    /// via `crate::entry::KALD_FORMAT_VERSION` — aucun hardcode.
+    pub(crate) fn make_valid_kald(n_registry: u32, n_entries: u32) -> Vec<u8> {
         let registry_size = n_registry as usize * 4;
         let timeline_size = n_entries  as usize * 8;
         let total         = 80 + registry_size + timeline_size;
@@ -159,7 +142,7 @@ pub(crate) mod tests {
 
         let mut buf = vec![0u8; total];
         buf[0..4].copy_from_slice(b"KALD");
-        buf[4..6].copy_from_slice(&5u16.to_le_bytes());
+        buf[4..6].copy_from_slice(&crate::entry::KALD_FORMAT_VERSION.to_le_bytes());
         buf[8..10].copy_from_slice(&1969u16.to_le_bytes());
         buf[10..12].copy_from_slice(&431u16.to_le_bytes());
         buf[12..16].copy_from_slice(&n_entries.to_le_bytes());
@@ -174,12 +157,10 @@ pub(crate) mod tests {
 
     #[test]
     fn fast_accepts_corrupt_checksum() {
-        // validate_header_fast ignore le SHA-256 — doit réussir sur payload corrompu.
-        let mut buf = make_valid_kald_v5(2, 4);
-        buf[80] = 0xFF; // corruption payload
+        let mut buf = make_valid_kald(2, 4);
+        buf[80] = 0xFF;
         assert!(validate_header_fast(&buf).is_ok(),
             "validate_header_fast ne doit pas vérifier le SHA-256");
-        // validate_header (complète) doit rejeter le même buffer.
         assert_eq!(validate_header(&buf), Err(ERR_CHECKSUM));
     }
 
@@ -188,7 +169,7 @@ pub(crate) mod tests {
 
     #[test]
     fn valid_header_ok() {
-        assert!(validate_header(&make_valid_kald_v5(4, 8)).is_ok());
+        assert!(validate_header(&make_valid_kald(4, 8)).is_ok());
     }
 
     #[test]
@@ -198,31 +179,31 @@ pub(crate) mod tests {
 
     #[test]
     fn err_magic() {
-        let mut buf = make_valid_kald_v5(0, 0); buf[0] = b'X';
+        let mut buf = make_valid_kald(0, 0); buf[0] = b'X';
         assert_eq!(validate_header(&buf), Err(ERR_MAGIC));
     }
 
     #[test]
     fn err_version() {
-        let mut buf = make_valid_kald_v5(0, 0); buf[4] = 4;
+        let mut buf = make_valid_kald(0, 0); buf[4] = 4;
         assert_eq!(validate_header(&buf), Err(ERR_VERSION));
     }
 
     #[test]
     fn err_schema() {
-        let mut buf = make_valid_kald_v5(0, 0); buf[68] ^= 0xFF;
+        let mut buf = make_valid_kald(0, 0); buf[68] ^= 0xFF;
         assert_eq!(validate_header(&buf), Err(ERR_SCHEMA));
     }
 
     #[test]
     fn err_checksum() {
-        let mut buf = make_valid_kald_v5(2, 4); buf[80] = 0xFF;
+        let mut buf = make_valid_kald(2, 4); buf[80] = 0xFF;
         assert_eq!(validate_header(&buf), Err(ERR_CHECKSUM));
     }
 
     #[test]
     fn header_fields_roundtrip() {
-        let buf = make_valid_kald_v5(10, 366);
+        let buf = make_valid_kald(10, 366);
         let h = validate_header(&buf).unwrap();
         assert_eq!(h.registry_count, 10);
         assert_eq!(h.entry_count, 366);

@@ -10,15 +10,12 @@ use crate::entry::{FeastEntry, TimelineEntry};
 use crate::header::{validate_header, validate_header_fast, Header};
 
 // ── Constantes publiques — surface ABI C ─────────────────────────────────────
-//
-// Valeurs SYNCHRONISÉES avec les `ERR_*` de `header.rs`.
-// Ces constantes sont la source de vérité pour les intégrateurs C/WASM.
 
 /// Succès.
 pub const KAL_ENGINE_OK:         i32 =  0;
 /// Pointeur null passé à une fonction FFI.
 pub const KAL_ERR_NULL_PTR:      i32 = -1;
-/// Buffer trop court (< 80 octets pour un header v5 valide).
+/// Buffer trop court (< 80 octets pour un header valide).
 pub const KAL_ERR_BUF_TOO_SMALL: i32 = -2;
 /// Signature `b"KALD"` absente.
 pub const KAL_ERR_MAGIC:         i32 = -3;
@@ -32,14 +29,14 @@ pub const KAL_ERR_FILE_SIZE:     i32 = -6;
 pub const KAL_ERR_INDEX_OOB:     i32 = -7;
 /// Offset ou count hors des bornes du Secondary Pool.
 pub const KAL_ERR_POOL_OOB:      i32 = -8;
-/// Conservé pour compatibilité ABI — réservé, non émis en v5.
+/// Conservé pour compatibilité ABI — réservé, non émis en v6.
 pub const KAL_ERR_RESERVED:      i32 = -9;
 /// Discriminant de layout incompatible — dérive de schéma Forge / Engine.
 pub const KAL_ERR_SCHEMA:        i32 = -10;
 
 // ── kal_validate_header ───────────────────────────────────────────────────────
 
-/// Valide le header d'un buffer `.kald` v5.
+/// Valide le header d'un buffer `.kald` v6.
 ///
 /// `out_header` : si non-NULL, reçoit le `Header` parsé en cas de succès.
 ///
@@ -72,11 +69,6 @@ pub unsafe extern "C" fn kal_validate_header(
 
 /// Valide les invariants structurels du header sans vérifier le SHA-256.
 ///
-/// Utile pour les sources de confiance (ROM, storage vérifié en amont)
-/// ou pour valider la structure avant de décider de vérifier l'intégrité.
-/// Les fonctions de lecture (`kal_read_entry`, etc.) utilisent cette validation
-/// en interne — appeler `kal_validate_header` une fois à l'ouverture suffit.
-///
 /// # Safety
 /// `buf` doit être valide pour `len` octets. `out_header` doit être valide ou NULL.
 #[unsafe(no_mangle)]
@@ -108,6 +100,8 @@ pub unsafe extern "C" fn kal_validate_header_fast(
 ///
 /// `doy` : 0-based (0 = 1er janvier, 59 = Padding Feb29 hors bissextile, 365 = 31 déc).
 /// Un slot `primary_index == 0` est une Padding Entry valide — pas une erreur.
+/// v6 : les Padding Entries portent `occurrence_flags[4:2]` (LiturgicalPeriod)
+/// et `liturgical_week` même sans fête propre.
 ///
 /// # Safety
 /// `buf` valide pour `len` octets. `out` non-NULL.
@@ -143,7 +137,6 @@ pub unsafe extern "C" fn kal_read_entry(
         return KAL_ERR_INDEX_OOB;
     }
 
-    // Timeline base = registry_offset (80) + registry_count × 4
     let timeline_base = header.registry_offset as u64
         + header.registry_count as u64 * 4;
     let byte_offset = timeline_base + slot * 8;
@@ -154,13 +147,17 @@ pub unsafe extern "C" fn kal_read_entry(
 
     let s = &data[byte_offset as usize .. byte_offset as usize + 8];
 
+    // v6 layout : bytes 0–1 primary_index, 2–3 secondary_offset,
+    //             4 occurrence_flags, 5 secondary_count,
+    //             6 liturgical_week, 7 _reserved.
     unsafe {
         *out = TimelineEntry {
             primary_index:    u16::from_le_bytes([s[0], s[1]]),
             secondary_offset: u16::from_le_bytes([s[2], s[3]]),
             occurrence_flags: s[4],
             secondary_count:  s[5],
-            _reserved:        u16::from_le_bytes([s[6], s[7]]),
+            liturgical_week:  s[6],
+            _reserved:        s[7],
         };
     }
 
@@ -173,8 +170,6 @@ pub unsafe extern "C" fn kal_read_entry(
 ///
 /// `registry_index` : 1-based (valeurs valides : `1..=header.registry_count`).
 /// `0` est le sentinel Padding — retourne `KAL_ERR_INDEX_OOB`.
-///
-/// Accès O(1) : `registry_offset + (registry_index − 1) × 4`.
 ///
 /// # Safety
 /// `buf` valide pour `len` octets. `out` non-NULL.
@@ -225,12 +220,6 @@ pub unsafe extern "C" fn kal_read_feast(
 // ── kal_read_secondary ────────────────────────────────────────────────────────
 
 /// Lit `count` registry_indices depuis le Secondary Pool.
-///
-/// `secondary_offset` : offset en nombre de u16 depuis le début du Pool.
-/// `out_indices`      : buffer de `capacity` u16, doit être ≥ `count`.
-///
-/// Les valeurs retournées sont des `registry_index` 1-based.
-/// Utiliser `kal_read_feast` pour résoudre chacun en `FeastEntry`.
 ///
 /// # Safety
 /// `buf` valide pour `len` octets. `out_indices` valide pour `capacity` u16.
@@ -286,14 +275,6 @@ pub unsafe extern "C" fn kal_read_secondary(
 /// Scanne la Timeline pour la plage `[year_from, year_to]` et retourne les
 /// slots dont `FeastEntry.flags & flag_mask == flag_value`.
 ///
-/// `out_indices`  : buffer de `out_capacity` u32 recevant les slots correspondants,
-///                  encodés comme `(year − year_from) × 366 + doy`.
-///                  Peut être NULL si seul le décompte est souhaité.
-/// `out_count`    : nombre total de matches, indépendamment de `out_capacity`.
-///
-/// Retourne `KAL_ERR_BUF_TOO_SMALL` si `*out_count > out_capacity`
-/// (le buffer est trop petit ; agrandir et rappeler).
-///
 /// # Safety
 /// `buf` valide pour `len` octets. `out_count` non-NULL.
 /// `out_indices` valide pour `out_capacity` u32 ou NULL.
@@ -327,7 +308,7 @@ pub unsafe extern "C" fn kal_scan_flags(
         return KAL_ERR_INDEX_OOB;
     }
 
-    let registry_base = header.registry_offset as u64;              // 80
+    let registry_base = header.registry_offset as u64;
     let timeline_base = registry_base + header.registry_count as u64 * 4;
 
     let has_out = !out_indices.is_null();
@@ -340,16 +321,14 @@ pub unsafe extern "C" fn kal_scan_flags(
             let slot = year_offset * 366 + doy;
             if slot >= header.entry_count as u64 { break; }
 
-            // Lecture du primary_index depuis la Timeline (byte 0..2 du slot).
             let tl_off = timeline_base + slot * 8;
             if tl_off + 2 > len as u64 { continue; }
             let primary_index = u16::from_le_bytes([
                 data[tl_off as usize],
                 data[tl_off as usize + 1],
             ]);
-            if primary_index == 0 { continue; } // Padding Entry
+            if primary_index == 0 { continue; }
 
-            // Lecture de FeastEntry.flags depuis le Registry (bytes 2..4 de l'entrée).
             let reg_off = registry_base + (primary_index - 1) as u64 * 4;
             if reg_off + 4 > len as u64 { continue; }
             let feast_flags = u16::from_le_bytes([
@@ -362,7 +341,6 @@ pub unsafe extern "C" fn kal_scan_flags(
                     unsafe { *out_indices.add(count as usize) = slot as u32; }
                 }
                 count += 1;
-                // Ne pas interrompre : compter tous les matches même si buffer plein.
             }
         }
     }
@@ -381,7 +359,7 @@ pub unsafe extern "C" fn kal_scan_flags(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::header::tests::make_valid_kald_v5;
+    use crate::header::tests::make_valid_kald;
     use crate::entry::TimelineEntry;
 
     #[test]
@@ -394,7 +372,7 @@ mod tests {
 
     #[test]
     fn validate_ok_and_out_written() {
-        let buf = make_valid_kald_v5(3, 6);
+        let buf = make_valid_kald(3, 6);
         let mut h = unsafe { core::mem::zeroed::<Header>() };
         let rc = unsafe {
             kal_validate_header(buf.as_ptr(), buf.len(), &mut h)
@@ -406,7 +384,7 @@ mod tests {
 
     #[test]
     fn read_entry_padding_slot() {
-        let buf = make_valid_kald_v5(1, 366);
+        let buf = make_valid_kald(1, 366);
         let mut e = TimelineEntry::zeroed();
         let rc = unsafe {
             kal_read_entry(buf.as_ptr(), buf.len(), 1969, 0, &mut e)
@@ -417,7 +395,7 @@ mod tests {
 
     #[test]
     fn read_entry_doy_out_of_range() {
-        let buf = make_valid_kald_v5(0, 366);
+        let buf = make_valid_kald(0, 366);
         let mut e = TimelineEntry::zeroed();
         let rc = unsafe {
             kal_read_entry(buf.as_ptr(), buf.len(), 1969, 366, &mut e)
@@ -427,7 +405,7 @@ mod tests {
 
     #[test]
     fn read_entry_year_out_of_range() {
-        let buf = make_valid_kald_v5(0, 366);
+        let buf = make_valid_kald(0, 366);
         let mut e = TimelineEntry::zeroed();
         let rc = unsafe {
             kal_read_entry(buf.as_ptr(), buf.len(), 1900, 0, &mut e)
@@ -438,7 +416,7 @@ mod tests {
     #[test]
     fn read_feast_sentinel_zero() {
         use crate::entry::FeastEntry;
-        let buf = make_valid_kald_v5(2, 0);
+        let buf = make_valid_kald(2, 0);
         let mut fe = FeastEntry::zeroed();
         let rc = unsafe {
             kal_read_feast(buf.as_ptr(), buf.len(), 0, &mut fe)
@@ -449,7 +427,7 @@ mod tests {
     #[test]
     fn read_feast_out_of_bounds() {
         use crate::entry::FeastEntry;
-        let buf = make_valid_kald_v5(2, 0);
+        let buf = make_valid_kald(2, 0);
         let mut fe = FeastEntry::zeroed();
         let rc = unsafe {
             kal_read_feast(buf.as_ptr(), buf.len(), 3, &mut fe)
@@ -459,7 +437,7 @@ mod tests {
 
     #[test]
     fn read_secondary_zero_count_ok() {
-        let buf = make_valid_kald_v5(0, 0);
+        let buf = make_valid_kald(0, 0);
         let mut out = [0u16; 4];
         let rc = unsafe {
             kal_read_secondary(buf.as_ptr(), buf.len(), 0, 0, out.as_mut_ptr(), 4)
@@ -469,7 +447,7 @@ mod tests {
 
     #[test]
     fn read_secondary_capacity_insufficient() {
-        let buf = make_valid_kald_v5(0, 0);
+        let buf = make_valid_kald(0, 0);
         let mut out = [0u16; 1];
         let rc = unsafe {
             kal_read_secondary(buf.as_ptr(), buf.len(), 0, 3, out.as_mut_ptr(), 1)

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Affiche en Markdown un tableau des jours de l’année liturgique (calendrier DOD)
+# Affiche en Markdown un tableau des jours de l'année liturgique (calendrier DOD)
 # avec DOY, date (JJ mmm) et les labels (principal ; secondaires).
 # Usage : ./calendar_md.sh [-d] [-f KALD_FILE] [-l LITS_FILE] ANNÉE
 # Exemple : ./calendar_md.sh 2026 > calendar_2026.md
@@ -19,7 +19,7 @@ usage() {
     cat <<EOF
 Usage: $0 [-d] [-f KALD_FILE] [-l LITS_FILE] YEAR
 
-Produit un tableau Markdown de tous les jours de l’année liturgique
+Produit un tableau Markdown de tous les jours de l'année liturgique
 (ou seulement les dimanches avec -d) au format :
   | DOY | date | festums |
 
@@ -73,11 +73,11 @@ else
     LEAP_YEAR=false
 fi
 
-# --- Fonction d’affichage d’un jour (version tableau) ---
+# --- Fonction d'affichage d'un jour (version tableau) ---
 print_day() {
     local doy=$1
 
-    # Décalage réel par rapport au 1er janvier (en années non bissextiles on saute le DOY 59)
+    # Décalage réel par rapport au 1er janvier
     if $LEAP_YEAR; then
         offset=$doy
     else
@@ -92,46 +92,41 @@ print_day() {
     date_str=$(LC_TIME=C date -d "$YEAR-01-01 +$offset days" +"%d %b" | tr '[:upper:]' '[:lower:]')
     date_str="${date_str/ /$'\u00A0'}"
 
-    # Récupération des labels (principal et secondaires)
+    # Récupération des labels depuis kal-read.
+    #
+    # Stratégie : toutes les lignes "label : …" sont collectées dans l'ordre
+    # d'apparition dans la sortie de kal-read.
+    # La PREMIÈRE occurrence = fête principale.
+    # Les suivantes = fêtes secondaires.
+    # Le second bloc de détection par "[N]" est supprimé — il était la source
+    # du bug d'écrasement de `main`.
     labels=$(cargo run -q -p liturgical-calendar-forge --bin kal-read -- \
             --kald "$KALD_FILE" --lits "$LITS_FILE" --year "$YEAR" --doy "$doy" 2>/dev/null |
             awk '
                 /^[[:space:]]*label[[:space:]]*:/ {
                     sub(/^[^:]*:[[:space:]]*/, "")
-                    main = $0
-                }
-                /^[[:space:]]+\[[0-9]+\][[:space:]]/ && !/feast_id/ && !/registry_index/ {
-                    sub(/^[[:space:]]+\[[0-9]+\][[:space:]]*/, "")
-                    # Supprimer "registry_index=xxx" et "feast_id=0x..."
-                    gsub(/registry_index=[0-9]+[[:space:]]*/, "")
-                    gsub(/feast_id=0x[0-9a-f]+[[:space:]]*/, "")
-                    gsub(/[[:space:]]+/, " ")
-                    gsub(/^[[:space:]]+|[[:space:]]+$/, "")
-                    if ($0 != "") secondary[++s] = $0
+                    if (label_count == 0) {
+                        main = $0
+                    } else {
+                        secondary[++s] = $0
+                    }
+                    label_count++
                 }
                 END {
                     sep = ""
                     if (main != "") {
                         printf "%s", main
-                        sep = " | "
+                        sep = " ; "
                     }
-                    for (i=1; i<=s; i++) {
+                    for (i = 1; i <= s; i++) {
                         printf "%s%s", sep, secondary[i]
-                        sep = " | "
+                        sep = " ; "
                     }
                 }
             ')
 
-    # Remplacement du séparateur " | " par " ; " pour ne pas casser le tableau Markdown
-    local labels_clean
-    if [ -n "$labels" ]; then
-        labels_clean=$(echo "$labels" | sed 's/ | / ; /g')
-    else
-        labels_clean=""
-    fi
-
-    # Ligne du tableau
-    printf '| %03d | **%s** | %s |\n' "$doy" "$date_str" "$labels_clean"
+    # Ligne du tableau — cellule vide si aucun label (jour sans fête dans le .lits courant)
+    printf '| %03d | **%s** | %s |\n' "$doy" "$date_str" "$labels"
 }
 
 # --- En-tête du tableau ---

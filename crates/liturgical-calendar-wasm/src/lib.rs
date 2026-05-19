@@ -1,3 +1,5 @@
+#![no_std]
+
 use core::ptr::{addr_of, addr_of_mut};
 
 use liturgical_calendar_core::{
@@ -15,7 +17,7 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
 }
 
 // ── Capacités ─────────────────────────────────────────────────────────────────
-// .kald v5 : 80 octets header + Registry + Timeline + Pool.
+// .kald v6 : 80 octets header + Registry + Timeline + Pool.
 // 431 ans × 366 slots × 8 octets ≈ 1.26 MB Timeline.
 // Registry : ~4000 fêtes × 4 octets ≈ 16 KB.
 
@@ -27,7 +29,7 @@ const SECONDARY_CAP: usize = 32;
 
 static mut KALD_BUF:      [u8;  KALD_CAP]      = [0u8; KALD_CAP];
 static mut LITS_BUF:      [u8;  LITS_CAP]      = [0u8; LITS_CAP];
-static mut ENTRY_BUF:     [u8;  8]             = [0u8; 8]; // TimelineEntry
+static mut ENTRY_BUF:     [u8;  8]             = [0u8; 8]; // TimelineEntry v6
 static mut FEAST_BUF:     [u8;  4]             = [0u8; 4]; // FeastEntry
 static mut SECONDARY_BUF: [u16; SECONDARY_CAP] = [0u16; SECONDARY_CAP];
 
@@ -51,11 +53,6 @@ pub const KAL_ERR_LITS_INVALID:      i32 = -23;
 
 // ── Helper interne ────────────────────────────────────────────────────────────
 
-/// Résout `feast_id` dans le LitsProvider et remplit les out-statics
-/// LABEL_* + ANNOTATION_*. Retourne 1 si trouvé, 0 si absent.
-///
-/// # Safety
-/// Doit être appelé depuis un bloc `unsafe` avec `BRIDGE_STATE == 2`.
 unsafe fn resolve_by_id(feast_id: u16, year: u16) -> i32 {
     let lits_slice: &'static [u8] = unsafe {
         core::slice::from_raw_parts(
@@ -121,7 +118,7 @@ pub extern "C" fn kal_wasm_alloc_lits(len: u32) -> u32 {
 // Phase 2 — commit
 // ═════════════════════════════════════════════════════════════════════════════
 
-/// Valide le header `.kald` v5 (magic, version, taille, discriminant, SHA-256).
+/// Valide le header `.kald` v6 (magic, version, taille, discriminant, SHA-256).
 /// Passe l'état à `KaldLoaded` si OK.
 #[unsafe(no_mangle)]
 pub extern "C" fn kal_wasm_commit_kald() -> i32 {
@@ -138,17 +135,12 @@ pub extern "C" fn kal_wasm_commit_kald() -> i32 {
 
 /// Vérifie le `build_id` et valide le header `.lits`.
 /// Passe l'état à `Ready` si OK.
-///
-/// Header v5 : checksum à l'offset 36 (vs offset 24 en v4).
-/// `build_id` = `kald_header[36..44]` == `lits_header[12..20]`.
 #[unsafe(no_mangle)]
 pub extern "C" fn kal_wasm_commit_lits() -> i32 {
     unsafe {
         if *addr_of!(BRIDGE_STATE) < 1 { return KAL_ERR_NOT_READY; }
         if *addr_of!(LITS_LEN) < 20   { return KAL_ERR_LITS_INVALID; }
 
-        // build_id : kald_checksum[..8] == lits_header[12..20].
-        // v5 : checksum commence à l'offset 36 du header (vs 24 en v4).
         let kald_cs_ptr = (addr_of!(KALD_BUF) as *const u8).add(36);
         let lits_bi_ptr = (addr_of!(LITS_BUF) as *const u8).add(12);
         if core::slice::from_raw_parts(kald_cs_ptr, 8)
@@ -173,8 +165,16 @@ pub extern "C" fn kal_wasm_commit_lits() -> i32 {
 // ═════════════════════════════════════════════════════════════════════════════
 
 /// Lit la `TimelineEntry` pour `(year, doy)` dans `ENTRY_BUF`.
-/// Lire les champs via `kal_wasm_entry_ptr()`.
-/// Retourne 0 (OK) ou code d'erreur négatif.
+///
+/// Layout v6 (8 octets, LE) :
+///   [0..2] primary_index    u16  — 0 = Padding Entry
+///   [2..4] secondary_offset u16
+///   [4]    occurrence_flags u8   — bits [1:0] vespers/vigil, [4:2] LiturgicalPeriod
+///   [5]    secondary_count  u8
+///   [6]    liturgical_week  u8   — 0 = N/A, 1–34 = semaine active
+///   [7]    _reserved        u8   — nul
+///
+/// v6 : les Padding Entries portent `occurrence_flags[4:2]` et `liturgical_week`.
 #[unsafe(no_mangle)]
 pub extern "C" fn kal_wasm_read_day(year: u16, doy: u16) -> i32 {
     unsafe {
@@ -189,22 +189,53 @@ pub extern "C" fn kal_wasm_read_day(year: u16, doy: u16) -> i32 {
     }
 }
 
-/// Pointeur vers `ENTRY_BUF` (8 octets, `TimelineEntry`).
-/// Valide après `kal_wasm_read_day`.
+/// Pointeur vers `ENTRY_BUF` (8 octets, `TimelineEntry` v6).
 #[unsafe(no_mangle)]
 pub extern "C" fn kal_wasm_entry_ptr() -> u32 {
     addr_of!(ENTRY_BUF) as u32
+}
+
+/// `primary_index` de la dernière `TimelineEntry` lue (0 = Padding Entry).
+#[unsafe(no_mangle)]
+pub extern "C" fn kal_wasm_entry_primary_index() -> u16 {
+    unsafe {
+        u16::from_le_bytes([*addr_of!(ENTRY_BUF[0]), *addr_of!(ENTRY_BUF[1])])
+    }
+}
+
+/// `1` si Padding Entry (primary_index == 0), `0` sinon.
+#[unsafe(no_mangle)]
+pub extern "C" fn kal_wasm_entry_is_padding() -> u32 {
+    unsafe {
+        let pi = u16::from_le_bytes([*addr_of!(ENTRY_BUF[0]), *addr_of!(ENTRY_BUF[1])]);
+        if pi == 0 { 1 } else { 0 }
+    }
+}
+
+/// `LiturgicalPeriod` du slot courant — bits [4:2] de `occurrence_flags`.
+/// Valide pour tous les slots y compris Padding Entries.
+#[unsafe(no_mangle)]
+pub extern "C" fn kal_wasm_entry_liturgical_period() -> u8 {
+    unsafe { (*addr_of!(ENTRY_BUF[4]) >> 2) & 0x07 }
+}
+
+/// Ordinal de semaine liturgique (byte 6). 0 = N/A, 1–34 = semaine active.
+/// Valide pour tous les slots y compris Padding Entries.
+#[unsafe(no_mangle)]
+pub extern "C" fn kal_wasm_entry_liturgical_week() -> u8 {
+    unsafe { *addr_of!(ENTRY_BUF[6]) }
+}
+
+/// `occurrence_flags` bruts — bits [1:0] vespers/vigil, bits [4:2] période.
+#[unsafe(no_mangle)]
+pub extern "C" fn kal_wasm_entry_occurrence_flags() -> u8 {
+    unsafe { *addr_of!(ENTRY_BUF[4]) }
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
 // Lecture Feast Registry — pattern out-static (FEAST_BUF)
 // ═════════════════════════════════════════════════════════════════════════════
 
-/// Lit le `FeastEntry` pour `registry_index` (1-based) dans `FEAST_BUF`.
-///
-/// Accès O(1) : `registry_offset + (registry_index − 1) × 4`.
-/// `registry_index == 0` (Padding) retourne `KAL_ERR_INDEX_OOB`.
-/// Lire les champs via `kal_wasm_feast_ptr()`.
 #[unsafe(no_mangle)]
 pub extern "C" fn kal_wasm_read_feast(registry_index: u16) -> i32 {
     unsafe {
@@ -218,8 +249,6 @@ pub extern "C" fn kal_wasm_read_feast(registry_index: u16) -> i32 {
     }
 }
 
-/// Pointeur vers `FEAST_BUF` (4 octets, `FeastEntry`).
-/// Valide après `kal_wasm_read_feast`.
 #[unsafe(no_mangle)]
 pub extern "C" fn kal_wasm_feast_ptr() -> u32 {
     addr_of!(FEAST_BUF) as u32
@@ -229,11 +258,6 @@ pub extern "C" fn kal_wasm_feast_ptr() -> u32 {
 // Fêtes secondaires — pattern out-static (SECONDARY_BUF)
 // ═════════════════════════════════════════════════════════════════════════════
 
-/// Remplit `SECONDARY_BUF` avec `count` registry_indices depuis le Secondary Pool.
-///
-/// Les valeurs retournées sont des `registry_index` 1-based.
-/// Appeler `kal_wasm_read_feast` pour résoudre chacun en `FeastEntry`.
-/// Retourne 0 (OK) ou code d'erreur négatif.
 #[unsafe(no_mangle)]
 pub extern "C" fn kal_wasm_read_secondary(secondary_offset: u16, count: u8) -> i32 {
     unsafe {
@@ -249,8 +273,6 @@ pub extern "C" fn kal_wasm_read_secondary(secondary_offset: u16, count: u8) -> i
     }
 }
 
-/// Pointeur vers `SECONDARY_BUF` (tableau de u16 LE, registry_indices).
-/// Valide après `kal_wasm_read_secondary`.
 #[unsafe(no_mangle)]
 pub extern "C" fn kal_wasm_secondary_ptr() -> u32 {
     addr_of!(SECONDARY_BUF) as u32
@@ -261,18 +283,12 @@ pub extern "C" fn kal_wasm_secondary_ptr() -> u32 {
 // ═════════════════════════════════════════════════════════════════════════════
 
 /// Résout label + annotation pour `(year, doy)`.
-///
-/// Pattern v5 (2 appels) :
-///   1. `kal_read_entry`  → `primary_index` (registry_index)
-///   2. `kal_read_feast`  → `feast_id` (clé de lookup `.lits`)
-///
 /// Retourne 1 (trouvé), 0 (Padding Entry ou absent), < 0 (erreur).
 #[unsafe(no_mangle)]
 pub extern "C" fn kal_wasm_get_label(year: u16, doy: u16) -> i32 {
     unsafe {
         if *addr_of!(BRIDGE_STATE) != 2 { return KAL_ERR_NOT_READY; }
 
-        // 1. Lire TimelineEntry → primary_index
         let rc = kal_read_entry(
             addr_of!(KALD_BUF) as *const u8,
             *addr_of!(KALD_LEN) as usize,
@@ -286,9 +302,8 @@ pub extern "C" fn kal_wasm_get_label(year: u16, doy: u16) -> i32 {
             *addr_of!(ENTRY_BUF[0]),
             *addr_of!(ENTRY_BUF[1]),
         ]);
-        if primary_index == 0 { return 0; } // Padding Entry
+        if primary_index == 0 { return 0; }
 
-        // 2. Résoudre registry_index → feast_id via Feast Registry O(1)
         let rc2 = kal_read_feast(
             addr_of!(KALD_BUF) as *const u8,
             *addr_of!(KALD_LEN) as usize,
@@ -306,8 +321,7 @@ pub extern "C" fn kal_wasm_get_label(year: u16, doy: u16) -> i32 {
     }
 }
 
-/// Résout label + annotation directement par `feast_id`.
-/// Utilisé pour les fêtes secondaires après résolution via `kal_wasm_read_feast`.
+/// Résout label + annotation par `feast_id` — pour les fêtes secondaires.
 /// Retourne 1 (trouvé), 0 (absent), < 0 (erreur).
 #[unsafe(no_mangle)]
 pub extern "C" fn kal_wasm_get_label_by_id(feast_id: u16, year: u16) -> i32 {
@@ -317,13 +331,10 @@ pub extern "C" fn kal_wasm_get_label_by_id(feast_id: u16, year: u16) -> i32 {
     }
 }
 
-// Accesseurs out-statics label
 #[unsafe(no_mangle)]
 pub extern "C" fn kal_wasm_label_ptr() -> u32      { unsafe { *addr_of!(LABEL_PTR) } }
 #[unsafe(no_mangle)]
 pub extern "C" fn kal_wasm_label_len() -> u32      { unsafe { *addr_of!(LABEL_LEN) } }
-
-// Accesseurs out-statics annotation (ANNOTATION_LEN == 0 si absente)
 #[unsafe(no_mangle)]
 pub extern "C" fn kal_wasm_annotation_ptr() -> u32 { unsafe { *addr_of!(ANNOTATION_PTR) } }
 #[unsafe(no_mangle)]

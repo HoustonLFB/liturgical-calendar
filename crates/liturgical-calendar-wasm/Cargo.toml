@@ -14,4 +14,4 @@ categories = ["wasm"]
 crate-type = ["cdylib"]
 
 [dependencies]
-liturgical-calendar-core = { version = "0.2.0", path = "../../liturgical-calendar-core" }
+liturgical-calendar-core = { version = "0.2.0", path = "../../liturgical-calendar-core", default-features = false }

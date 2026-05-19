@@ -56,8 +56,10 @@ fn full_range_header_valid() {
 // 2. Padding entries — doy=59 sur 431 années
 // ---------------------------------------------------------------------------
 
-/// doy=59 = 28 février non-bissextile → Padding Entry (primary_index == 0).
-/// doy=59 = 29 février bissextile      → entrée réelle  (primary_index != 0).
+/// Invariant v6 : les primitives temporelles sont toujours écrites, même au 29 février.
+/// invariant v6 : primary_index peut être 0 pour un bissextile sans fête au 29 fév.
+/// La présence des primitives temporelles (liturgical_week > 0) est la garantie structurelle.
+/// Le padding pur (non-bissextile) reste zéro absolu.
 #[test]
 fn full_range_padding_entries_correct() {
     let kald = &kalds().0;
@@ -67,14 +69,25 @@ fn full_range_padding_entries_correct() {
         let e = unsafe { read_entry(kald, year, 59) };
 
         if is_leap {
-            assert_ne!(
-                e.primary_index, 0,
-                "year {year} (bissextile) : doy=59 doit être une entrée réelle"
+            // v6 : primitives temporelles toujours écrites — liturgical_week > 0 invariant.
+            // primary_index peut être non-nul si une fête tombe le 29 fév (ex: 1976).
+            assert!(
+                e.liturgical_week > 0,
+                "year {year} (bissextile) : doy=59 doit porter liturgical_week > 0",
             );
         } else {
+            // Padding pur — zéro absolu sur tous les champs.
             assert_eq!(
                 e.primary_index, 0,
-                "year {year} (non-bissextile) : doy=59 doit être un Padding Entry"
+                "year {year} (non-bissextile) : doy=59 doit être un Padding Entry",
+            );
+            assert_eq!(
+                e.liturgical_week, 0,
+                "year {year} (non-bissextile) : doy=59 = padding pur, liturgical_week doit être 0",
+            );
+            assert_eq!(
+                e.occurrence_flags & 0b1111_1100, 0,
+                "year {year} (non-bissextile) : doy=59 = padding pur, bits period/reserved doivent être nuls",
             );
         }
     }
@@ -146,11 +159,8 @@ fn full_range_triduum_2025_exactly_3_entries() {
 // 6. Transfer de Ss. Petri et Pauli
 // ---------------------------------------------------------------------------
 
-/// En 1973 et 1984, Pâques = 22 avril. Le Sacré-Cœur (pascha+68) atterrit
-/// le 29 juin (doy=180). La résolution de préséance transfère Ss. Petri et Pauli
-/// au 30 juin (doy=181).
-///
-/// En v5, l'identité d'une fête est son `registry_index` (stable et opaque).
+/// En 1973 et 1984, Pâques = 22 avril. Le Sacré-Cœur (pascha+68) atterrit le 29 juin (doy=180).
+/// La résolution de préséance transfère Ss. Petri et Pauli au 30 juin (doy=181).
 #[test]
 fn full_range_petri_et_pauli_transfer_easter_april22() {
     let kald = &kalds().0;

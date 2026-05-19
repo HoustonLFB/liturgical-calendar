@@ -85,7 +85,8 @@ pub(crate) fn build_kald(
             timeline_bytes.extend_from_slice(&e.secondary_offset.to_le_bytes());
             timeline_bytes.push(e.occurrence_flags);
             timeline_bytes.push(e.secondary_count);
-            timeline_bytes.extend_from_slice(&e._reserved.to_le_bytes());
+            timeline_bytes.push(e.liturgical_week);
+            timeline_bytes.push(e._reserved);
         }
     }
     debug_assert_eq!(timeline_bytes.len(), (ENTRY_COUNT * 8) as usize);

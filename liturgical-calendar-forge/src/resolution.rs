@@ -10,7 +10,6 @@
 //!   FeastVersionDef::has_vigil_mass : bool
 //!   FeastVersionDef::date       : Option<(u8, u8)>   — (month, day)
 //!   FeastVersionDef::mobile     : Option<MobileDef>
-//!   FeastVersionDef::transfers  : Vec<TransferRule>
 //!   MobileDef::anchor           : String
 //!   MobileDef::offset           : i32
 //!   MobileDef::ordinal          : Option<u8>         — tempus_ordinarium uniquement
@@ -19,6 +18,12 @@
 //!   TransferTarget              : Offset(u32) | Date{m,d} | Mobile{anchor,offset}
 //!   CanonicalizedYear::pre_resolved_transfers : BTreeMap<(String,String), u16>
 //!   SeasonBoundaries::period_of(&self, doy: u16) -> LiturgicalPeriod
+//!
+//! v6 : suppression de l'inter-passe 4/5.
+//! Les jours sans fête propre (y compris DOY 59 des années bissextiles) sont
+//! désormais matérialisés dans `generate_year` comme slots padding portant
+//! uniquement `LiturgicalPeriod` et `liturgical_week` — sans ferie fictive
+//! dans le Feast Registry.
 
 #![allow(missing_docs)]
 
@@ -44,7 +49,7 @@ use crate::{
     error::ForgeError,
     registry::{
         FeastDef, FeastRegistry, Scope,
-        Temporality as RegistryTemporality, // qualification obligatoire — conflit de nom
+        Temporality as RegistryTemporality,
         TransferTarget,
     },
 };
@@ -52,7 +57,6 @@ use crate::{
 // ─── Nouvel outil de conversion ───────────────────────────────────────────────
 
 /// Transforme la période du Registre vers le type binaire du Core.
-/// Garantit le respect du layout de 3 bits défini dans l'ADR.
 pub(crate) fn period_to_core(p: &RegistryPeriod) -> CorePeriod {
     match p {
         RegistryPeriod::TempusOrdinarium    => CorePeriod::TempusOrdinarium,
@@ -68,11 +72,9 @@ pub(crate) fn period_to_core(p: &RegistryPeriod) -> CorePeriod {
 // ─── FeastIdMap ───────────────────────────────────────────────────────────────
 
 /// `slug → FeastID` alloué. INV-FORGE-2 : BTreeMap.
-/// Calculé une fois avant la boucle annuelle dans `compile()`.
 pub(crate) type FeastIdMap = BTreeMap<String, u16>;
 
 // ─── Conversions registry → Core ─────────────────────────────────────────────
-// Nécessaires car registry::Color / registry::Nature ≠ liturgical_calendar_core::Color/Nature.
 
 fn color_to_core(c: &crate::registry::Color) -> CoreColor {
     use crate::registry::Color as R;
@@ -83,9 +85,7 @@ fn color_to_core(c: &crate::registry::Color) -> CoreColor {
         R::Violaceus => CoreColor::Violaceus,
         R::Rosaceus  => CoreColor::Rosaceus,
         R::Niger     => CoreColor::Niger,
-        // Aureus : réservé dans Core v2.0 (valeur 6 non définie).
-        // Fallback Albus — à revoir si Core expose Color::Aureus.
-        R::Aureus    => CoreColor::Albus,
+        R::Aureus    => CoreColor::Albus, // réservé Core v2.0 — fallback Albus
     }
 }
 
@@ -101,7 +101,7 @@ fn nature_to_core(n: &crate::registry::Nature) -> CoreNature {
     }
 }
 
-// ─── Cycle — utilisé dans elect pour temporal_primary ────────────────────────
+// ─── Cycle ────────────────────────────────────────────────────────────────────
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Cycle {
@@ -109,21 +109,12 @@ pub(crate) enum Cycle {
     Sanctoral = 1,
 }
 
-// ─── ResolutionKey — ADR-038 ──────────────────────────────────────────────────
-//
-// `sort_weight` = (internal_precedence << 2) | class_weight — 6 bits effectifs.
-// Valeur plus faible = priorité plus haute.
-//
-// Bits [5:2] : préséance interne 0-based (0=Triduum, 12=Memoria ad libitum).
-// Bits [1:0] : classe (0=Lord, 1=Virgin, 2=Saint, 3=Proper).
-//
-// `feast_id` : tiebreaker numérique pur — comparaison scalaire, zéro
-// cache-miss, déterminisme garanti sans comparaison de chaînes.
+// ─── ResolutionKey ────────────────────────────────────────────────────────────
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) struct ResolutionKey {
-    pub sort_weight: u8,   // (precedence << 2) | class
-    pub feast_id:    u16,  // tiebreaker final
+    pub sort_weight: u8,
+    pub feast_id:    u16,
 }
 
 // ─── PlacedFeast ──────────────────────────────────────────────────────────────
@@ -132,14 +123,14 @@ pub(crate) struct ResolutionKey {
 pub(crate) struct PlacedFeast {
     pub slug:           String,
     pub feast_id:       u16,
-    pub scope_bits:     u8,   // 0=Universal 1=National 2=Diocesan
+    pub scope_bits:     u8,
     pub precedence:     u8,
-    pub class:          u8,   // ADR-038 : 0=Lord 1=Virgin 2=Saint 3=Proper
+    pub class:          u8,
     pub nature:         CoreNature,
     pub color:          CoreColor,
     pub period:         Option<CorePeriod>,
     pub has_vigil_mass: bool,
-    pub cycle:          Cycle, // utilisé dans elect pour temporal_primary
+    pub cycle:          Cycle,
 }
 
 impl PlacedFeast {
@@ -235,8 +226,6 @@ pub(crate) fn should_demote_to_commemoratio(
     feast: &PlacedFeast,
     period: CorePeriod,
 ) -> bool {
-    // Toutes les mémoires (générales=9, propres=10, facultatives=11)
-    // perdent leur caractère prescriptif en période privilegiée.
     feast.precedence >= 9
         && matches!(
             period,
@@ -248,21 +237,15 @@ pub(crate) fn should_demote_to_commemoratio(
 }
 
 // ─── DOY depuis FeastDef.temporality ─────────────────────────────────────────
-// Temporality est sur FeastDef, pas sur FeastHistoryEntry.
 
 fn feast_doy(feast_def: &FeastDef, anchors: &BTreeMap<String, u16>, year: u16) -> Option<u16> {
-    match feast_def.temporality.as_ref()? {  // None temporality → None DOY → skip
+    match feast_def.temporality.as_ref()? {
         RegistryTemporality::Fixed { month, day } => {
             Some(MONTH_STARTS[*month as usize - 1] + *day as u16 - 1)
         }
         RegistryTemporality::Mobile { anchor, offset } => {
             let anchor_doy = *anchors.get(anchor.as_str())? as i32;
             let mut doy = anchor_doy + offset;
-            // Correction de franchissement du slot 59 (29 fév fictif) en année
-            // non-bissextile.  Le slot 59 est présent dans l'espace .kald mais
-            // n'existe pas dans le calendrier effectif ; un offset qui traverse
-            // ce slot en sens inverse (ancre ≥ 59, résultat < 59) compte un jour
-            // de trop.  L'inverse (ancre < 59, résultat ≥ 59) est symétrique.
             if !is_leap_year(year) {
                 if anchor_doy >= 59 && doy < 59 {
                     doy -= 1;
@@ -274,8 +257,6 @@ fn feast_doy(feast_def: &FeastDef, anchors: &BTreeMap<String, u16>, year: u16) -
         }
         RegistryTemporality::Ordinal { ordinal } => {
             let adventus        = *anchors.get("adventus")?;
-            // post_epiphaniam est une fonction pure de year — calculé directement
-            // plutôt que via l'AnchorTable (ADR-001 §4 : pas de dépendance à l'état global).
             let post_epiphaniam = resolve_tempus_ordinarium_post_epiphaniam(year);
             Some(resolve_tempus_ordinarium_dispatch(
                 year, post_epiphaniam, adventus, *ordinal,
@@ -284,8 +265,6 @@ fn feast_doy(feast_def: &FeastDef, anchors: &BTreeMap<String, u16>, year: u16) -
     }
 }
 
-/// Déduit le Cycle depuis la temporalité de la fête.
-/// Appelé uniquement si `feast_doy` a retourné `Some` — temporality garantie `Some`.
 fn feast_cycle(feast_def: &FeastDef) -> Cycle {
     match feast_def.temporality.as_ref().expect("temporality absente après merge") {
         RegistryTemporality::Fixed { .. }         => Cycle::Sanctoral,
@@ -312,16 +291,12 @@ fn elect(
         if (temporal_primary && should_demote_to_commemoratio(&feast, period))
             || feast.precedence >= 6
         {
-            // secondary : FestaBMVEtSanctorumGenerales (6) et rangs inférieurs
             secondary_feasts.push(feast);
         } else if feast.nature == CoreNature::Dominica || feast.nature == CoreNature::Feria {
-            // Dominica et Feria vaincues : absorption silencieuse — jamais transférées.
-            // Invariant liturgique : un dimanche ordinaire ne se reporte pas.
+            // Absorption silencieuse — jamais transférées.
         } else if feast.precedence <= 7 {
-            // transferable : FestaPropria (7) et rangs supérieurs (0-5 atteignent ici)
             to_transfer.push(feast);
         }
-        // else : supprimé silencieusement.
     }
 
     secondary_feasts.sort_unstable_by_key(|f| f.feast_id); // INV-FORGE-4
@@ -386,7 +361,6 @@ pub(crate) fn resolve_year(
                 ForgeError::MissingResolvedField { feast_id, year, doy, field: "color" }
             })?;
 
-        // ADR-038 : class obligatoire après merge — None = corpus universale incomplet.
         let class: u8 = feast_def.class
             .ok_or_else(|| {
                 eprintln!("ERREUR: Champ 'class' manquant pour le slug: {}", feast_def.slug);
@@ -424,8 +398,6 @@ pub(crate) fn resolve_year(
         }
 
         // V7b : SollemnitatesGenerales (2) et SollemnitatesPropria (3).
-        // Erreur uniquement si même scope ET même classe — deux classes différentes
-        // sont résolvables par elect via sort_weight (ADR-038).
         {
             let solemn: Vec<_> = candidates.iter()
                 .filter(|f| f.precedence >= 2 && f.precedence <= 3)
@@ -447,7 +419,6 @@ pub(crate) fn resolve_year(
         }
 
         // §3.1 — scope le plus local prime pour les Solennités.
-        // Solennités susceptibles de conflit inter-scope : rangs 2 et 3.
         if candidates.iter().filter(|f| f.precedence <= 3).count() >= 2 {
             let max_scope = candidates.iter()
                 .filter(|f| f.precedence <= 3)
@@ -484,7 +455,7 @@ pub(crate) fn resolve_year(
                 let matched_collides = rule.collides.iter()
                     .find(|c| *c == &primary.slug)
                     .cloned()
-                    .unwrap(); // safe : find sur rule garanti par le .find() ci-dessus
+                    .unwrap();
                 let pre_key = (feast.slug.clone(), matched_collides);
                 if let Some(&doy_dst) = canonicalized.pre_resolved_transfers.get(&pre_key) {
                     if doy_dst <= doy {
@@ -501,7 +472,6 @@ pub(crate) fn resolve_year(
                         MONTH_STARTS[*month as usize - 1] + *day as u16 - 1
                     }
                     TransferTarget::Mobile { .. } => {
-                        // Mobile sans PreResolved — bug Étape 3 ; fallback générique.
                         transfer_queue.enqueue(doy, feast, 0, year)?;
                         continue;
                     }
@@ -520,7 +490,6 @@ pub(crate) fn resolve_year(
         resolved_days.insert(doy, ResolvedDay { primary, secondary_feasts });
     }
 
-    // Inserts rétrogrades — tri par doy_dst pour déterminisme.
     retrograde_inserts.sort_unstable_by_key(|(d, _)| *d);
     for (doy_dst, feast) in retrograde_inserts {
         let period = canonicalized.season_boundaries.period_of(doy_dst);
@@ -580,37 +549,12 @@ pub(crate) fn resolve_year(
 
     debug_assert!(transfer_queue.is_empty(), "TransferQueue non vide après Passe 4");
 
-    // ── INTER-PASSE 4/5 — Feria generica pour doy=59 en année bissextile ─────────
-
-    if is_leap && !resolved_days.contains_key(&59) {
-        // Aucune fête ne tombe le 29 février — émettre une feria de substitution.
-        // On cherche un slug feria générique dans le registry ; à défaut, ID réservé.
-        let feria_id = feast_ids
-            .get("feria_per_annum")
-            .or_else(|| feast_ids.get("feria_generica"))
-            .copied()
-            .unwrap_or(0xFFFE); // ID de réserve si absent du corpus
-
-        let period = canonicalized.season_boundaries.period_of(59);
-
-        resolved_days.insert(59, ResolvedDay {
-            primary: PlacedFeast {
-                slug:           "feria_per_annum".into(),
-                feast_id:       feria_id,
-                scope_bits:     0,
-                precedence:     13, // rang le plus bas
-                class:          3,
-                nature:         CoreNature::Feria,
-                color:          CoreColor::Viridis,
-                period:         Some(period),
-                has_vigil_mass: false,
-                cycle:          Cycle::Temporal,
-            },
-            secondary_feasts: Vec::new(),
-        });
-    }
-
     // ── PASSE 5 ───────────────────────────────────────────────────────────────
+    //
+    // v6 : inter-passe 4/5 supprimée.
+    // Les jours sans fête (DOY 59 bissextile inclus) restent absents de
+    // `resolved_days`. `generate_year` les matérialise comme slots padding
+    // portant `LiturgicalPeriod` et `liturgical_week` — sans entrée Registre.
 
     for (&doy, day) in &resolved_days {
         if let Some(&expected_id) = feast_ids.get(&day.primary.slug)

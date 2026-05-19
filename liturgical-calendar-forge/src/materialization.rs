@@ -1,13 +1,15 @@
-//! Étape 5 — Day Materialization : Timeline v5 + vespers lookahead.
+//! Étape 5 — Day Materialization : Timeline v6 + vespers lookahead.
 //!
-//! Changements v4 → v5 :
-//!   - `CalendarEntry`    → `TimelineEntry` (stride 8 conservé)
-//!   - `flags[13:0]`      → migrent dans `FeastEntry.flags` (Feast Registry)
-//!   - `flags[14:15]`     → migrent dans `TimelineEntry.occurrence_flags` bits [0:1]
-//!   - `primary_id`       → `primary_index` (registry_index 1-based, 0 = Padding)
-//!   - `secondary_index`  → `secondary_offset`
-//!   - `PoolBuilder`      : stocke des `registry_index` (1-based), pas des `feast_id`
-//!   - `vespers_lookahead_pass` : lit la préséance depuis le Feast Registry
+//! Changements v5 → v6 :
+//!   - `encode_feast_flags` : paramètre `liturgical_period` supprimé.
+//!     `FeastEntry.flags[10:8]` libérés (nuls).
+//!   - `build_feast_registry` : n'utilise plus `season_boundaries`.
+//!   - `generate_year` : `_season_boundaries` → `season_boundaries` (activé).
+//!     Écrit `occurrence_flags[4:2]` (period) et `liturgical_week` pour TOUS les slots non-padding,
+//!     y compris les jours sans fête propre.
+//!     Suppression de la dépendance à l'inter-passe feria fictive.
+//!   - `vespers_lookahead_pass`: `prec_of` retourne `0xFF` pour les slots padding
+//!     (fix bug : `0` interprété à tort comme TriduumSacrum).
 
 #![allow(missing_docs)]
 
@@ -107,40 +109,81 @@ impl PoolBuilder {
 
 /// Encode les invariants d'une fête dans `FeastEntry.flags`.
 ///
+/// Layout v6 :
 /// - bits [3:0]   → `precedence`
 /// - bits [7:4]   → `color`
-/// - bits [10:8]  → `liturgical_period`
+/// - bits [10:8]  → réservés, nuls (v5 : `liturgical_period` — supprimé en v6)
 /// - bits [13:11] → `nature`
 /// - bit  [14]    → `has_vigil_mass`
 /// - bit  [15]    → réservé, nul
 pub(crate) fn encode_feast_flags(
-    precedence:        u8,
-    color:             Color,
-    liturgical_period: LiturgicalPeriod,
-    nature:            Nature,
-    has_vigil_mass:    bool,
+    precedence:     u8,
+    color:          Color,
+    nature:         Nature,
+    has_vigil_mass: bool,
 ) -> u16 {
     (precedence as u16)
-        | ((color as u16)             << 4)
-        | ((liturgical_period as u16) << 8)
-        | ((nature as u16)            << 11)
-        | ((has_vigil_mass as u16)    << 14)
+        | ((color as u16)          << 4)
+        // bits [10:8] réservés nuls — LiturgicalPeriod retiré de FeastEntry en v6
+        | ((nature as u16)         << 11)
+        | ((has_vigil_mass as u16) << 14)
+}
+
+// ─── liturgical_week_of ───────────────────────────────────────────────────────
+
+/// Calcule l'ordinal de semaine liturgique pour un DOY dans une période.
+///
+/// | Période             | Retour       | Base de calcul                         |
+/// |---------------------|-------------|----------------------------------------|
+/// | TempusOrdinarium SI | 1–8 (env.)  | `⌊(doy − epiphania) / 7⌋ + 1`         |
+/// | TempusOrdinarium SII| N–34        | `34 − ⌊(adventus − 1 − doy) / 7⌋`    |
+/// | TempusAdventus      | 1–4         | `⌊(doy − adventus) / 7⌋ + 1`          |
+/// | TempusNativitatis   | 1           | fixe                                   |
+/// | TempusQuadragesimae | 1–5         | `⌊(doy − ash_wednesday) / 7⌋ + 1`     |
+/// | DiesSancti          | 6           | fixe (Hebdomada VI Quadragesimae)      |
+/// | TriduumPaschale     | 0           | pas d'ordinal applicable               |
+/// | TempusPaschale      | 1–7         | `⌊(doy − easter) / 7⌋ + 1`            |
+fn liturgical_week_of(doy: u16, period: LiturgicalPeriod, sb: &SeasonBoundaries) -> u8 {
+    match period {
+        LiturgicalPeriod::TempusOrdinarium => {
+            if doy > sb.pentecost {
+                // Segment II — ordinal canonique à rebours depuis l'Avent.
+                // Dominica XXXIV = adventus − 7 → ordinal = 34 − ⌊(adventus−1−doy)/7⌋
+                34u8.saturating_sub(
+                    sb.adventus.saturating_sub(doy).div_ceil(7) as u8
+                )
+            } else {
+                // Segment I — ordinal depuis le Baptême du Seigneur (epiphania).
+                // Dominica I = epiphania → semaine 1; Dominica II = epiphania+7 → semaine 2.
+                (doy.saturating_sub(sb.epiphania) / 7 + 1) as u8
+            }
+        }
+        LiturgicalPeriod::TempusAdventus => {
+            (doy.saturating_sub(sb.adventus) / 7 + 1) as u8
+        }
+        LiturgicalPeriod::TempusNativitatis => 1,
+        LiturgicalPeriod::TempusQuadragesimae => {
+            (doy.saturating_sub(sb.ash_wednesday) / 7 + 1) as u8
+        }
+        LiturgicalPeriod::DiesSancti => 6, // Semaine Sainte = Hebdomada VI Quadragesimae
+        LiturgicalPeriod::TriduumPaschale => 0,
+        LiturgicalPeriod::TempusPaschale => {
+            (doy.saturating_sub(sb.easter) / 7 + 1) as u8
+        }
+    }
 }
 
 // ─── build_feast_registry (Pass 1) ────────────────────────────────────────────
 
 /// Pass 1 — collecte tous les `feast_id` du corpus et construit le Feast Registry.
 ///
-/// Prend des références — `ResolvedCalendar` n'a pas besoin d'implémenter `Clone`.
-///
-/// Hypothèse : `ResolvedDay.secondary_feasts` expose les mêmes champs que `day.primary`
-/// (`feast_id`, `precedence`, `color`, `nature`, `has_vigil_mass`).
+/// v6 : `season_boundaries` non utilisé (LiturgicalPeriod retiré de `encode_feast_flags`).
 pub(crate) fn build_feast_registry<'a>(
     all_inputs: &[(&'a ResolvedCalendar, &'a SeasonBoundaries)],
 ) -> Result<FeastRegistryBuilder, ForgeError> {
     let mut builder = FeastRegistryBuilder::new();
 
-    for &(resolved, season_boundaries) in all_inputs {
+    for &(resolved, _season_boundaries) in all_inputs {
         let is_leap = is_leap_year(resolved.year);
 
         for (&doy, day) in &resolved.days {
@@ -148,12 +191,9 @@ pub(crate) fn build_feast_registry<'a>(
                 continue;
             }
 
-            let period = season_boundaries.period_of(doy);
-
             let primary_flags = encode_feast_flags(
                 day.primary.precedence,
                 day.primary.color,
-                period,
                 day.primary.nature,
                 day.primary.has_vigil_mass,
             );
@@ -163,7 +203,6 @@ pub(crate) fn build_feast_registry<'a>(
                 let sec_flags = encode_feast_flags(
                     secondary.precedence,
                     secondary.color,
-                    period,
                     secondary.nature,
                     secondary.has_vigil_mass,
                 );
@@ -179,14 +218,17 @@ pub(crate) fn build_feast_registry<'a>(
 
 /// Pass 2 — génère les 366 `TimelineEntry` pour une année résolue.
 ///
-/// Requiert que `feast_registry` soit complet (Pass 1 terminée) :
-/// tout `feast_id` rencontré doit y être présent.
-/// `occurrence_flags` laissés à `0` — `vespers_lookahead_pass` les calcule ensuite.
+/// v6 : pour tout slot non-padding, écrit `occurrence_flags[4:2]` (LiturgicalPeriod)
+/// et `liturgical_week`, y compris pour les jours sans fête propre (`primary_index = 0`).
+/// Le DOY 59 des années non-bissextiles reste entièrement nul (sentinel Padding pur).
+///
+/// `occurrence_flags[1:0]` (vesperae_i, vigilia) sont laissés à 0 ici ;
+/// `vespers_lookahead_pass` les positionne en passe ultérieure (OR-safe).
 pub(crate) fn generate_year(
-    resolved:             &ResolvedCalendar,
-    pool:                 &mut PoolBuilder,
-    _season_boundaries:   &SeasonBoundaries,
-    feast_registry:       &FeastRegistryBuilder,
+    resolved:          &ResolvedCalendar,
+    pool:              &mut PoolBuilder,
+    season_boundaries: &SeasonBoundaries,
+    feast_registry:    &FeastRegistryBuilder,
 ) -> Result<[TimelineEntry; 366], ForgeError> {
     let year    = resolved.year;
     let is_leap = is_leap_year(year);
@@ -194,13 +236,30 @@ pub(crate) fn generate_year(
     let mut entries = [TimelineEntry::zeroed(); 366];
 
     for doy in 0u16..=365u16 {
+        // DOY 59 non-bissextile : sentinel Padding pur — aucune donnée écrite.
         if !is_leap && doy == 59 {
             continue;
         }
 
+        let period      = season_boundaries.period_of(doy);
+        let week        = liturgical_week_of(doy, period, season_boundaries);
+        let period_bits = (period as u8 & 0x07) << 2;
+
         let day = match resolved.days.get(&doy) {
             Some(d) => d,
-            None    => continue,
+            None    => {
+                // Slot sans fête propre — primitives temporelles uniquement.
+                // primary_index = 0 ; period et week renseignés pour le Runtime.
+                entries[doy as usize] = TimelineEntry {
+                    primary_index:    0,
+                    secondary_offset: 0,
+                    occurrence_flags: period_bits,
+                    secondary_count:  0,
+                    liturgical_week:  week,
+                    _reserved:        0,
+                };
+                continue;
+            }
         };
 
         let secondary_count = day.secondary_feasts.len();
@@ -230,15 +289,21 @@ pub(crate) fn generate_year(
         entries[doy as usize] = TimelineEntry {
             primary_index,
             secondary_offset,
-            occurrence_flags: 0,
+            occurrence_flags: period_bits, // bits [1:0] à 0 — écrits par vespers_lookahead_pass
             secondary_count:  sc,
+            liturgical_week:  week,
             _reserved:        0,
         };
     }
 
+    // Invariant Padding : DOY 59 doit être entièrement nul pour les années non-bissextiles.
     if !is_leap {
         let e = &entries[59];
-        if e.primary_index != 0 || e.secondary_count != 0 {
+        if e.primary_index    != 0
+            || e.secondary_count  != 0
+            || e.occurrence_flags != 0
+            || e.liturgical_week  != 0
+        {
             return Err(ForgeError::PaddingEntryMissing { year, doy: 59 });
         }
     }
@@ -248,27 +313,34 @@ pub(crate) fn generate_year(
 
 // ─── vespers_lookahead_pass ────────────────────────────────────────────────────
 
-/// Passe vespérale — calcule `occurrence_flags` bits [0:1] de chaque `TimelineEntry`.
+/// Passe vespérale — positionne `occurrence_flags[1:0]` de chaque `TimelineEntry`.
 ///
-/// Opère APRÈS `generate_year`. Lit la préséance et `has_vigil_mass` depuis `feast_registry`.
+/// Opère APRÈS `generate_year`. Les bits [7:2] (`LiturgicalPeriod` + réservés)
+/// sont préservés par l'opérateur `|=`.
 ///
-/// Règles (inchangées depuis v4) :
+/// Fix v6 : `prec_of` retourne `0xFF` (hors domaine [0,12]) pour les slots
+/// `primary_index == 0`. Cela corrige le bug v5 où `0` était interprété comme
+/// TriduumSacrum, corrompant les `occurrence_flags` du 28 février en année commune.
+///
+/// Règles (inchangées) :
 ///   - bit 0 (HAS_VESPERAE_I) : si `tomorrow_prec ≤ 3 || tomorrow_prec == 5`
-///     ET `today_prec ≥ tomorrow_prec || today_prec == 0`.
+///     ET `today_prec ≥ tomorrow_prec || today_prec == 0` (Triduum).
 ///   - bit 1 (HAS_VIGILIA)    : reporté depuis `FeastEntry.has_vigil_mass()` de demain.
-///
-/// `next_year_jan1` : premier slot de l'année suivante.
-/// `None` pour 2399 — bits conservés à 0.
 pub(crate) fn vespers_lookahead_pass(
     entries:        &mut [TimelineEntry; 366],
     feast_registry: &[FeastEntry],
     next_year_jan1: Option<&TimelineEntry>,
 ) {
+    /// Extrait la préséance depuis le Feast Registry.
+    /// Retourne `0xFF` pour les slots padding (`primary_index == 0`) :
+    /// valeur hors domaine [0,12] garantissant qu'un slot vide ne bloque
+    /// jamais les Premières Vêpres du lendemain et n'est pas confondu
+    /// avec TriduumSacrum (prec 0).
     #[inline]
     fn prec_of(e: &TimelineEntry, r: &[FeastEntry]) -> u8 {
-        if e.primary_index == 0 { return 0; }
+        if e.primary_index == 0 { return 0xFF; }
         r.get(e.primary_index as usize - 1)
-            .map_or(0, |fe| (fe.flags & 0x0F) as u8)
+            .map_or(0xFF, |fe| (fe.flags & 0x0F) as u8)
     }
 
     #[inline]
@@ -289,12 +361,19 @@ pub(crate) fn vespers_lookahead_pass(
             }
         };
 
+        // Demain doit être une fête à préséance élevée pour mériter des Premières Vêpres.
+        // 0xFF (padding) → has_first_vespers = false, correctement ignoré.
         let has_first_vespers = tomorrow_prec <= 3 || tomorrow_prec == 5;
         if !has_first_vespers { continue; }
 
         let today_prec = prec_of(&entries[doy as usize], feast_registry);
+        // Condition de blocage : aujourd'hui a une fête plus importante que demain
+        // (today_prec < tomorrow_prec, i.e. numéro plus faible = rang plus élevé),
+        // SAUF TriduumSacrum (today_prec == 0) qui cède toujours ses Vêpres.
+        // 0xFF (padding) ne bloque jamais : 0xFF < tomorrow_prec est false (0xFF > 12).
         if today_prec != 0 && today_prec < tomorrow_prec { continue; }
 
+        // Préserve les bits [7:2], positionne les bits [1:0].
         let mut occ = entries[doy as usize].occurrence_flags;
         occ |= 1 << 0;
         if tomorrow_has_vigil { occ |= 1 << 1; }

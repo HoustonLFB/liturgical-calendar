@@ -148,8 +148,8 @@ Idem avec création de markdowns consultables
 Générer des fichiers Markdown pour plusieurs années :
 
 ```
-for y in 1973 1974 1984 1999 2000 2008 2009 2010 2020 2021 2022 2023 2024 2025 2026 2027 2057; do
-./calendar*md.sh "$y" > "./docs/outputs/calendar*${y}.md"
+for y in 1973 1974 1976 1984 1999 2000 2008 2009 2010 2020 2021 2022 2023 2024 2025 2026 2027 2057; do
+./calendar_md.sh "$y" > "./docs/outputs/calendar_${y}.md"
 done
 ```
 
@@ -157,6 +157,6 @@ Générer une plage continue (par exemple de 2025 à 2030) :
 
 ```
 for y in {2025..2030}; do
-./calendar*md.sh "$y" > "./docs/outputs/calendar*${y}.md"
+./calendar_md.sh "$y" > "./docs/outputs/calendar_${y}.md"
 done
 ```

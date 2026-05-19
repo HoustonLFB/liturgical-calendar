@@ -11,7 +11,7 @@ use liturgical_calendar_core::{
 // ── Arguments CLI ─────────────────────────────────────────────────────────────
 
 #[derive(Parser, Debug)]
-#[command(name = "kal-read", about = "Lit une entrée d'un fichier .kald v5")]
+#[command(name = "kal-read", about = "Lit une entrée d'un fichier .kald v6")]
 struct Args {
     #[arg(long)] kald: PathBuf,
     #[arg(long)] year: u16,
@@ -50,8 +50,11 @@ fn run(args: &Args) -> Result<(), String> {
 
     println!("year={year}  doy={doy}", year = args.year, doy = args.doy);
 
+    // v6 : les slots padding portent period et liturgical_week même sans fête propre.
     if entry.is_padding() {
-        println!("  [Padding Entry — aucune célébration]");
+        println!("  [Padding Entry — aucune fête propre]");
+        println!("  period         : {}", fmt_period(entry.liturgical_period()));
+        println!("  liturgical_week: {}", entry.liturgical_week);
         return Ok(());
     }
 
@@ -66,7 +69,6 @@ fn run(args: &Args) -> Result<(), String> {
     // Créé après validation — emprunte lits_bytes qui vit pour toute la fonction.
     let provider: Option<LitsProvider<'_>> = lits_bytes.as_ref()
         .map(|bytes| {
-            // En v5 : checksum = kald[36..68], build_id = kald[36..44].
             let kald_build_id = &kald[36..44];
             let p = LitsProvider::new(bytes).map_err(fmt_lits_error)?;
             if p.build_id() != kald_build_id {
@@ -81,7 +83,9 @@ fn run(args: &Args) -> Result<(), String> {
 
     // ── Affichage fête principale ─────────────────────────────────────────────
     println!("  registry_index : {}", entry.primary_index);
-    print_feast(&primary_feast, "  ");
+    // v6 : period extraite de TimelineEntry.occurrence_flags[4:2], pas de FeastEntry.
+    print_feast(&primary_feast, entry.liturgical_period(), "  ");
+    println!("  liturgical_week: {}", entry.liturgical_week);
     println!("  secondary      : {} entrée(s) (offset={})",
         entry.secondary_count, entry.secondary_offset);
     println!("  vesperae_i     : {}", entry.has_vesperae_i());
@@ -120,7 +124,8 @@ fn run(args: &Args) -> Result<(), String> {
 
         println!();
         println!("    [{i}] registry_index={ridx}");
-        print_feast(&sf, "    ");
+        // Les fêtes secondaires partagent le même slot — même period que la primaire.
+        print_feast(&sf, entry.liturgical_period(), "    ");
         if let Some(ref p) = provider {
             print_label(p.get(sf.feast_id, args.year), "    ");
         }
@@ -132,12 +137,19 @@ fn run(args: &Args) -> Result<(), String> {
 // ── Helpers d'affichage ───────────────────────────────────────────────────────
 
 /// Affiche les champs d'un `FeastEntry` avec le préfixe d'indentation donné.
-fn print_feast(fe: &FeastEntry, indent: &str) {
+///
+/// v6 : `period` est fourni par l'appelant depuis `TimelineEntry.liturgical_period()`
+/// — `FeastEntry` ne porte plus cette donnée.
+fn print_feast(
+    fe:     &FeastEntry,
+    period: Result<LiturgicalPeriod, impl std::fmt::Debug>,
+    indent: &str,
+) {
     println!("{indent}feast_id       : {:#06x}", fe.feast_id);
     println!("{indent}flags          : {:#06x}", fe.flags);
     println!("{indent}precedence     : {}", fmt_precedence(fe.precedence()));
     println!("{indent}color          : {}", fmt_color(fe.color()));
-    println!("{indent}period         : {}", fmt_period(fe.liturgical_period()));
+    println!("{indent}period         : {}", fmt_period(period));
     println!("{indent}nature         : {}", fmt_nature(fe.nature()));
     println!("{indent}has_vigil_mass : {}", fe.has_vigil_mass());
 }
