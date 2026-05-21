@@ -122,7 +122,7 @@ cal.dispose();
 
 ## Format compatibility
 
-Requires `.kald` v5 and `.lits` v1, produced by [liturgical-calendar-forge].
+Requires `.kald` v6 and `.lits` v1, produced by [liturgical-calendar-forge].
 The `build_id` coherence check (first 8 bytes of the SHA-256 checksum vs.
 `lits[12..20]`) is enforced by the Dart layer at load time.
 

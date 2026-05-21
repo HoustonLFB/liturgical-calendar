@@ -3,14 +3,20 @@ import 'dart:ffi';
 /// `TimelineEntry` C-ABI — 8 octets.
 ///
 /// Représente l'occurrence journalière pour un slot `(year, doy)`.
-/// `primaryIndex == 0` est la sentinelle Padding Entry (aucune célébration).
+/// `primaryIndex == 0` est la sentinelle Padding Entry (aucune fête propre).
 ///
-/// Offsets confirmés (layout_discriminant = 0x0005000605040208) :
+/// v6 — offsets confirmés par `LAYOUT_DISCRIMINANT` :
 /// - +0 `primaryIndex`    Uint16
 /// - +2 `secondaryOffset` Uint16
-/// - +4 `occurrenceFlags` Uint8   (bit0 = vesperaeI, bit1 = vigilia)
+/// - +4 `occurrenceFlags` Uint8   (bit0=vesperaeI, bit1=vigilia, bits[4:2]=LiturgicalPeriod)
 /// - +5 `secondaryCount`  Uint8
-/// - +6 `reserved`        Uint16
+/// - +6 `liturgicalWeek`  Uint8   (0=N/A, 1–34=ordinal semaine liturgique)
+/// - +7 `reserved`        Uint8   (nul)
+///
+/// Changement v5→v6 : `reserved: Uint16` (bytes 6–7) remplacé par
+/// `liturgicalWeek: Uint8` (byte 6) + `reserved: Uint8` (byte 7).
+/// Les Padding Entries portent `occurrenceFlags[4:2]` et `liturgicalWeek`
+/// même sans fête propre (sauf DOY 59 non-bissextile : zéro absolu).
 final class KalTimelineEntry extends Struct {
   @Uint16()
   external int primaryIndex;
@@ -24,7 +30,10 @@ final class KalTimelineEntry extends Struct {
   @Uint8()
   external int secondaryCount;
 
-  @Uint16()
+  @Uint8()
+  external int liturgicalWeek;
+
+  @Uint8()
   external int reserved;
 }
 
@@ -32,13 +41,16 @@ final class KalTimelineEntry extends Struct {
 ///
 /// Invariants d'une fête dans le Feast Registry (indexé 1-based).
 ///
-/// `flags` layout :
-/// - bits [3:0]   → Precedence     (0–12)
+/// `flags` layout v6 :
+/// - bits [3:0]   → Precedence      (0–12)
 /// - bits [7:4]   → LiturgicalColor (0–5)
-/// - bits [10:8]  → LiturgicalPeriod (0–6)
+/// - bits [10:8]  → réservés, nuls  (v5 : LiturgicalPeriod — supprimé en v6)
 /// - bits [13:11] → Nature          (0–4)
 /// - bit  [14]    → hasVigilMass
 /// - bit  [15]    → réservé
+///
+/// La `LiturgicalPeriod` est désormais portée par
+/// `KalTimelineEntry.occurrenceFlags[4:2]`.
 final class KalFeastEntry extends Struct {
   @Uint16()
   external int feastId;
@@ -47,7 +59,7 @@ final class KalFeastEntry extends Struct {
   external int flags;
 }
 
-/// Header `.kald` v5 C-ABI — 80 octets.
+/// Header `.kald` v6 C-ABI — 80 octets.
 ///
 /// Passé en sortie à `kal_validate_header`. Seuls `epoch`, `range`,
 /// `entryCount` et `checksum[0..8]` sont lus côté Dart ; les autres
@@ -57,7 +69,7 @@ final class KalHeader extends Struct {
   @Array(4)
   external Array<Uint8> magic;
 
-  /// Version du format (5 pour v5).
+  /// Version du format (6 pour v6).
   @Uint16()
   external int version;
 
@@ -103,7 +115,7 @@ final class KalHeader extends Struct {
   @Array(32)
   external Array<Uint8> checksum;
 
-  /// Discriminant de layout — empreinte des offsets de `TimelineEntry`.
+  /// Discriminant de layout v6 — empreinte des offsets de `TimelineEntry`.
   @Array(8)
   external Array<Uint8> layoutDiscriminant;
 

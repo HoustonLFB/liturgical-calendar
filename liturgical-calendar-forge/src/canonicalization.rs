@@ -236,12 +236,23 @@ pub struct SeasonBoundaries {
 impl SeasonBoundaries {
     pub fn compute(year: u16) -> Self {
         let easter = compute_easter(year);
+        let leap   = is_leap_year(year);
+
+        // Mercredi des Cendres : 46 jours calendaires avant Pâques.
+        // En pseudo-DOY, le slot 59 (29 fév fictif) s'intercale entre
+        // Jan–Fév (DOY ≤ 58) et Mars+ (DOY ≥ 60) en année non-bissextile.
+        // Pâques est toujours après le slot 59 (DOY ≥ 81).
+        // Si le résultat brut atterrit sur le slot fantôme ou avant,
+        // la soustraction a traversé le slot fictif → correction de −1.
+        let raw_ash       = easter.saturating_sub(46);
+        let ash_wednesday = if !leap && raw_ash <= 59 { raw_ash - 1 } else { raw_ash };
+
         Self {
             adventus:           resolve_adventus(year),
             nativitas:          resolve_nativitas(year),
             epiphania:          resolve_epiphania(year),
             epiphania_dominica: resolve_epiphania_dominica(year),
-            ash_wednesday:      easter.saturating_sub(46),
+            ash_wednesday,
             palm_sunday:        easter.saturating_sub(7),
             easter,
             pentecost:          easter + 49,
@@ -249,34 +260,44 @@ impl SeasonBoundaries {
     }
 
     pub fn period_of(&self, doy: u16) -> LiturgicalPeriod {
+        // Nativitas Domini : pseudo-DOY fixe = MONTH_STARTS[11] + 24 = 335 + 24 = 359.
+        // Indépendant de la bissextilité — Dec 25 est toujours DOY 359.
+        const NAT_DOMINI: u16 = 359;
+
+        // Triduum Paschale : Feria V in Cena Domini → Sabbatum Sanctum.
         let triduum_start = self.easter.saturating_sub(3);
         let triduum_end   = self.easter.saturating_sub(1);
         if doy >= triduum_start && doy <= triduum_end {
             return LiturgicalPeriod::TriduumPaschale;
         }
 
+        // Dies Sancti (Semaine Sainte) : Dominica in Palmis → Feria IV.
         let dies_sancti_end = self.easter.saturating_sub(4);
         if doy >= self.palm_sunday && doy <= dies_sancti_end {
             return LiturgicalPeriod::DiesSancti;
         }
 
+        // Tempus Paschale : Dominica Resurrectionis → Pentecostes.
         if doy >= self.easter && doy <= self.pentecost {
             return LiturgicalPeriod::TempusPaschale;
         }
 
+        // Tempus Quadragesimae : Feria IV Cinerum → Feria IV ante Dominicam in Palmis.
         if doy >= self.ash_wednesday && doy < self.palm_sunday {
             return LiturgicalPeriod::TempusQuadragesimae;
         }
 
-        if doy >= self.adventus && doy < self.nativitas {
+        // Tempus Adventus : Dominica I Adventus → Vigilia Nativitatis (24 déc, DOY 358).
+        // Borne haute exclusive : NAT_DOMINI (359) — Dec 25 appartient au Temps de Noël.
+        if doy >= self.adventus && doy < NAT_DOMINI {
             return LiturgicalPeriod::TempusAdventus;
         }
 
-        if doy >= self.nativitas {
-            return LiturgicalPeriod::TempusNativitatis;
-        }
-
-        if doy <= self.epiphania + 7 {
+        // Tempus Nativitatis (deux segments, pas de condition intermédiaire) :
+        //   Segment I  — Nativitas Domini (25 déc, DOY 359) → fin d'année civile.
+        //   Segment II — 1er janvier (DOY 0) → Baptisma Domini (self.epiphania, inclus).
+        // Dominica II per annum = self.epiphania + 7 → TempusOrdinarium (exclus).
+        if doy >= NAT_DOMINI || doy <= self.epiphania {
             return LiturgicalPeriod::TempusNativitatis;
         }
 
@@ -423,7 +444,7 @@ mod tests {
 
     #[test]
     fn dispatch_2026_segment_i_ordinaux_ii_vi() {
-        // 2026 : epiphania = 10, ash_wednesday = 49, adventus = 333
+        // 2026 : epiphania = 10, ash_wednesday = 48 (corrigé phantom slot), adventus = 333
         // Dominica II–VI restent dans le Segment I.
         let post_ep  = resolve_tempus_ordinarium_post_epiphaniam(2026);
         let adventus = resolve_adventus(2026);
@@ -440,7 +461,7 @@ mod tests {
 
     #[test]
     fn dispatch_2026_segment_i_boundary() {
-        // Dominica VII 2026 : DOY seg1 = 10 + 42 = 52 ≥ ash(49) → Segment II.
+        // Dominica VII 2026 : DOY seg1 = 10 + 42 = 52 ≥ ash(48) → Segment II.
         let post_ep  = resolve_tempus_ordinarium_post_epiphaniam(2026);
         let adventus = resolve_adventus(2026);
         let seg2 = resolve_tempus_ordinarium_dispatch(2026, post_ep, adventus, 7);
@@ -535,6 +556,89 @@ mod tests {
     #[test]
     fn adventus_2025_is_nov30() {
         assert_eq!(resolve_adventus(2025), 334);
+    }
+
+
+    // --- ash_wednesday --- correction pseudo-DOY phantom slot
+
+    #[test]
+    fn ash_wednesday_2026_is_feb18() {
+        // Easter 2026 = DOY 95 (April 5). raw = 95−46 = 49 = Feb 19 (jeudi).
+        // Correction phantom : !leap && 49 ≤ 59 → ash_wednesday = 48 = Feb 18 (mercredi).
+        let sb = SeasonBoundaries::compute(2026);
+        assert_eq!(sb.ash_wednesday, 48, "Mercredi des Cendres 2026 doit être DOY 48 (18 fév)");
+        assert_eq!(weekday_of_doy(2026, sb.ash_wednesday), 2, "DOY 48 doit être un mercredi");
+    }
+
+    #[test]
+    fn ash_wednesday_is_always_wednesday() {
+        for year in 1969u16..=2399 {
+            let sb = SeasonBoundaries::compute(year);
+            assert_eq!(
+                weekday_of_doy(year, sb.ash_wednesday), 2,
+                "year {}: ash_wednesday DOY {} n'est pas un mercredi",
+                year, sb.ash_wednesday
+            );
+        }
+    }
+
+    // --- period_of --- bornes TempusNativitatis
+
+    #[test]
+    fn period_nativitas_domini_is_tempus_nativitatis() {
+        // Dec 25 = DOY 359 doit toujours être TempusNativitatis, jamais TempusAdventus.
+        for year in 1969u16..=2399 {
+            let sb = SeasonBoundaries::compute(year);
+            assert_eq!(
+                sb.period_of(359),
+                LiturgicalPeriod::TempusNativitatis,
+                "year {}: DOY 359 (25 déc) doit être TempusNativitatis",
+                year
+            );
+        }
+    }
+
+    #[test]
+    fn period_dominica_ii_per_annum_is_tempus_ordinarium() {
+        // Dominica II per annum = epiphania + 7.
+        // Doit être TempusOrdinarium, pas TempusNativitatis.
+        for year in 1969u16..=2399 {
+            let sb = SeasonBoundaries::compute(year);
+            let dominica_ii = sb.epiphania + 7;
+            assert_eq!(
+                sb.period_of(dominica_ii),
+                LiturgicalPeriod::TempusOrdinarium,
+                "year {}: Dominica II per annum (DOY {}) doit être TempusOrdinarium",
+                year, dominica_ii
+            );
+        }
+    }
+
+    #[test]
+    fn period_ash_wednesday_is_tempus_quadragesimae() {
+        for year in 1969u16..=2399 {
+            let sb = SeasonBoundaries::compute(year);
+            assert_eq!(
+                sb.period_of(sb.ash_wednesday),
+                LiturgicalPeriod::TempusQuadragesimae,
+                "year {}: ash_wednesday DOY {} doit être TempusQuadragesimae",
+                year, sb.ash_wednesday
+            );
+        }
+    }
+
+    #[test]
+    fn period_epiphania_is_tempus_nativitatis() {
+        // Le Baptême du Seigneur (epiphania) est le dernier jour du Temps de Noël.
+        for year in 1969u16..=2399 {
+            let sb = SeasonBoundaries::compute(year);
+            assert_eq!(
+                sb.period_of(sb.epiphania),
+                LiturgicalPeriod::TempusNativitatis,
+                "year {}: epiphania DOY {} doit être TempusNativitatis",
+                year, sb.epiphania
+            );
+        }
     }
 
     // --- date_to_pseudo_doy ---

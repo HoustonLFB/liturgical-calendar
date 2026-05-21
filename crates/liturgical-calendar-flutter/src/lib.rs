@@ -1,4 +1,4 @@
-//! Wrapper Flutter — `liturgical-calendar-core` v5.
+//! Wrapper Flutter — `liturgical-calendar-core` v6.
 //!
 //! Ce crate expose **une seule** nouvelle fonction C-ABI : [`kal_lits_get_label`].
 //!
@@ -72,7 +72,6 @@ pub unsafe extern "C" fn kal_lits_get_label(
     out_annotation_ptr: *mut *const u8, // nullable
     out_annotation_len: *mut usize,     // nullable
 ) -> i32 {
-    // Gardes null — seuls out_label_* sont obligatoires.
     if lits_bytes.is_null() || out_label_ptr.is_null() || out_label_len.is_null() {
         return KAL_ERR_NULL_PTR;
     }
@@ -94,7 +93,6 @@ pub unsafe extern "C" fn kal_lits_get_label(
         None    => return KAL_ERR_INDEX_OOB,
     };
 
-    // Écriture des sorties — toutes les vérifications null sont passées.
     unsafe {
         *out_label_ptr = entry.label.as_ptr();
         *out_label_len = entry.label.len();
@@ -122,12 +120,11 @@ pub unsafe extern "C" fn kal_lits_get_label(
 mod tests {
     use super::*;
 
-    /// Buffer `.lits` minimal valide — 0 entrées, pool vide.
     fn make_minimal_lits() -> Vec<u8> {
         let mut buf = vec![0u8; 32];
         buf[0..4].copy_from_slice(b"LITS");
-        buf[4..6].copy_from_slice(&1u16.to_le_bytes());   // version = 1
-        buf[24..28].copy_from_slice(&32u32.to_le_bytes()); // pool_offset = 32
+        buf[4..6].copy_from_slice(&1u16.to_le_bytes());
+        buf[24..28].copy_from_slice(&32u32.to_le_bytes());
         buf
     }
 
@@ -192,7 +189,7 @@ mod tests {
 
     #[test]
     fn buffer_trop_court_retourne_err() {
-        let buf = vec![0u8; 8]; // < 32 octets
+        let buf = vec![0u8; 8];
         let mut label_ptr: *const u8 = core::ptr::null();
         let mut label_len: usize = 0;
         let rc = unsafe {
@@ -210,8 +207,6 @@ mod tests {
         let buf = make_minimal_lits();
         let mut label_ptr: *const u8 = core::ptr::null();
         let mut label_len: usize = 0;
-        // Passer null pour annotation — ne doit pas segfaulter.
-        // Le corpus est vide donc on attend KAL_ERR_INDEX_OOB, pas de crash.
         let rc = unsafe {
             kal_lits_get_label(
                 buf.as_ptr(), buf.len(), 0, 0,

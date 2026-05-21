@@ -38,7 +38,7 @@ class KalBuildIdMismatchException extends KalException {
 /// Rang de préséance liturgique — bits [3:0] de [KalFeastEntry.flags].
 ///
 /// Ordre numérique = priorité décroissante (0 = priorité absolue).
-/// Valeurs 13–15 réservées système — non émises par le Forge v2.
+/// Valeurs 13–15 réservées système — non émises par la Forge v6.
 enum Precedence {
   /// 1. Triduum pascal.
   triduumSacrum(0),
@@ -128,7 +128,15 @@ enum LiturgicalColor {
   }
 }
 
-/// Période du calendrier liturgique — bits [10:8] de [KalFeastEntry.flags].
+/// Période du calendrier liturgique.
+///
+/// v6 : sourcée depuis `KalTimelineEntry.occurrenceFlags[4:2]` (bits 2–4).
+/// N'est plus dans `KalFeastEntry.flags[10:8]` — ces bits sont réservés/nuls.
+///
+/// Accessible via [TimelineEntryData.liturgicalPeriod], y compris pour les
+/// Padding Entries (jours sans fête propre).
+/// Exception : DOY 59 non-bissextile retourne toujours [tempusOrdinarium]
+/// (zéro absolu — ne pas interpréter).
 ///
 /// La valeur 7 est réservée.
 enum LiturgicalPeriod {
@@ -203,6 +211,10 @@ enum Nature {
 /// Données d'occurrence journalière — copie Dart de [KalTimelineEntry].
 ///
 /// Immutable. Créé par [LiturgicalCalendar.getDay] via [_fromFfi].
+///
+/// v6 : [liturgicalPeriod] et [liturgicalWeek] sont renseignés pour **tous**
+/// les slots, y compris les Padding Entries — sauf DOY 59 non-bissextile
+/// (zéro absolu, [isPadding] sera `true`).
 class TimelineEntryData {
   /// Index 1-based dans le Feast Registry. 0 = Padding Entry.
   final int primaryIndex;
@@ -213,11 +225,24 @@ class TimelineEntryData {
   /// Nombre de célébrations secondaires pour ce slot.
   final int secondaryCount;
 
-  /// `true` si des premières vêpres sont célébrées la veille.
+  /// `true` si des Premières Vêpres sont célébrées ce soir pour le lendemain.
   final bool hasVesperaeI;
 
-  /// `true` si une messe de vigile est prévue.
+  /// `true` si une Messe de Vigile propre est prévue ce soir pour le lendemain.
   final bool hasVigilia;
+
+  /// Période liturgique courante — extraite de `occurrenceFlags[4:2]`.
+  ///
+  /// Valide même pour les Padding Entries : permet au client de construire
+  /// le label de feria (ex: "Feria II, Hebdomada VI Temporis Paschalis")
+  /// sans entrée dans le Feast Registry ni lookup `.lits`.
+  final LiturgicalPeriod? liturgicalPeriod;
+
+  /// Ordinal de semaine liturgique dans la période courante.
+  ///
+  /// `0`    = aucun ordinal (TriduumPaschale, DOY 59 non-bissextile).
+  /// `1–34` = semaine active.
+  final int liturgicalWeek;
 
   const TimelineEntryData({
     required this.primaryIndex,
@@ -225,23 +250,33 @@ class TimelineEntryData {
     required this.secondaryCount,
     required this.hasVesperaeI,
     required this.hasVigilia,
+    required this.liturgicalPeriod,
+    required this.liturgicalWeek,
   });
 
-  /// `true` si ce slot ne porte aucune célébration (primaryIndex == 0).
+  /// `true` si ce slot ne porte aucune fête propre (primaryIndex == 0).
+  ///
+  /// v6 : un Padding Entry porte néanmoins [liturgicalPeriod] et
+  /// [liturgicalWeek] — le client peut construire un label de feria.
   bool get isPadding => primaryIndex == 0;
 
   factory TimelineEntryData._fromFfi(KalTimelineEntry e) => TimelineEntryData(
-        primaryIndex:    e.primaryIndex,
-        secondaryOffset: e.secondaryOffset,
-        secondaryCount:  e.secondaryCount,
-        hasVesperaeI:    (e.occurrenceFlags & 0x01) != 0,
-        hasVigilia:      (e.occurrenceFlags & 0x02) != 0,
+        primaryIndex:     e.primaryIndex,
+        secondaryOffset:  e.secondaryOffset,
+        secondaryCount:   e.secondaryCount,
+        hasVesperaeI:     (e.occurrenceFlags & 0x01) != 0,
+        hasVigilia:       (e.occurrenceFlags & 0x02) != 0,
+        // v6 : LiturgicalPeriod dans occurrenceFlags[4:2].
+        liturgicalPeriod: LiturgicalPeriod.fromValue((e.occurrenceFlags >> 2) & 0x07),
+        liturgicalWeek:   e.liturgicalWeek,
       );
 
   @override
   String toString() => 'TimelineEntryData('
       'primaryIndex: $primaryIndex, '
-      'secondaries: $secondaryCount'
+      'secondaries: $secondaryCount, '
+      'period: $liturgicalPeriod, '
+      'week: $liturgicalWeek'
       '${hasVesperaeI ? ", vesperaeI" : ""}'
       '${hasVigilia ? ", vigilia" : ""}'
       ')';
@@ -251,18 +286,21 @@ class TimelineEntryData {
 ///
 /// Immutable. Les champs enum peuvent être `null` si la valeur de bit field
 /// n'est pas reconnue (forward-compat avec les formats futurs).
+///
+/// v6 : le champ `period` (LiturgicalPeriod) a été retiré de [KalFeastEntry].
+/// La période est désormais portée par [TimelineEntryData.liturgicalPeriod].
 class FeastEntryData {
   final int feastId;
 
   /// Valeur brute de `flags` — utile si un champ enum est `null`.
   final int flagsRaw;
 
-  final Precedence?       precedence;
-  final LiturgicalColor?  color;
-  final LiturgicalPeriod? period;
-  final Nature?           nature;
+  final Precedence?      precedence;
+  final LiturgicalColor? color;
+  final Nature?          nature;
 
-  /// `true` si une messe de vigile propre est associée à cette fête.
+  /// `true` si une messe de vigile propre est associée à cette fête
+  /// (invariant corpus — indépendant du jour).
   final bool hasVigilMass;
 
   const FeastEntryData({
@@ -270,7 +308,6 @@ class FeastEntryData {
     required this.flagsRaw,
     required this.precedence,
     required this.color,
-    required this.period,
     required this.nature,
     required this.hasVigilMass,
   });
@@ -278,12 +315,12 @@ class FeastEntryData {
   factory FeastEntryData._fromFfi(KalFeastEntry e) {
     final f = e.flags;
     return FeastEntryData(
-      feastId:      e.feastId,
-      flagsRaw:     f,
-      precedence:   Precedence.fromValue(f & 0x000F),
-      color:        LiturgicalColor.fromValue((f >> 4) & 0x000F),
-      period:       LiturgicalPeriod.fromValue((f >> 8) & 0x0007),
-      nature:       Nature.fromValue((f >> 11) & 0x0007),
+      feastId:     e.feastId,
+      flagsRaw:    f,
+      precedence:  Precedence.fromValue(f & 0x000F),
+      color:       LiturgicalColor.fromValue((f >> 4) & 0x000F),
+      // bits [10:8] réservés nuls en v6 — LiturgicalPeriod supprimé de FeastEntry.
+      nature:      Nature.fromValue((f >> 11) & 0x0007),
       hasVigilMass: (f & (1 << 14)) != 0,
     );
   }
@@ -300,6 +337,9 @@ class FeastEntryData {
 /// Résultat d'un appel [LiturgicalCalendar.getDay].
 class DayData {
   /// Métadonnées d'occurrence (Timeline).
+  ///
+  /// v6 : [TimelineEntryData.liturgicalPeriod] et [TimelineEntryData.liturgicalWeek]
+  /// sont disponibles même si [TimelineEntryData.isPadding] est `true`.
   final TimelineEntryData timeline;
 
   /// Invariants de la fête principale.
