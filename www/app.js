@@ -6,9 +6,9 @@
 
 const APP_ROOT = '/app/liturgical-calendar/'
 
-const WASM_URL = `${APP_ROOT}liturgical_calendar_wasm.wasm?v=12`
-const KALD_URL = `${APP_ROOT}romanus_universale.kald?v=12`
-const LITS_URL = `${APP_ROOT}romanus_universale_la.lits?v=12`
+const WASM_URL = `${APP_ROOT}liturgical_calendar_wasm.wasm?v=16`
+const KALD_URL = `${APP_ROOT}romanus_universale.kald?v=16`
+const LITS_URL = `${APP_ROOT}romanus_universale_la.lits?v=16`
 
 const KAL_ENGINE_OK = 0
 const KAL_ERR_BUILD_ID_MISMATCH = -22
@@ -166,9 +166,15 @@ function renderYear(year, exports, memory) {
   document.title = `Calendarium ${year}`
   document.getElementById('h1').innerHTML = `Calendarium Romanum Generale <span>. pro ${year}</span>`
 
-  const tbody = document.getElementById('cal-body')
+  // Isolation stricte des layouts
+  const yearContent = document.getElementById('year-content')
+  document.getElementById('day-content').hidden = true
+
   const entryPtr = exports.kal_wasm_entry_ptr()
   const feastPtr = exports.kal_wasm_feast_ptr()
+
+  // Buffer de chaînes pour éviter les allocations d'éléments DOM individuels dans la boucle
+  let rowsHtml = ''
 
   for (let doy = 0; doy < 366; doy++) {
     if (exports.kal_wasm_read_day(year, doy) !== KAL_ENGINE_OK) continue
@@ -190,7 +196,6 @@ function renderYear(year, exports, memory) {
     const { month, day } = doyToMonthDay(doy)
     const href = `${APP_ROOT}${year}/${zeroPad(month)}/${zeroPad(day)}`
 
-    // Correction ici : initialisation stricte sans 's' pour correspondre aux mutations suivantes
     let featsHtml = ''
 
     if (exports.kal_wasm_get_label(year, doy) === 1) {
@@ -210,20 +215,43 @@ function renderYear(year, exports, memory) {
       }
     }
 
-    const tr = document.createElement('tr')
-    tr.innerHTML = `
+    rowsHtml += `<tr>
             <td class="doy"><a id="doy-${doy}" href="#doy-${doy}">${doy}</a></td>
             <td class="date"><a href="${href}">${zeroPad(day)}/${zeroPad(month)}</a></td>
-            <td class="feasts">${featsHtml}</td>`
-    tbody.appendChild(tr)
+            <td class="feasts">${featsHtml}</td>
+        </tr>`
   }
 
-  document.getElementById('cal-table').hidden = false
+  // Flush unique du layout complet (Table + Structure + Navigation)
+  yearContent.innerHTML = `
+    <table class="table liturgical-calendar">
+      <thead>
+        <tr>
+          <th>Doy</th>
+          <th>Date</th>
+          <th>Celebrationes</th>
+        </tr>
+      </thead>
+      <tbody class="table">${rowsHtml}</tbody>
+    </table>
+    <hr>
+    <nav class="flex gap">
+        <a class="button" href="${APP_ROOT}${year - 10}">Année ${year - 10}</a>
+        <a class="button" href="${APP_ROOT}${year - 1}">Année ${year - 1}</a>
+        <a class="button" href="${APP_ROOT}${year}">Année ${year}</a>
+        <a class="button" href="${APP_ROOT}${year + 1}">Année ${year + 1}</a>
+        <a class="button" href="${APP_ROOT}${year + 10}">Année ${year + 10}</a>
+    </nav>`
+
+  yearContent.hidden = false
 }
 
-// ── Vue journalière ───────────────────────────────────────────────────────────
+// ── Vue journalière ─────────────────────────────────────────────────────────
 
 function renderDay(year, month, day, exports, memory) {
+  // Désactivation explicite du layout annuel
+  document.getElementById('year-content').hidden = true
+
   const doy = dateToDoy(year, month, day)
   document.title = `${zeroPad(day)}/${zeroPad(month)}/${year}`
   document.getElementById('h1').innerHTML = `Calendarium Romanum Generale <span>. ${formatDateLong(year, month, day)}</span>`
@@ -256,54 +284,58 @@ function renderDay(year, month, day, exports, memory) {
     }
 
     const { precedence, color, nature, hasVigil } = decodeFeastFlags(feastFlags)
-    // v6 : LiturgicalPeriod dans TimelineEntry.occurrenceFlags[4:2], plus dans FeastEntry.flags[10:8].
     const period = exports.kal_wasm_entry_liturgical_period()
     const { hasVesperaeI, hasVigilia } = decodeOccurrenceFlags(occFlags)
 
-    // Alignement structurel : Résolution sécurisée via l'ID de la célébration principale
     const res = resolveById(exports, memory, feastId, year)
     const label = res ? res.label : `Fête inconnue (0x${feastId.toString(16).toUpperCase()})`
     const annotation = res ? res.annotation : null
 
-    html = `<div class="column-fix gap">`
-    html += `<article class="card feast primary color-${COLOR_CSS[color] ?? ''}" style="text-align: left;">
-        <h2>${label}</h2>`
-    if (annotation) html += `<p class="annotation">${renderMarkdown(annotation)}</p>`
-    html += `<ul>
-        <li>Feast ID: 0x${feastId.toString(16).toUpperCase().padStart(4, '0')}</li>
-        <li>Précédence: ${PRECEDENCE[precedence] ?? precedence} (${precedence + 1})</li>
-        <li>Couleur: ${COLOR[color] ?? color}</li>
-        <li>Période: ${PERIOD[period] ?? period}</li>
-        <li>Nature: ${NATURE[nature] ?? nature}</li>`
-    if (hasVigil) html += `<li>Vigile propre: oui (invariant)</li>`
-    if (hasVesperaeI) html += `<li>Vêpres I: ce soir</li>`
-    if (hasVigilia) html += `<li>Vigile: ce soir</li>`
-    html += `</ul></article>`
+    html += `<div class="grid3 gap">`
+    html += `<table class="table liturgical-calendar">`
+    html += `<caption class="h4 color-${COLOR_CSS[color] ?? ''}">`
+    html += `${label}`
+    if (annotation) html += `. ${renderMarkdown(annotation)}`
+    html += `</caption>`
+    html += `<tbody>`
+    html += `<tr><td>Feast ID</td><td>0x${feastId.toString(16).toUpperCase().padStart(4, '0')}</td></tr>
+        <tr><td>Précédence</td><td>${PRECEDENCE[precedence] ?? precedence} (${precedence + 1})</td></tr>
+        <tr><td>Nature</td><td>${NATURE[nature] ?? nature}</td></tr>
+        <tr><td>Couleur</td><td>${COLOR[color] ?? color}</td></tr>`
+    if (hasVigil) html += `<tr><td>Vigile propre</td><td>oui (invariant)</td></tr>`
+    if (hasVesperaeI) html += `<tr><td>Vêpres I</td><td>ce soir</td></tr>`
+    if (hasVigilia) html += `<tr><td>Vigile</td><td>ce soir</td></tr>`
+    html += `<tr><td>Période</td><td>${PERIOD[period] ?? period}</td></tr>`
+    html += `</tbody>`
+    html += `</table>`
+    html += `</div>`
 
     if (secCount > 0 && exports.kal_wasm_read_secondary(secOffset, secCount) === KAL_ENGINE_OK) {
       const sv = new DataView(memory.buffer, exports.kal_wasm_secondary_ptr(), secCount * 2)
-      html += `</div>`
       html += `<hr>`
-      html += `<h2>Fêtes secondaires du jour :</h2>`
-      html += `<div class="column-fix gap gap-top">`
+      html += `<h2 class="h3">Fêtes secondaires du jour :</h2>`
+      html += `<div class="grid3 gap">`
       for (let i = 0; i < secCount; i++) {
         const ridx = sv.getUint16(i * 2, true)
         if (ridx === 0) continue
         const resSec = resolveSecondary(exports, memory, ridx, year)
         if (!resSec) continue
         const sf = decodeFeastFlags(resSec.feastFlags)
-        html += `<article class="card secondaries feast secondary color-${COLOR_CSS[sf.color] ?? ''}" style="text-align: left;">
-                <h2>${resSec.label}</h2>`
-        if (resSec.annotation) html += `<p class="annotation">${renderMarkdown(resSec.annotation)}</p>`
-        html += `<ul>
-                <li>Feast ID: 0x${ridx.toString(16).toUpperCase().padStart(4, '0')}</li>
-                <li>Précédence: ${PRECEDENCE[sf.precedence] ?? sf.precedence} (${sf.precedence + 1})</li>
-                <li>Couleur: ${COLOR[sf.color] ?? sf.color}</li>
-                <li>Nature: ${NATURE[sf.nature] ?? sf.nature}</li>
-            </ul></article>`
+        html += `<table class="table liturgical-calendar">`
+        html += `<caption class="h4 color-${COLOR_CSS[sf.color] ?? ''}">`
+        html += `${resSec.label}`
+        if (resSec.annotation) html += `. ${renderMarkdown(resSec.annotation)}`
+        html += `</caption>`
+        html += `<tbody>`
+        html += `<tr><td>Feast ID</td><td>0x${ridx.toString(16).toUpperCase().padStart(4, '0')}</td></tr>`
+        html += `<tr><td>Précédence</td><td>${PRECEDENCE[sf.precedence] ?? sf.precedence} (${sf.precedence + 1})</td></tr>`
+        html += `<tr><td>Nature</td><td>${NATURE[sf.nature] ?? sf.nature}</td></tr>`
+        html += `<tr><td>Couleur</td><td>${COLOR[sf.color] ?? sf.color}</td></tr>`
+        html += `</tbody>`
+        html += `</table>`
       }
+      html += `</div>`
     }
-    html += `</div>`
   } else {
     html =
       '<div class="message-highlight"><svg class="icon" role="img" focusable="false"><use href="/sprites/util.svg#pencil"></use></svg><div><p>Pas de célébration répertoriée pour cette date.</p></div></div>'
@@ -327,6 +359,8 @@ function renderDay(year, month, day, exports, memory) {
 function renderNotFound() {
   document.title = '404 — Page non trouvée'
   document.getElementById('h1').innerHTML = 'Calendarium Romanum Generale <span>. 404</span>'
+
+  document.getElementById('year-content').hidden = true
   const container = document.getElementById('day-content')
   container.innerHTML = `<section class="not-found">
     <p>La ressource demandée n'existe pas.</p>
