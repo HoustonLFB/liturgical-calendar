@@ -5,7 +5,7 @@ date:
   month: 10
   day: 9
 history:
-  - from: 2026
+  - from: 2026 # Décret du Dicastère pour le Culte Divin, 9 novembre 2025 (Prot. N. 760/25)
     precedence: 12
     nature: memoria
     color: albus

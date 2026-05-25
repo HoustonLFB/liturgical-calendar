@@ -5,7 +5,7 @@ date:
   month: 4
   day: 28
 history:
-  - from: 1969
+  - from: 2001 # Editio typica tertia du Missale Romanum (décret du 20 avril 2000)
     precedence: 12
     nature: memoria
     color: albus

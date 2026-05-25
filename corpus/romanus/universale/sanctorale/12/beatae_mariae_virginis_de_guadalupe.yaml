@@ -5,7 +5,7 @@ date:
   month: 12
   day: 12
 history:
-  - from: 2002
+  - from: 2000 # Décret de la Congrégation pour le Culte Divin, 28 juin 2000
     precedence: 12
     nature: memoria
     color: albus

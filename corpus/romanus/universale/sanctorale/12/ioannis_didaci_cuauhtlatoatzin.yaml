@@ -5,7 +5,7 @@ date:
   month: 12
   day: 9
 history:
-  - from: 2002
+  - from: 2002 # Canonisation par Jean-Paul II le 31 juillet 2002 (AAS, vol. XCV, n. 12, 4 décembre 2003). Également attesté par Notitiae 2015 et la reimpressio emendata du Missale Romanum 2008. Décret d'inscription non retrouvé.
     precedence: 12
     nature: memoria
     color: albus

@@ -5,7 +5,7 @@ date:
   month: 1
   day: 3
 history:
-  - from: 2003 # entrée en vigueur avec Missel Romain 2002
+  - from: 2001 # Editio typica tertia du Missale Romanum (décret du 20 avril 2000)
     precedence: 12
     nature: memoria
     color: albus

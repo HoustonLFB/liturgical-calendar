@@ -5,7 +5,7 @@ date:
   month: 9
   day: 5
 history:
-  - from: 2025
+  - from: 2025 # Décret du Dicastère pour le Culte Divin, 24 décembre 2024 (Prot. N. 703/24)
     precedence: 12
     nature: memoria
     color: albus

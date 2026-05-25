@@ -5,7 +5,7 @@ date:
   month: 9
   day: 23
 history:
-  - from: 2002
+  - from: 2002 # Attesté par la reimpressio emendata du Missale Romanum 2008 (cf. Notitiae 2016) et par Notitiae 2015. Décret d'inscription non retrouvé.
     precedence: 10
     nature: memoria
     color: albus

@@ -5,8 +5,7 @@ mobile:
   anchor: pascha
   offset: 50
 history:
-  - from: 2018
+  - from: 2018 # Décret de la Congrégation pour le Culte Divin, 11 février 2018
     precedence: 10
     nature: memoria
     color: albus
-    period: tempus_ordinarium
