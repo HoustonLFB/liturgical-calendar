@@ -5,6 +5,12 @@ mobile:
   anchor: tempus_ordinarium
   ordinal: 3
 history:
-  - precedence: 6
+  - from: 1969
+    precedence: 6
+    nature: dominica
+    color: viridis
+    to: 2019
+  - from: 2020 # Dimanche de la Parole de Dieu, Motu proprio Aperuit illis, 30 septembre 2019
+    precedence: 6
     nature: dominica
     color: viridis

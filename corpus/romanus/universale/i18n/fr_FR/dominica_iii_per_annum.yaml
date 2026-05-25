@@ -2,3 +2,6 @@ version: 1
 history:
   - from: 1969
     label: "3ème Dimanche du Temps Ordinaire"
+  - from: 2020
+    label: "3ème Dimanche du Temps Ordinaire"
+    annotation: "*Dimanche de la Parole de Dieu*"

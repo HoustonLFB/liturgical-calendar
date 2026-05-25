@@ -2,3 +2,6 @@ version: 1
 history:
   - from: 1969
     label: "Dominica III per annum"
+  - from: 2020
+    label: "Dominica III per annum"
+    annotation: "*Dominica Verbi Dei*"

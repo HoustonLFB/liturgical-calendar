@@ -2,3 +2,6 @@ version: 1
 history:
   - from: 1969
     label: "3rd Sunday in Ordinary Time"
+  - from: 2020
+    label: "3rd Sunday in Ordinary Time"
+    annotation: "*Sunday of the Word of God*"

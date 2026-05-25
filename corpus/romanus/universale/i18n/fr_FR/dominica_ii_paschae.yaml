@@ -3,7 +3,7 @@ history:
   - from: 1969
     label: "2ème Dimanche de Pâque"
     annotation: "*In albis*"
-    to: 2001
-  - from: 2002 # Jean-Paul II, Lettre apostolique, Misericordia Dei, 2002
+    to: 2000
+  - from: 2001
     label: "2ème Dimanche de Pâques"
-    annotation: "Dimanche dans l'octave de Pâques ou de la Divine Miséricorde, *In albis*"
+    annotation: "Dimanche de la Divine Miséricorde, *In albis*"
