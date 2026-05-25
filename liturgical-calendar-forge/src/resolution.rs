@@ -113,7 +113,7 @@ pub(crate) enum Cycle {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) struct ResolutionKey {
-    pub sort_weight: u8,
+    pub sort_weight: u16,
     pub feast_id:    u16,
 }
 
@@ -137,7 +137,7 @@ impl PlacedFeast {
     #[inline]
     fn key(&self) -> ResolutionKey {
         ResolutionKey {
-            sort_weight: (self.precedence << 2) | self.class,
+            sort_weight: (self.precedence as u16) * 256 + (self.class as u16),
             feast_id:    self.feast_id,
         }
     }

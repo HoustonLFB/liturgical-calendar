@@ -5,6 +5,11 @@ date:
   month: 10
   day: 1
 history:
-  - precedence: 10
+  - to: 1997
+    precedence: 10
+    nature: memoria
+    color: albus
+  - from: 1998 # Proclamation comme Docteur de l'Église, Lettres apostoliques Divini amoris scientia du 19 octobre 1997
+    precedence: 10
     nature: memoria
     color: albus

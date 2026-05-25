@@ -5,11 +5,12 @@ mobile:
   anchor: pascha
   offset: 69
 history:
-  - to: 1995
+  - from: 1969
     precedence: 12
     nature: memoria
     color: albus
-  - from: 1996
+    to: 1995
+  - from: 1996 # Mémoire obligatoire, Décret du 1er janvier 1996 (Prot. 2376/95/L)
     precedence: 10
     nature: memoria
     color: albus

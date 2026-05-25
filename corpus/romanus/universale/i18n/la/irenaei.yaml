@@ -2,3 +2,6 @@ version: 1
 history:
   - from: 1969
     label: "S. Irenæi, episcopi et martyris"
+  - from: 2022
+    label: "S. Irenæi, episcopi, martyris et Ecclesiæ doctoris"
+    annotation: "*Doctor unitatis*"

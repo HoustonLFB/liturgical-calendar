@@ -1,0 +1,73 @@
+## Tableau récapitulatif des fêtes modifiées après 1969
+
+## Section A : Inscriptions au Calendrier Romain Général
+
+| Nom de la fête | Date d'introduction | Source |
+| :--- | :--- | :--- |
+| Saint Adalbert, évêque et martyr | **23 avril 1996** | Décret de la Congrégation pour le Culte Divin, 11 juillet 1995 (Prot. 2349/95/L) — *Notitiae* 357, vol. 32 (1996) |
+| Bienheureuse Vierge Marie de Fatima | **13 mai 2000** | *Editio typica tertia* du *Missale Romanum* (décret du 20 avril 2000) — Présentation du Cardinal Medina Estévez, 18 mars 2002 |
+| Saints Christophe Magallanes, prêtre, et compagnons, martyrs | **21 mai 2000** | *Editio typica tertia* du *Missale Romanum* (décret du 20 avril 2000) — Présentation du Cardinal Medina Estévez, 18 mars 2002 |
+| Sainte Rita de Cascia, religieuse | **22 mai 2000** | *Editio typica tertia* du *Missale Romanum* (décret du 20 avril 2000) — Présentation du Cardinal Medina Estévez, 18 mars 2002 |
+| Saints Augustin Zhao Rong, prêtre, et compagnons, martyrs | **9 juillet 2000** | *Editio typica tertia* du *Missale Romanum* (décret du 20 avril 2000) — Présentation du Cardinal Medina Estévez, 18 mars 2002 |
+| Saint Apollinaire, évêque et martyr | **20 juillet 2000** | *Editio typica tertia* du *Missale Romanum* (décret du 20 avril 2000) — Présentation du Cardinal Medina Estévez, 18 mars 2002 |
+| Saint Charbel Makhlouf, prêtre | **24 juillet 2000** | *Editio typica tertia* du *Missale Romanum* (décret du 20 avril 2000) — Présentation du Cardinal Medina Estévez, 18 mars 2002 |
+| Sainte Thérèse-Bénédicte de la Croix (Édith Stein), vierge et martyre | **9 août 2000** | *Editio typica tertia* du *Missale Romanum* (décret du 20 avril 2000) — Présentation du Cardinal Medina Estévez, 18 mars 2002 |
+| Saint Maximilien-Marie Kolbe, prêtre et martyr | **14 août 2000** | *Editio typica tertia* du *Missale Romanum* (décret du 20 avril 2000) — Présentation du Cardinal Medina Estévez, 18 mars 2002 |
+| Saint Pierre Claver, prêtre | **9 septembre 2000** | *Editio typica tertia* du *Missale Romanum* (décret du 20 avril 2000) — Présentation du Cardinal Medina Estévez, 18 mars 2002 |
+| Très Saint Nom de Marie | **12 septembre 2000** | *Editio typica tertia* du *Missale Romanum* (décret du 20 avril 2000) — Présentation du Cardinal Medina Estévez, 18 mars 2002 |
+| Saints André Kim Tae-gŏn, prêtre, Paul Chŏng Ha-sang et compagnons, martyrs | **20 septembre 2000** | *Editio typica tertia* du *Missale Romanum* (décret du 20 avril 2000) — Présentation du Cardinal Medina Estévez, 18 mars 2002 |
+| Saints Laurent Ruiz et compagnons, martyrs | **28 septembre 2000** | *Editio typica tertia* du *Missale Romanum* (décret du 20 avril 2000) — Présentation du Cardinal Medina Estévez, 18 mars 2002 |
+| Saints André Dũng-Lạc, prêtre, et compagnons, martyrs | **24 novembre 2000** | *Editio typica tertia* du *Missale Romanum* (décret du 20 avril 2000) — Présentation du Cardinal Medina Estévez, 18 mars 2002 |
+| Sainte Catherine d'Alexandrie, vierge et martyre | **25 novembre 2000** | *Editio typica tertia* du *Missale Romanum* (décret du 20 avril 2000) — Présentation du Cardinal Medina Estévez, 18 mars 2002 |
+| Notre-Dame de Guadalupe | **12 décembre 2000** | Décret de la Congrégation pour le Culte Divin, 28 juin 2000 |
+| Très Saint Nom de Jésus | **3 janvier 2001** | *Editio typica tertia* du *Missale Romanum* (décret du 20 avril 2000) — Présentation du Cardinal Medina Estévez, 18 mars 2002 |
+| Sainte Joséphine Bakhita, vierge | **8 février 2001** | *Editio typica tertia* du *Missale Romanum* (décret du 20 avril 2000) — Présentation du Cardinal Medina Estévez, 18 mars 2002 |
+| Saint Louis-Marie Grignion de Montfort, prêtre | **28 avril 2001** | *Editio typica tertia* du *Missale Romanum* (décret du 20 avril 2000) — Présentation du Cardinal Medina Estévez, 18 mars 2002 |
+| Saint Pierre-Julien Eymard, prêtre | **2 août 2001** | *Editio typica tertia* du *Missale Romanum* (décret du 20 avril 2000) — Présentation du Cardinal Medina Estévez, 18 mars 2002 |
+| Saint Pio de Pietrelcina (Padre Pio), religieux | **23 septembre 2002** * | Attesté par la *reimpressio emendata* du *Missale Romanum* 2008 (cf. *Notitiae* 2016) et par *Notitiae* 2015. Décret d'inscription non retrouvé. |
+| Saint Juan Diego Cuauhtlatoatzin | **9 décembre 2002** * | Canonisation par Jean-Paul II le 31 juillet 2002 (AAS, vol. XCV, n. 12, 4 décembre 2003). Également attesté par *Notitiae* 2015 et la *reimpressio emendata* du *Missale Romanum* 2008. Décret d'inscription non retrouvé. |
+| Saint Jean XXIII, Pape | **11 octobre 2014** | Décret de la Congrégation pour le Culte Divin, 29 mai 2014 |
+| Saint Jean-Paul II, Pape | **22 octobre 2014** | Décret de la Congrégation pour le Culte Divin, 29 mai 2014 |
+| Bienheureuse Vierge Marie, Mère de l'Église | **21 mai 2018** | Décret de la Congrégation pour le Culte Divin, 11 février 2018 |
+| Saint Paul VI, Pape | **29 mai 2019** | Décret de la Congrégation pour le Culte Divin, 25 janvier 2019 (Prot. N. 29/19) |
+| Bienheureuse Vierge Marie de Lorette | **10 décembre 2019** | Décret de la Congrégation pour le Culte Divin, 7 octobre 2019 (Prot. N. 404/19) |
+| Sainte Faustine Kowalska, vierge | **5 octobre 2020** | Décret de la Congrégation pour le Culte Divin, 18 mai 2020 (Prot. N. 229/20) |
+| Saint Grégoire de Narek, abbé et Docteur de l'Église | **27 février 2021** | Décret de la Congrégation pour le Culte Divin, 25 janvier 2021 (Prot. N. 40/21) |
+| Saint Jean De Avila, prêtre et Docteur de l'Église | **10 mai 2021** | Décret de la Congrégation pour le Culte Divin, 25 janvier 2021 (Prot. N. 40/21) |
+| Saintes Marthe, Marie et saint Lazare | **29 juillet 2021** | Décret de la Congrégation pour le Culte Divin, 26 janvier 2021 (Prot. N. 35/21) |
+| Sainte Hildegarde de Bingen, vierge et Docteur de l'Église | **17 septembre 2021** | Décret de la Congrégation pour le Culte Divin, 25 janvier 2021 (Prot. N. 40/21) |
+| Sainte Teresa de Calcutta, vierge | **5 septembre 2025** | Décret du Dicastère pour le Culte Divin, 24 décembre 2024 (Prot. N. 703/24) |
+| Saint John Henry Newman, prêtre et Docteur de l'Église | **9 octobre 2026** | Décret du Dicastère pour le Culte Divin, 9 novembre 2025 (Prot. N. 760/25) |
+
+---
+
+## Section B : Modifications du rang dans le Calendrier Romain Général
+
+| Nom de la fête | Modification apportée | Date d'entrée en vigueur | Source |
+| :--- | :--- | :--- | :--- |
+| Cœur Immaculé de Marie | Élévation de Mémoire facultative à **Mémoire obligatoire** | **8 juin 1996** | Décret du 1er janvier 1996 (Prot. 2376/95/L) — *Notitiae* 32 (1996) 654-656, cité par la *Notificatio* du 8 décembre 1998 |
+| Sainte Marie-Madeleine | Élévation de Mémoire à **Fête** | **22 juillet 2016** | Décret de la Congrégation pour le Culte Divin, 3 juin 2016 (Prot. N. 257/16) |
+
+---
+
+## Section C : Calendriers propres (hors Calendrier Romain Général)
+
+| Nom de la fête | Modification / Particularité | Date d'entrée en vigueur | Source |
+| :--- | :--- | :--- | :--- |
+| Notre-Dame de Guadalupe | Élévation au rang de **Fête** dans toute l'Amérique | **12 décembre 1999** | Décret de la Congrégation pour le Culte Divin, 25 mars 1999 |
+| Notre-Seigneur Jésus-Christ, Souverain et Éternel Prêtre | Inscription au calendrier propre d'Angleterre et du Pays de Galles (**Fête**, jeudi après la Pentecôte) | **20 mai 2018** | Décrets Prot. N. 83/13/L (25 février 2013) et Prot. N. 144/17 (22 février 2018) |
+
+---
+
+## Récapitulatif statistique final
+
+| Section | Nombre d'entrées |
+| :--- | :--- |
+| Section A — Inscriptions au Calendrier Romain Général | **34** |
+| Section B — Modifications de rang (Calendrier Général) | **2** |
+| Section C — Calendriers propres | **2** |
+| **Total général** | **38** |
+
+---
+
+Le 24 mai 2026.
