@@ -45,16 +45,6 @@ table.liturgical-calendar {
     background-color: hsl(330, 100%, 71%);
   }
 
-  /*
-    .color-black::before {
-      background-color: hsl(0, 0%, 0%);
-    }
-
-	.color-gold {
-	background-color: hwb(51 0% 0%);
-	}
-	*/
-
   .doy a {
     scroll-margin-top: 3.5em;
   }
