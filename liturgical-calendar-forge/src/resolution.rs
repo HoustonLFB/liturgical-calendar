@@ -223,17 +223,27 @@ impl TransferQueue {
 // ─── Déclassement saisonnier — §3.4 ─────────────────────────────────────────
 
 pub(crate) fn should_demote_to_commemoratio(
-    feast: &PlacedFeast,
+    feast:  &PlacedFeast,
     period: CorePeriod,
+    doy:    u16,
 ) -> bool {
-    feast.precedence >= 9
-        && matches!(
-            period,
-            CorePeriod::TempusQuadragesimae
-                | CorePeriod::TempusAdventus
-                | CorePeriod::TriduumPaschale
-                | CorePeriod::DiesSancti
-        )
+    if !matches!(feast.precedence, 9 | 10) {
+        return false;
+    }
+    match period {
+        CorePeriod::TempusQuadragesimae
+        | CorePeriod::TriduumPaschale
+        | CorePeriod::DiesSancti => true,
+        CorePeriod::TempusAdventus => {
+            // NUALC n°16 : déclassement limité au 17–24 décembre.
+            // `doy` est en pseudo-DOY (slot 59 réservé au 29 fév., boucle 0..=365) :
+            // même référentiel que MONTH_STARTS — aucune translation nécessaire.
+            let dec_17 = MONTH_STARTS[11] + 17 - 1;
+            let dec_24 = MONTH_STARTS[11] + 24 - 1;
+            doy >= dec_17 && doy <= dec_24
+        }
+        _ => false,
+    }
 }
 
 // ─── DOY depuis FeastDef.temporality ─────────────────────────────────────────
@@ -278,30 +288,39 @@ fn feast_cycle(feast_def: &FeastDef) -> Cycle {
 fn elect(
     mut candidates: Vec<PlacedFeast>,
     period:         CorePeriod,
+    doy:            u16,
 ) -> (PlacedFeast, Vec<PlacedFeast>, Vec<PlacedFeast>) {
-    candidates.sort_unstable_by_key(|a| a.key());
-
-    let primary = candidates.remove(0);
-    let temporal_primary = primary.cycle == Cycle::Temporal;
-
-    let mut secondary_feasts = Vec::new();
-    let mut to_transfer      = Vec::new();
-
-    for feast in candidates {
-        if (temporal_primary && should_demote_to_commemoratio(&feast, period))
-            || feast.precedence >= 6
-        {
-            secondary_feasts.push(feast);
-        } else if feast.nature == CoreNature::Dominica || feast.nature == CoreNature::Feria {
-            // Absorption silencieuse — jamais transférées.
-        } else if feast.precedence <= 7 {
-            to_transfer.push(feast);
+    // §3.4 — Mutation in-place avant tri canonique.
+    for feast in &mut candidates {
+        if should_demote_to_commemoratio(feast, period, doy) {
+            feast.precedence = 11;
+            feast.nature     = CoreNature::Commemoratio;
         }
     }
 
-    // Ordre liturgique : (precedence, class, feast_id)
-    secondary_feasts.sort_unstable_by_key(|f| f.key());
-    (primary, secondary_feasts, to_transfer)
+    // Tri descendant : le candidat de clé minimale (priorité canonique maximale)
+    // se retrouve en queue — extraction via .pop() en O(1) strict, zéro memmove.
+    candidates.sort_unstable_by_key(|b| std::cmp::Reverse(b.key()));
+    let primary = candidates.pop().expect("elect: vecteur de candidats vide");
+
+    // Avec tri descendant, secondaires (prec. ≥ 6, clé haute) précèdent
+    // les candidats au transfert (prec. 0–5, clé basse).
+    // partition_point est valide : le prédicat prec >= 6 est vrai sur un
+    // préfixe contigu après tri descendant par clé (prec * 256 + class).
+    let split = candidates.partition_point(|f| f.precedence >= 6);
+
+    // Drain depuis la queue (split..) : zéro déplacement des secondaires.
+    // Vide si split == len (cas majoritaire) : aucune allocation.
+    let to_transfer: Vec<PlacedFeast> = candidates
+        .drain(split..)
+        .filter(|f| f.nature != CoreNature::Dominica && f.nature != CoreNature::Feria)
+        .collect();
+
+    // Inversion O(n) in-place : restitue l'ordre canonique ascendant
+    // (clé minimale en tête) attendu par le sérialiseur .kald.
+    candidates.reverse();
+
+    (primary, candidates, to_transfer)
 }
 
 // ─── resolve_year ─────────────────────────────────────────────────────────────
@@ -445,7 +464,7 @@ pub(crate) fn resolve_year(
         if candidates.is_empty() { continue; }
 
         let period = canonicalized.season_boundaries.period_of(doy);
-        let (primary, secondary_feasts, to_transfer) = elect(candidates, period);
+        let (primary, secondary_feasts, to_transfer) = elect(candidates, period, doy);
 
         for feast in to_transfer {
             let active_rule = registry.get(&feast.slug)
@@ -497,7 +516,7 @@ pub(crate) fn resolve_year(
         if let Some(day) = resolved_days.get_mut(&doy_dst) {
             let mut all = vec![day.primary.clone(), feast];
             all.extend(day.secondary_feasts.clone());
-            let (new_primary, new_secondary, _) = elect(all, period);
+            let (new_primary, new_secondary, _) = elect(all, period, doy_dst);
             day.primary          = new_primary;
             day.secondary_feasts = new_secondary;
         } else {
@@ -527,7 +546,7 @@ pub(crate) fn resolve_year(
                 all.push(existing.primary);
                 all.extend(existing.secondary_feasts);
             }
-            let (new_primary, new_secondary, displaced) = elect(all, period);
+            let (new_primary, new_secondary, displaced) = elect(all, period, doy_dst);
             for d in displaced {
                 transfer_queue.enqueue(doy_dst, d, depth + 1, year)?;
             }
@@ -570,4 +589,117 @@ pub(crate) fn resolve_year(
     }
 
     Ok(ResolvedCalendar { year, days: resolved_days })
+}
+
+// ─── Tests ────────────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::canonicalization::MONTH_STARTS;
+
+    /// Construit une PlacedFeast de nature Memoria avec la precedence donnée.
+    /// Zéro-allocation hors du String du slug.
+    fn make_memoria(slug: &str, feast_id: u16, precedence: u8) -> PlacedFeast {
+        PlacedFeast {
+            slug:           slug.to_string(),
+            feast_id,
+            scope_bits:     0,
+            precedence,
+            class:          0,
+            nature:         CoreNature::Memoria,
+            color:          CoreColor::Albus,
+            period:         None,
+            has_vigil_mass: false,
+            cycle:          Cycle::Sanctoral,
+        }
+    }
+
+    // ── Avent tardif — borne basse : 14 déc. hors plage → pas de mutation ────
+
+    /// Saint Jean de la Croix (14 déc.) est AVANT la plage 17–24 déc.
+    /// Invariant : aucune mutation de precedence ni de nature.
+    #[test]
+    fn test_adventus_tardivus_boundary_ioannis_a_cruce() {
+        // DOY = MONTH_STARTS[11] + 14 - 1 — identique bissextile et non-bissextile.
+        // DOY 59 absent en non-bissextile ; les autres slots ne sont pas décalés.
+        let doy_dec_14 = MONTH_STARTS[11] + 14 - 1;
+
+        let ioannis = make_memoria("ioannis_a_cruce", 1, 9);
+        let (primary, _, _) = elect(vec![ioannis], CorePeriod::TempusAdventus, doy_dec_14);
+
+        assert_eq!(
+            primary.precedence, 9u8,
+            "Invariant brisé : precedence dégradée hors de la plage 17–24 déc."
+        );
+        assert_eq!(
+            primary.nature, CoreNature::Memoria,
+            "Invariant brisé : nature mutée en Commemoratio hors de la plage 17–24 déc."
+        );
+    }
+
+    // ── Avent tardif — borne haute : 17 déc. inclus → mutation obligatoire ───
+
+    /// Premier jour de la plage canonique : doit déclencher le déclassement.
+    #[test]
+    fn test_adventus_tardivus_dec17_demoted() {
+        let doy_dec_17 = MONTH_STARTS[11] + 17 - 1; // borne inférieure inclusive
+        let feast = make_memoria("o_sapientia", 2, 9);
+        let (primary, _, _) = elect(vec![feast], CorePeriod::TempusAdventus, doy_dec_17);
+
+        assert_eq!(primary.precedence, 11u8,
+            "Invariant brisé : precedence non mutée à 11 au 17 déc.");
+        assert_eq!(primary.nature, CoreNature::Commemoratio,
+            "Invariant brisé : nature non mutée en Commemoratio au 17 déc.");
+    }
+
+    // ── Carême — déclassement MemoriaeObligatoriaGenerales (prec. 9) ─────────
+
+    /// Perpétue et Félicité (7 mars, TempusQuadragesimae).
+    /// Invariant : precedence → 11, nature → Commemoratio.
+    #[test]
+    fn test_quadragesimae_demotion_perpetua_et_felicitas() {
+        // DOY = MONTH_STARTS[2] + 7 - 1 = 66. Pas de correction bissextile.
+        let doy_mar_7 = MONTH_STARTS[2] + 7 - 1;
+        let perpetua = make_memoria("perpetua_et_felicitas", 3, 9);
+        let (primary, _, _) = elect(vec![perpetua], CorePeriod::TempusQuadragesimae, doy_mar_7);
+
+        assert_eq!(
+            primary.precedence, 11u8,
+            "Invariant brisé : precedence non dégradée à 11 (MemoriaeAdLibitum) en Carême."
+        );
+        assert_eq!(
+            primary.nature, CoreNature::Commemoratio,
+            "Invariant brisé : nature non mutée en Commemoratio en Carême."
+        );
+    }
+
+    // ── Carême — déclassement MemoriaeObligatoriaePropria (prec. 10) ─────────
+
+    /// Même règle pour les mémoires propres : prec. 10 → 11.
+    #[test]
+    fn test_quadragesimae_demotion_propria() {
+        let doy_mar_7 = MONTH_STARTS[2] + 7 - 1;
+        let feast = make_memoria("test_propria", 4, 10);
+        let (primary, _, _) = elect(vec![feast], CorePeriod::TempusQuadragesimae, doy_mar_7);
+
+        assert_eq!(primary.precedence, 11u8,
+            "Invariant brisé : MemoriaeObligatoriaePropria non dégradée en Carême.");
+        assert_eq!(primary.nature, CoreNature::Commemoratio);
+    }
+
+    // ── Non-régression — MemoriaeAdLibitum (prec. 11) non ré-dégradée ────────
+
+    /// Une mémoire déjà facultative ne doit pas être mutée une seconde fois.
+    #[test]
+    fn test_ad_libitum_not_double_demoted() {
+        let doy_mar_7 = MONTH_STARTS[2] + 7 - 1;
+        let feast = make_memoria("test_ad_libitum", 5, 11);
+        let (primary, _, _) = elect(vec![feast], CorePeriod::TempusQuadragesimae, doy_mar_7);
+
+        assert_eq!(primary.precedence, 11u8,
+            "Régression : MemoriaeAdLibitum ré-dégradée au-delà de 11.");
+        assert_eq!(primary.nature, CoreNature::Memoria,
+            "Régression : nature d'une mémoire déjà facultative mutée.");
+    }
 }
