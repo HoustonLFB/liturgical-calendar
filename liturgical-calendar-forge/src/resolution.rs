@@ -227,7 +227,7 @@ pub(crate) fn should_demote_to_commemoratio(
     period: CorePeriod,
     doy:    u16,
 ) -> bool {
-    if !matches!(feast.precedence, 9 | 10) {
+    if feast.nature != CoreNature::Memoria {
         return false;
     }
     match period {
@@ -688,18 +688,18 @@ mod tests {
         assert_eq!(primary.nature, CoreNature::Commemoratio);
     }
 
-    // ── Non-régression — MemoriaeAdLibitum (prec. 11) non ré-dégradée ────────
+    // ── Carême — Déclassement des MemoriaeAdLibitum (prec. 11) ───────────────
 
-    /// Une mémoire déjà facultative ne doit pas être mutée une seconde fois.
+    /// Une mémoire facultative (11) en Carême doit basculer en Commemoratio.
     #[test]
-    fn test_ad_libitum_not_double_demoted() {
+    fn test_ad_libitum_becomes_commemoratio_in_lnt() {
         let doy_mar_7 = MONTH_STARTS[2] + 7 - 1;
         let feast = make_memoria("test_ad_libitum", 5, 11);
         let (primary, _, _) = elect(vec![feast], CorePeriod::TempusQuadragesimae, doy_mar_7);
 
         assert_eq!(primary.precedence, 11u8,
-            "Régression : MemoriaeAdLibitum ré-dégradée au-delà de 11.");
-        assert_eq!(primary.nature, CoreNature::Memoria,
-            "Régression : nature d'une mémoire déjà facultative mutée.");
+            "Invariant : la précédence d'une mémoire facultative reste fixée à 11.");
+        assert_eq!(primary.nature, CoreNature::Commemoratio,
+            "Invariant brisé : la nature de la mémoire facultative n'a pas muté en Commemoratio.");
     }
 }
