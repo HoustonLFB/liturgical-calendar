@@ -437,7 +437,7 @@ dependencies = [
 
 [[package]]
 name = "liturgical-calendar-forge"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "cbindgen",
  "clap 4.6.1",

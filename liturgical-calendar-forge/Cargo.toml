@@ -1,6 +1,6 @@
 [package]
 name = "liturgical-calendar-forge"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2024"
 rust-version = "1.97.0"
 description = "Ahead-of-time compiler for the Catholic liturgical calendar. Ingests a YAML corpus of feasts, precedence, and transfer rules, resolves all conflicts, and emits pre-validated binary artifacts (`.kald` / `.lits`) for zero-runtime-cost deployment."
