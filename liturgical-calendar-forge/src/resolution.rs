@@ -299,7 +299,8 @@ fn elect(
         }
     }
 
-    secondary_feasts.sort_unstable_by_key(|f| f.feast_id); // INV-FORGE-4
+    // Ordre liturgique : (precedence, class, feast_id)
+    secondary_feasts.sort_unstable_by_key(|f| f.key());
     (primary, secondary_feasts, to_transfer)
 }
 

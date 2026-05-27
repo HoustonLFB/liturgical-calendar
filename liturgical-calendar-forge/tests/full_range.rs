@@ -68,14 +68,12 @@ fn full_range_padding_entries_correct() {
         let is_leap = is_leap_year(year as i32);
         let e = unsafe { read_entry(kald, year, 59) };
 
-        if is_leap {
-            // v6 : primitives temporelles toujours écrites — liturgical_week > 0 invariant.
-            // primary_index peut être non-nul si une fête tombe le 29 fév (ex: 1976).
-            assert!(
-                e.liturgical_week > 0,
-                "year {year} (bissextile) : doy=59 doit porter liturgical_week > 0",
-            );
-        } else {
+            if is_leap {
+                assert!(
+                    e.liturgical_week > 0,
+                    "year {year} (bissextile) : doy=59 doit porter liturgical_week > 0 (primitives temporelles)"
+                );
+            } else {
             // Padding pur — zéro absolu sur tous les champs.
             assert_eq!(
                 e.primary_index, 0,
@@ -255,4 +253,70 @@ fn full_range_ash_wednesday_early_easter_2026() {
 
     let e49 = unsafe { read_entry(kald, 2026, 49) };
     assert_eq!(e49.primary_index, 0, "DOY 49 doit être vide en 2026");
+}
+
+// ---------------------------------------------------------------------------
+// 10. Non-régression — Immaculati Cordis : flags history 1996
+// ---------------------------------------------------------------------------
+
+/// Vérifie que les flags du FeastEntry d'Immaculati Cordis reflètent l'entrée
+/// `history` de 1996 (precedence interne 9 = MemoriaeObligatoriaGenerales)
+/// et non l'entrée 1969 gelée (precedence 11 = MemoriaeAdLibitum).
+///
+/// Régression couverte : le registre AOT gelait les flags à la première
+/// insertion (année 1969), ignorant les entrées `history` ultérieures.
+#[test]
+fn full_range_immaculati_cordis_flags_post_1996() {
+    use liturgical_calendar_core::ffi::{kal_read_feast, kal_read_secondary};
+
+    const DOY:  u16 = 164;   // 13 juin
+    const YEAR: u16 = 2026;
+    const FEAST_ID_IMMACULATI: u16 = 0x003d;
+    const PREC_OBL_GEN:        u8  = 9;     // MemoriaeObligatoriaGenerales
+
+    let kald = &kalds().0;
+    let ptr  = kald.as_ptr();
+    let len  = kald.len();
+
+    let entry = unsafe { read_entry(kald, YEAR, DOY) };
+    assert!(!entry.is_padding(), "DOY {DOY} {YEAR} : Padding Entry inattendu");
+    assert!(entry.secondary_count >= 1, "aucune secondaire — Immaculati manquant");
+
+    // Chercher Immaculati Cordis parmi primary + secondaries.
+    let mut immaculati_flags: Option<u16> = None;
+
+    // Vérifier primary
+    let mut fe = liturgical_calendar_core::entry::FeastEntry::zeroed();
+    unsafe { kal_read_feast(ptr, len, entry.primary_index, &mut fe) };
+    if fe.feast_id == FEAST_ID_IMMACULATI {
+        immaculati_flags = Some(fe.flags);
+    }
+
+    // Vérifier secondaries
+    if immaculati_flags.is_none() {
+        let mut sec = vec![0u16; entry.secondary_count as usize];
+        unsafe {
+            kal_read_secondary(ptr, len, entry.secondary_offset,
+                entry.secondary_count, sec.as_mut_ptr(), entry.secondary_count);
+        };
+        for &ridx in &sec {
+            let mut sf = liturgical_calendar_core::entry::FeastEntry::zeroed();
+            unsafe { kal_read_feast(ptr, len, ridx, &mut sf) };
+            if sf.feast_id == FEAST_ID_IMMACULATI {
+                immaculati_flags = Some(sf.flags);
+                break;
+            }
+        }
+    }
+
+    let flags = immaculati_flags
+        .expect("Immaculati Cordis (0x003d) introuvable en primary ni secondary pour 2026 doy=164");
+
+    let prec = (flags & 0x000F) as u8;
+    assert_eq!(
+        prec, PREC_OBL_GEN,
+        "Immaculati Cordis 2026 : precedence binaire={prec}, \
+         attendu {PREC_OBL_GEN} (MemoriaeObligatoriaGenerales, history depuis 1996) — \
+         régression : registre gelé sur l'entrée 1969 (prec=11, MemoriaeAdLibitum)"
+    );
 }

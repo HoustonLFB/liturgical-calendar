@@ -34,7 +34,7 @@ use crate::{
 /// Index `0` = sentinel Padding, jamais assigné.
 /// Déterministe : le premier `get_or_insert` pour un `feast_id` donné fixe son index.
 pub(crate) struct FeastRegistryBuilder {
-    index:       BTreeMap<u16, u16>,
+    index:       BTreeMap<(u16, u16), u16>,
     pub entries: Vec<FeastEntry>,
 }
 
@@ -45,20 +45,21 @@ impl FeastRegistryBuilder {
 
     /// Retourne le `registry_index` existant ou insère et assigne le suivant (1-based).
     pub fn get_or_insert(&mut self, feast_id: u16, flags: u16) -> Result<u16, ForgeError> {
-        if let Some(&idx) = self.index.get(&feast_id) {
+        let key = (feast_id, flags);
+        if let Some(&idx) = self.index.get(&key) {
             return Ok(idx);
         }
         if self.entries.len() >= u16::MAX as usize {
             return Err(ForgeError::RegistryOverflow);
         }
         let idx = self.entries.len() as u16 + 1;
-        self.index.insert(feast_id, idx);
+        self.index.insert(key, idx);
         self.entries.push(FeastEntry { feast_id, flags });
         Ok(idx)
     }
 
-    pub fn index_of(&self, feast_id: u16) -> Option<u16> {
-        self.index.get(&feast_id).copied()
+    pub fn index_of(&self, feast_id: u16, flags: u16) -> Option<u16> {
+        self.index.get(&(feast_id, flags)).copied()
     }
 
     pub fn registry_count(&self) -> u32 {
@@ -150,7 +151,7 @@ fn liturgical_week_of(doy: u16, period: LiturgicalPeriod, sb: &SeasonBoundaries)
                 // Segment II — ordinal canonique à rebours depuis l'Avent.
                 // Dominica XXXIV = adventus − 7 → ordinal = 34 − ⌊(adventus−1−doy)/7⌋
                 34u8.saturating_sub(
-                    sb.adventus.saturating_sub(doy).div_ceil(7) as u8
+                    (sb.adventus.saturating_sub(1).saturating_sub(doy) / 7) as u8
                 )
             } else {
                 // Segment I — ordinal depuis le Baptême du Seigneur (epiphania).
@@ -267,16 +268,28 @@ pub(crate) fn generate_year(
             return Err(ForgeError::SecondaryCountOverflow { doy, year, count: secondary_count });
         }
 
+        let primary_flags = encode_feast_flags(
+            day.primary.precedence,
+            day.primary.color,
+            day.primary.nature,
+            day.primary.has_vigil_mass,
+        );
         let primary_index = feast_registry
-            .index_of(day.primary.feast_id)
+            .index_of(day.primary.feast_id, primary_flags)
             .ok_or(ForgeError::FeastNotInRegistry { feast_id: day.primary.feast_id, year, doy })?;
 
         let (secondary_offset, sc) = if secondary_count > 0 {
             let indices: Vec<u16> = day.secondary_feasts
                 .iter()
                 .map(|f| {
+                    let sec_flags = encode_feast_flags(
+                        f.precedence,
+                        f.color,
+                        f.nature,
+                        f.has_vigil_mass,
+                    );
                     feast_registry
-                        .index_of(f.feast_id)
+                        .index_of(f.feast_id, sec_flags)
                         .ok_or(ForgeError::FeastNotInRegistry { feast_id: f.feast_id, year, doy })
                 })
                 .collect::<Result<_, _>>()?;
