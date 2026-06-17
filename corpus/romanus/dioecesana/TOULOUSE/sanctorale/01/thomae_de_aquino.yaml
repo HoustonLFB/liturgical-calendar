@@ -1,0 +1,10 @@
+version: 1
+category: 1
+class: saint
+date:
+  month: 1
+  day: 28
+history:
+  - precedence: 10
+    nature: festum
+    color: albus

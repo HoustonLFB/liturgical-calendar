@@ -1,0 +1,10 @@
+version: 1
+category: 3
+class: saint
+date:
+  month: 05
+  day: 29
+history:
+  - precedence: 13
+    nature: memoria
+    color: albus
