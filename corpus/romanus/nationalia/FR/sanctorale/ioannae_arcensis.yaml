@@ -5,6 +5,6 @@ date:
   month: 5
   day: 30
 history:
-  - precedence: 8
-    nature: festum
+  - precedence: 12
+    nature: memoria
     color: albus

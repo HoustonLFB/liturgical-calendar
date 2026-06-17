@@ -2,9 +2,9 @@ version: 1
 category: 3
 class: saint
 date:
-  month: 10
-  day: 1
+  month: 1
+  day: 15
 history:
-  - precedence: 11
+  - precedence: 13
     nature: memoria
     color: albus

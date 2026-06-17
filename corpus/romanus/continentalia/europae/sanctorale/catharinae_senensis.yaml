@@ -1,7 +1,10 @@
 version: 1
 category: 1
+date:
+  month: 4
+  day: 29
 history:
   - from: 1999 # Co-patronne de l'Europe
     precedence: 10
-    nature: memoria
+    nature: festum
     color: albus

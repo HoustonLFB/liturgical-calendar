@@ -2,10 +2,10 @@ version: 1
 category: 3
 history:
   - to: 1980
-    precedence: 8
+    precedence: 10
     nature: festum
     color: albus
   - from: 1981 # Titre de co-patrons de l'Europe par Jean-Paul II le 31 décembre 1980
-    precedence: 8
+    precedence: 10
     nature: festum
     color: albus
