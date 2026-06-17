@@ -5,6 +5,6 @@ date:
   month: 1
   day: 31
 history:
-  - precedence: 10
+  - precedence: 12
     nature: memoria
     color: albus

@@ -6,6 +6,6 @@ date:
   day: 24
 history:
   - to: ~
-    precedence: 10
+    precedence: 12
     nature: memoria
     color: albus

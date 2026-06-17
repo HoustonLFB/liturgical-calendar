@@ -6,6 +6,6 @@ date:
   day: 25
 history:
   - to: ~
-    precedence: 7
+    precedence: 9
     nature: festum
     color: albus
